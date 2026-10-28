@@ -183,3 +183,92 @@ def test_investment_property_depreciation_sentence_is_not_ppe_depreciation():
     assert not nr.PPE_DEP_SENTENCE.search(txt)
     ok = "Penyusutan dibebankan pada beban umum dan administrasi masing-masing sebesar Rp 1.234.567 dan Rp 1.100.000"
     assert nr.PPE_DEP_SENTENCE.search(ok)
+
+
+# ----------------------------------------------------------------------------- Trial 2 (blind, 28 Oct 2026): APII, TFAS
+
+from wars_scanner import pdf_reader as pr                         # noqa: E402
+
+
+def test_trade_receivables_item_with_a_wrapped_label_is_read():
+    """APII 2021: 'Pihak ketiga - setelah / dikurangi cadangan / ... / (2020 : Rp2.995.582.842) 52.638...' was missed."""
+    lines = [_ln("Piutang usaha"), _ln("Pihak berelasi", 2115, 1126), _ln("Pihak ketiga - setelah"),
+             _ln("dikurangi cadangan"), _ln("sebesar Rp1.829.642.116"), _ln("31 Desember 2021"),
+             _ln("(2020 : Rp2.995.582.842)", 52638, 62823), _ln("Piutang lain-lain"), _ln("Pihak berelasi", 5739, 3202)]
+    got, _ = pr._receivables(lines)
+    assert [x.amounts["t"] for x in got] == [2115, 52638]
+
+
+def test_other_receivables_are_not_trade_receivables():
+    lines = [_ln("Piutang usaha"), _ln("Pihak ketiga", 100, 90), _ln("Piutang lain-lain"), _ln("Pihak ketiga", 7, 6)]
+    assert [x.amounts["t"] for x in pr._receivables(lines)[0]] == [100]
+
+
+def test_receivables_on_two_own_lines():
+    lines = [_ln("Piutang usaha - pihak ketiga", 100, 90), _ln("Piutang usaha - pihak berelasi", 5, 4),
+             _ln("Persediaan", 50, 40)]
+    assert [x.amounts["t"] for x in pr._receivables(lines)[0]] == [100, 5]
+
+
+def test_wrapped_label_head_and_tail_match_together():
+    """TFAS 2021: 'Beban umum dan' / 'administrasi 30.403.766.317' is general and administrative expenses."""
+    lines = [_ln("Beban umum dan"), _ln("administrasi", 30403, 26649), _ln("Beban penjualan", 2800, 3310)]
+    assert pr._first(lines, r"^beban (umum dan administrasi|administrasi dan umum)$") is lines[1]
+    # negative: the tail alone, or under another head, is not matched
+    other = [_ln("Uang muka pembelian"), _ln("aset tetap", 58997, 95906, full_label="Uang muka pembelian aset tetap")]
+    assert pr._first(other, r"^aset tetap$") is None
+
+
+def _st(kind, lines):
+    return pr.Statement(kind, [1], lines)
+
+
+def test_sga_parts_against_total_operating_expenses():
+    gp = _ln("LABA KOTOR", 900, 800)
+    sell, ga = _ln("Beban penjualan", 28, 33), _ln("Beban umum dan administrasi", 304, 266)
+    ok = _st("profit_loss", [gp, ga, sell, _ln("Total Beban Usaha", 332, 299)])
+    assert pr._sga_total(ok, [ga, sell])[0] == {"t": "ok", "t1": "ok"}
+    # the TFAS failure: G&A missed (tail of a wrapped label), only selling expenses read
+    tail = _ln("administrasi", 304, 266)
+    bad = _st("profit_loss", [gp, _ln("Beban umum dan"), tail, sell, _ln("Total Beban Usaha", 332, 299)])
+    assert pr._sga_total(bad, [sell])[0] == {"t": "mismatch", "t1": "mismatch"}
+    # another item printed on its own line inside the total is not a misread
+    imp = _ln("Beban penyisihan penurunan nilai", 10, 0)
+    other = _st("profit_loss", [gp, ga, sell, imp, _ln("Total Beban Usaha", 342, 299)])
+    st, others = pr._sga_total(other, [ga, sell])
+    assert st == {"t": "other", "t1": "ok"} and others == [imp]
+
+
+def test_net_income_check():
+    pbt, tax, ni = _ln("LABA SEBELUM PAJAK", 2822, 984), _ln("BEBAN PAJAK PENGHASILAN", 158, 338), _ln("LABA TAHUN BERJALAN", 2664, 646)
+    pl = _st("profit_loss", [pbt, tax, ni])
+    assert pr._net_income_check(pl, {"t": 2664, "t1": 646}) == {"t": True, "t1": True}   # tax printed without brackets
+    assert pr._net_income_check(pl, {"t": 2665, "t1": 646}) == {}                          # no line with these figures
+    pl2 = _st("profit_loss", [pbt, _ln("Beban pajak", -158, -338), _ln("Laba tahun berjalan", 2664, 600)])
+    assert pr._net_income_check(pl2, {"t": 2664, "t1": 600}) == {"t": True, "t1": False}
+
+
+def test_operating_cash_flow_check():
+    cf = _st("cash_flow", [_ln("Kas neto diperoleh dari aktivitas operasi", 643, 486),
+                           _ln("Kas neto digunakan untuk aktivitas investasi", -161, -439),
+                           _ln("Kas neto digunakan untuk aktivitas pendanaan", -733, -209),
+                           _ln("Pengaruh perubahan kurs", -1, 0),
+                           _ln("Penurunan neto kas dan setara kas", -252, -162)])
+    assert pr._cfo_check(cf, {"t": 643, "t1": 486}) == {"t": True, "t1": True}
+    assert pr._cfo_check(cf, {"t": 600, "t1": 486}) == {"t": False, "t1": True}
+
+
+def test_figures_found_again_in_the_notes():
+    text = ["", "Kas 21.566.665.738 13.361.199.112 Cash", "Jumlah 54,753,896,950 63,949,833,306 Total"]
+    assert pr.pair_in_text(text, 2, 21566665738, 13361199112) == 2
+    assert pr.pair_in_text(text, 2, 54753896950, 63949833306) == 3          # English thousands style
+    assert pr.pair_in_text(text, 2, 1566665738, 13361199112) is None        # part of a longer figure is no match
+    assert pr.pair_in_text(text, 3, 21566665738, 13361199112) is None       # only from the first note page on
+    assert pr.pair_in_text(text, 2, 107, 31) is None                        # small figures are not distinctive
+
+
+def test_found_figure_without_any_cross_check_becomes_review():
+    from wars_scanner.pdf_reader import Value
+    values = [Value("cash_flow_from_operations", c, v, "FOUND") for c, v in (("t", 5), ("t1", 4))]
+    out = pr._rule7(values, [], {}, [""], None, {}, [])
+    assert {v.status for v in out} == {"REVIEW"}

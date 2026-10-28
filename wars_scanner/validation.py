@@ -81,6 +81,13 @@ def check(p: dict, ex=None) -> list:
                               Msg("flag.ppe_note", seen=join([Amt(x) for x in st[1]], ", ")),
                               ("property_plant_equipment_net",), c))
 
+    sga_x = (getattr(ex, "cross_checks", None) or {}).get("sga_total", {}) if ex is not None else {}
+    for c in cols:
+        st = sga_x.get(c)
+        if st and st[0] == "mismatch":
+            flags.append(Flag("a_sga_total", "ERROR", "app", Msg("flag.sga_total", a=Amt(st[1])),
+                              ("selling_general_administrative_expenses",), c))
+
     # ---------------------------------------------------------------- workbook: e_impossible_values (ERROR)
     for c in cols:
         cl, tl = _g(p, "current_liabilities", c), _g(p, "total_liabilities", c)
@@ -256,7 +263,7 @@ def check(p: dict, ex=None) -> list:
     return flags
 
 
-EXTRACTION_ONLY = ("a_cash", "a_year_labels", "a_ppe_note")   # checks that need the extraction; kept when the inputs are recalculated
+EXTRACTION_ONLY = ("a_cash", "a_year_labels", "a_ppe_note", "a_sga_total")   # checks that need the extraction; kept when the inputs are recalculated
 
 
 def passed_checks(p: dict, ex=None) -> list:

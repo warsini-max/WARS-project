@@ -1154,6 +1154,34 @@ CATALOG: dict = {
     "unit.USD.Billions": _e("miliaran Dolar AS", "billions of US dollars", "Gail 28 Okt P4"),
     "check.section_ca": _e("Baris aset lancar dijumlahkan sama dengan jumlah aset lancar",
                            "Current asset lines add up to total current assets", "new"),
+    "check.section_cl": _e("Baris liabilitas jangka pendek dijumlahkan sama dengan jumlah liabilitas jangka pendek",
+                           "Current liability lines add up to total current liabilities", "new"),
+    "check.ta_tle": _e("Total aset sama dengan total liabilitas dan ekuitas",
+                       "Total assets agree with total liabilities and equity", "new"),
+    "check.tl_parts": _e("Liabilitas jangka pendek ditambah liabilitas jangka panjang sama dengan total liabilitas",
+                         "Current plus non-current liabilities agree with total liabilities", "new"),
+    "check.net_income": _e("Laba sebelum pajak dan baris di bawahnya sama dengan laba tahun berjalan",
+                           "Profit before tax and the lines below it agree with profit for the year", "new"),
+    "check.cfo": _e("Arus kas operasi, investasi dan pendanaan dijumlahkan sama dengan kenaikan (penurunan) kas",
+                    "Operating, investing and financing cash flows add up to the net change in cash", "new"),
+    "check.cash_cf": _e("Kas dan setara kas sama dengan saldo di laporan arus kas",
+                        "Cash and cash equivalents agree with the balance in the statement of cash flows", "new"),
+    "check.sga_total": _e("Beban penjualan dan beban umum dijumlahkan sama dengan total beban usaha yang tercetak",
+                          "Selling and general expenses add up to the printed total operating expenses", "new"),
+    "check.in_notes": _e("{item}: angka yang sama ditemukan lagi di catatan (hal. {p})",
+                         "{item}: the same figures were found again in the notes (p. {p})", "new"),
+    "note.no_crosscheck": _e("Angka ini belum bisa dicocokkan dengan tempat kedua di laporan; periksa di PDF",
+                             "This figure could not be matched to a second place in the report; check in the PDF", "new"),
+    "issue.sga_other": _e("Total beban usaha juga memuat pos lain yang tidak dihitung sebagai beban penjualan dan umum: "
+                          "{lines}. Periksa di PDF",
+                          "Total operating expenses also holds other items not counted as selling and general expenses: "
+                          "{lines}. Check in the PDF", "new"),
+    "flag.sga_total": _e("Angka yang dibaca: beban penjualan dan beban umum ({a}) tidak sama dengan total beban usaha yang "
+                         "tercetak, dan selisihnya bukan pos lain yang berdiri sendiri. Kemungkinan ada baris yang terlewat; "
+                         "periksa di PDF",
+                         "Figures as read: selling and general expenses ({a}) do not agree with the printed total operating "
+                         "expenses, and the difference is not another item on its own line. A line may have been missed; "
+                         "check in the PDF", "new"),
     "check.section_nca": _e("Baris aset tidak lancar dijumlahkan sama dengan jumlah aset tidak lancar",
                             "Non-current asset lines add up to total non-current assets", "new"),
     "issue.section_sum": _e("{sec}: tidak cocok untuk kolom {col} ({a} terbaca, {b} tercetak, hal. {p}). Ada baris yang "

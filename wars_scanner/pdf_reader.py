@@ -415,13 +415,22 @@ def _continuation(lines, i):
     return bool(first) and first.islower() and i > 0 and not lines[i - 1].amounts and bool(lines[i - 1].label.strip())
 
 
+def _own_match(rx, lines, i):
+    """The line's label matches on its own, or, for the tail of a wrapped label, together with the label-only
+    line above it ("Beban umum dan" / "administrasi 30.403.766.317", TFAS 2021). A tail never matches alone
+    ("Uang muka pembelian" / "aset tetap", BIRD 2021)."""
+    ln = lines[i]
+    if not _continuation(lines, i):
+        return bool(rx.search(_norm(ln.label)))
+    return bool(rx.search(_norm(lines[i - 1].label + " " + ln.label)))
+
+
 def _candidates(lines, pattern):
     """Every line with both years whose label (own or wrapped) matches: used to detect ambiguity (rule 7)."""
     rx = re.compile(pattern)
     out = []
     for i, ln in enumerate(lines):
-        own = rx.search(_norm(ln.label)) and not _continuation(lines, i)
-        if (own or rx.search(_norm(ln.full_label))) and "t" in ln.amounts and "t1" in ln.amounts:
+        if (_own_match(rx, lines, i) or rx.search(_norm(ln.full_label))) and "t" in ln.amounts and "t1" in ln.amounts:
             out.append(ln)
     return out
 
@@ -429,8 +438,7 @@ def _candidates(lines, pattern):
 def _first(lines, pattern, need_both=True):
     rx = re.compile(pattern)
     for i, ln in enumerate(lines):
-        own = rx.search(_norm(ln.label)) and not _continuation(lines, i)
-        if (own or rx.search(_norm(ln.full_label))) and (
+        if (_own_match(rx, lines, i) or rx.search(_norm(ln.full_label))) and (
                 not need_both or ("t" in ln.amounts and "t1" in ln.amounts)):
             return ln
     return None
@@ -584,14 +592,36 @@ def _receivables(lines):
         if not lab.startswith("piutang usaha"):
             continue
         if "t" in ln.amounts:
-            return [ln], ""
-        block = []
-        for nxt in lines[i + 1:i + 9]:
+            block = [ln]
+            if "pihak" in lab:                 # 'Piutang usaha - pihak ketiga' then '- pihak berelasi' on its own line
+                for nxt in lines[i + 1:i + 4]:
+                    nl = _norm(nxt.label)
+                    if "t" in nxt.amounts and (nl.startswith("pihak") or nl.startswith("piutang usaha")) and "pihak" in nl:
+                        block.append(nxt)
+                    else:
+                        break
+            return block, ""
+        # Trial 2 (APII 2021): an item label can wrap over several lines with the allowance quoted in it
+        # ("Pihak ketiga - setelah / dikurangi cadangan / ... / (2020 : Rp2.995.582.842) 52.638.402.581 ...").
+        # A label-only 'Pihak ...' line opens an item; its figures are on the next line that has them.
+        block, open_at = [], None
+        for k, nxt in enumerate(lines[i + 1:i + 20], start=i + 1):
             nl = _norm(nxt.label)
-            if nl.startswith("pihak") and "t" in nxt.amounts:
-                block.append(nxt)
-            elif block or "t" in nxt.amounts:
+            if "t" in nxt.amounts:
+                if nl.startswith("pihak") or open_at is not None:
+                    block.append(nxt)
+                    open_at = None
+                    continue
                 break
+            if not nl:
+                continue
+            if nl.startswith("pihak"):
+                open_at = k
+                continue
+            if open_at is not None and k - open_at <= 8:
+                continue                       # wrapped label of the open item
+            if block or open_at is not None or nxt.label.strip()[:1].isupper():
+                break                          # the next item of the statement
         if block:
             return block, ""
     return [], ""
@@ -719,7 +749,8 @@ def _nil_by_absence(values, checks, sections, text, notes_start):
 
 
 SECTIONS = [("check.section_ca", r"^aset lancar$", r"^(total|jumlah) aset lancar$"),
-            ("check.section_nca", r"^aset tidak lancar$", r"^(total|jumlah) aset tidak lancar$")]
+            ("check.section_nca", r"^aset tidak lancar$", r"^(total|jumlah) aset tidak lancar$"),
+            ("check.section_cl", r"^liabilitas jangka pendek$", r"^(total|jumlah) liabilitas jangka pendek$")]
 
 
 def _section_sums(pos):
@@ -750,6 +781,202 @@ def _section_sums(pos):
                 issues.append(Msg("issue.section_sum", sec=Msg(key), col=c, a=Amt(got), b=Amt(total.amounts[c]),
                                   p=total.page))
     return passed, issues
+
+
+# ------------------------------------------------------------------------------------- rule 7 cross-checks
+# Rule 7 (Gail, 28 Oct 2026): every face figure the score uses needs an independent cross-check before it can
+# be FOUND; a figure that cannot be cross-checked stays REVIEW. Trial 2 (APII, TFAS 2021) showed two figures
+# FOUND without one.
+
+SCORE_FACE_FIELDS = ("revenue", "cost_of_goods_sold", "net_income", "total_assets", "current_assets",
+                     "cash_and_cash_equivalents", "current_liabilities", "total_liabilities",
+                     "cash_flow_from_operations", "selling_general_administrative_expenses", "accounts_receivable")
+PBT = r"^(laba|rugi|laba \(rugi\)|\(rugi\) laba|rugi \(laba\)|laba/rugi) sebelum (beban |manfaat )?(\(beban\) )?(\(manfaat\) )?pajak"
+TOTAL_OPEX = r"^(total|jumlah) beban (usaha|operasi|operasional)$"
+NET_CHANGE_CASH = (r"^(kenaikan|penurunan|peningkatan|\(penurunan\)|\(kenaikan\))\b(?![^.]*(awal|akhir|dibatasi|saldo|"
+                   r"piutang|persediaan|utang|aset|liabilitas|beban|uang muka))[^.]{0,60}(kas|neto|bersih)\b")
+
+
+def pair_in_text(text, first_page, t, t1):
+    """Page of the first text line (from first_page on) that shows both figures, in either thousands style.
+    Figures below 1.000 are not distinctive and are not searched. None when not found."""
+    pats = []
+    for v in (t, t1):
+        if not v:
+            continue
+        a = abs(v)
+        if a < 1000:
+            return None
+        forms = {f"{a:,}", f"{a:,}".replace(",", ".")}
+        pats.append(re.compile(r"(?<![\d.,])(" + "|".join(re.escape(f) for f in forms) + r")(?![\d]|[.,]\d)"))
+    if not pats or first_page is None:
+        return None
+    for i in range(first_page, len(text) + 1):
+        for line in text[i - 1].splitlines():
+            if all(p.search(line) for p in pats):
+                return i
+    return None
+
+
+def _between(lines, a, b):
+    return [x for x in lines[lines.index(a) + 1:lines.index(b)] if x.amounts]
+
+
+def _net_income_check(pl, ni):
+    """Profit before tax and the lines below it add up to profit for the year (either sign convention for tax)."""
+    pbt = _first(pl.lines, PBT)
+    if pbt is None:
+        return {}
+    ni_ln = next((x for x in pl.lines[pl.lines.index(pbt) + 1:] if "t" in x.amounts and "t1" in x.amounts
+                  and x.amounts["t"] == ni.get("t") and x.amounts["t1"] == ni.get("t1")), None)
+    if ni_ln is None:
+        return {}
+    mid = _between(pl.lines, pbt, ni_ln)
+    if any("t" not in x.amounts or "t1" not in x.amounts for x in mid):
+        return {}
+    out = {}
+    for c in ("t", "t1"):
+        ways = {pbt.amounts[c] + sum(x.amounts[c] for x in mid), pbt.amounts[c] - sum(abs(x.amounts[c]) for x in mid)}
+        if mid:                                # current + deferred tax followed by their total
+            ways |= {pbt.amounts[c] + mid[-1].amounts[c], pbt.amounts[c] - abs(mid[-1].amounts[c])}
+        out[c] = ni[c] in ways
+    return out
+
+
+def _cfo_check(cf, cfo):
+    """Operating + investing + financing cash flows = net change in cash."""
+    inv, fin = _first(cf.lines, r"aktivitas investasi$"), _first(cf.lines, r"aktivitas pendanaan$")
+    net = _first(cf.lines, NET_CHANGE_CASH)
+    if not (inv and fin and net):
+        return {}
+    fx = _first(cf.lines, r"^(pengaruh|efek|dampak)\b[^.]{0,60}(kurs|selisih)")
+    out = {}
+    for c in ("t", "t1"):
+        base = cfo.get(c) is not None and cfo[c] + inv.amounts[c] + fin.amounts[c]
+        out[c] = base is not False and (base == net.amounts[c] or (fx is not None and c in fx.amounts
+                                                                    and base + fx.amounts[c] == net.amounts[c]))
+    return out
+
+
+def _sga_total(pl, parts):
+    """SGA lines against a printed 'Total beban usaha'. Returns (status per column, other lines) where status is
+    'ok', 'other' (the total also holds other items printed on their own lines) or 'mismatch' (a line of the
+    block was not read as an item, e.g. the tail of a wrapped label). {} when no total is printed."""
+    total = _first(pl.lines, TOTAL_OPEX)
+    if total is None or not parts:
+        return {}, []
+    start = _first(pl.lines, r"^laba (bruto|kotor)$")
+    first = min(pl.lines.index(p) for p in parts)
+    if start is None or pl.lines.index(start) > first:
+        start_i = first - 1
+    else:
+        start_i = pl.lines.index(start)
+    end_i = pl.lines.index(total)
+    if end_i < first:
+        return {}, []
+    others = [x for x in pl.lines[start_i + 1:end_i] if x.amounts and x not in parts]
+    out = {}
+    for c in ("t", "t1"):
+        got = sum(abs(p.amounts.get(c, 0)) for p in parts)
+        if got == abs(total.amounts[c]):
+            out[c] = "ok"
+        elif others and all(x.label.strip()[:1].isupper() and c in x.amounts for x in others) and \
+                got + sum(abs(x.amounts[c]) for x in others) == abs(total.amounts[c]):
+            out[c] = "other"
+        else:
+            out[c] = "mismatch"
+    return out, others
+
+
+def _rule7(values, checks, statements, text, notes_start, cross_checks, issues):
+    """Collect the cross-checks each score field passed; FOUND figures without one become REVIEW."""
+    get = {(v.field, v.column): v.value for v in values}
+    ok = set()
+    by_key = {"check.balance": ("total_assets", "total_liabilities"), "check.section_ca": ("current_assets",),
+              "check.section_cl": ("current_liabilities",), "check.gross_profit": ("revenue", "cost_of_goods_sold")}
+    for name, c, passed, _ in checks:
+        if passed and getattr(name, "key", None) in by_key:
+            ok.update((f, c) for f in by_key[name.key])
+    new = []
+    pos = statements.get("position")
+    if pos:
+        # total assets = total liabilities and equity; total liabilities = current + non-current liabilities
+        tle = _first(pos.lines, r"^(total|jumlah) liabilitas dan ekuitas\b")
+        ncl = _first(pos.lines, r"^(total|jumlah) liabilitas jangka panjang$|^(total|jumlah) liabilitas tidak lancar$")
+        for c in ("t", "t1"):
+            ta, tl, cl = (get.get((f, c)) for f in ("total_assets", "total_liabilities", "current_liabilities"))
+            if tle and ta is not None and abs(tle.amounts[c]) == ta and ("total_assets", c) not in ok:
+                ok.add(("total_assets", c))
+                new.append((Msg("check.ta_tle"), c, True, ""))
+            if ncl and None not in (tl, cl) and cl + abs(ncl.amounts[c]) == tl:
+                ok.update({("total_liabilities", c), ("current_liabilities", c)})
+                new.append((Msg("check.tl_parts"), c, True, ""))
+    pl, cf = statements.get("profit_loss"), statements.get("cash_flow")
+    ni = {c: get.get(("net_income", c)) for c in ("t", "t1")}
+    if pl and None not in ni.values():
+        for c, passed in _net_income_check(pl, ni).items():
+            if passed:
+                ok.add(("net_income", c))
+                new.append((Msg("check.net_income"), c, True, ""))
+    cfo = {c: get.get(("cash_flow_from_operations", c)) for c in ("t", "t1")}
+    if cf and None not in cfo.values():
+        for c, passed in _cfo_check(cf, cfo).items():
+            if passed:
+                ok.add(("cash_flow_from_operations", c))
+                new.append((Msg("check.cfo"), c, True, ""))
+    cash = {c: get.get(("cash_and_cash_equivalents", c)) for c in ("t", "t1")}
+    if cf and None not in cash.values() and any(
+            "t" in x.amounts and "t1" in x.amounts and abs(x.amounts["t"]) == cash["t"] and abs(x.amounts["t1"]) == cash["t1"]
+            for x in cf.lines):
+        ok.update({("cash_and_cash_equivalents", "t"), ("cash_and_cash_equivalents", "t1")})
+        new += [(Msg("check.cash_cf"), c, True, "") for c in ("t", "t1")]
+    # SGA against the printed total of operating expenses
+    if pl:
+        parts = [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
+        st, others = _sga_total(pl, parts)
+        if st:
+            bad = [c for c, x in st.items() if x == "mismatch"]
+            if bad:
+                cross_checks["sga_total"] = {c: ("mismatch", sum(abs(p.amounts.get(c, 0)) for p in parts)) for c in bad}
+            for c, x in st.items():
+                if x == "ok":
+                    ok.add(("selling_general_administrative_expenses", c))
+                    new.append((Msg("check.sga_total"), c, True, ""))
+            if any(x == "other" for x in st.values()):
+                issues.append(Msg("issue.sga_other", lines=Raw("; ".join(o.text[:50] for o in others))))
+    # the same figures again in the notes (cash, revenue, cost of sales, SGA lines, trade receivables)
+    for f in ("cash_and_cash_equivalents", "revenue", "cost_of_goods_sold", "accounts_receivable",
+              "selling_general_administrative_expenses"):
+        if all((f, c) in ok for c in ("t", "t1")):
+            continue
+        vs = [v for v in values if v.field == f and v.value is not None]
+        if len(vs) != 2:
+            continue
+        pair = {v.column: v.value for v in vs}
+        page = pair_in_text(text, notes_start, pair["t"], pair["t1"])
+        if page is None and f in ("accounts_receivable", "selling_general_administrative_expenses"):
+            parts = _parts(statements, f)
+            pages = [pair_in_text(text, notes_start, p.amounts.get("t"), p.amounts.get("t1")) for p in parts]
+            if parts and all(pages):
+                page = min(pages)
+        if page is not None:
+            ok.update({(f, "t"), (f, "t1")})
+            new += [(Msg("check.in_notes", item=Msg(f"label.{f}"), p=page), c, True, "") for c in ("t", "t1")]
+    checks += new
+    for v in values:
+        if v.field in SCORE_FACE_FIELDS and v.status == "FOUND" and (v.field, v.column) not in ok:
+            v.status = "REVIEW"
+            v.note = join([v.note, Msg("note.no_crosscheck")]) if v.note else Msg("note.no_crosscheck")
+    return values
+
+
+def _parts(statements, f):
+    if f == "accounts_receivable" and statements.get("position"):
+        return _receivables(statements["position"].lines)[0]
+    if f == "selling_general_administrative_expenses" and statements.get("profit_loss"):
+        pl = statements["profit_loss"]
+        return [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
+    return []
 
 
 def _checks(pos, pl, values):
@@ -1051,6 +1278,9 @@ def read(pdf_path) -> Extraction:
             values += [Value(f, c, None, "NOT SEARCHED",
                              note=Msg("note.notes_not_read_calk" if pos else "note.notes_not_read_fs"))
                        for c in ("t", "t1")]
+
+    if statements:
+        values = _rule7(values, checks, statements, loc["text"], (chosen or {}).get("notes_start"), cross_checks, issues)
 
     # ---- M-08 package (approved 23 Oct 2026): transition and restated comparatives, from the report itself
     from .transition import detect as _detect_transition
