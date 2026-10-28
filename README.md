@@ -2,8 +2,8 @@
 
 By **Warsini** · [LinkedIn](https://www.linkedin.com/in/warsiniak)
 
-**Status: beta, under construction.** The app runs end to end (upload → result → confirmation →
-CSV) in Bahasa Indonesia and English. It is not online yet; see [docs/STATUS.md](docs/STATUS.md).
+**Status: beta, under construction.** The app runs end to end (continue as guest → upload → reading →
+result → PDF report and Excel table) in Bahasa Indonesia and English. See [docs/STATUS.md](docs/STATUS.md).
 
 WARS Scanner reads the audited annual financial statements of a company listed on the Indonesia
 Stock Exchange (IDX), computes the eight Beneish (1999) indices and the M-score, and shows which
@@ -32,12 +32,15 @@ kesimpulan tentang kecurangan.*
    digit slip; the year columns are taken from the year labels printed in each statement's heading,
    and the score is withheld if they are missing or disagree. A figure that needs judgement is marked yellow; a figure that is not found is never
    filled in, so the score is not calculated.
-4. **Statuses set by the user.** Where the notes are silent (for example, no intangible assets
-   found), the app does not assume "none": the user sets the status and records the notes examined.
-5. **Result.** The M-score against the −1.78 threshold, the ratios that raise it with the figures
-   and pages behind them, possible non-manipulative explanations and areas for examination.
-6. **Confirmation.** The user marks each yellow item as matching the report or not. One "does not
-   match" withholds the score. User confirmation is not independent verification.
+4. **Provisional result.** The M-score against the −1.78 threshold, the ratios that raise it with
+   the figures and pages behind them, and the eight indices. Where the notes are silent (for
+   example, no intangible assets found), the app uses the amount read or 0 under the workbook rule
+   and marks it as an assumption; the result is labelled provisional.
+5. **Downloads.** A PDF report (findings with possible non-manipulative explanations and areas for
+   examination, score breakdown, a checklist of every figure to check against the source page,
+   figures read, cross-checks, methodology) and an Excel table of all figures with their pages and
+   source lines. The user ticks each checklist item as matching the report or not; one "does not
+   match" means the score cannot be used. User confirmation is not independent verification.
 
 ## Design principles
 
@@ -75,7 +78,8 @@ streamlit run app.py
 ```
 
 Windows, step by step: [docs/run_locally_windows.md](docs/run_locally_windows.md).
-Uploads are limited to one PDF of up to 50 MB (`.streamlit/config.toml`).
+Uploads are limited to one PDF of up to 50 MB (`.streamlit/config.toml`). The IBM Plex fonts in
+`static/fonts` and `assets/fonts` are used under the SIL Open Font License (`OFL.txt`).
 
 ## Run the tests
 

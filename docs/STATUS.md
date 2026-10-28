@@ -29,6 +29,7 @@ references in the tables below) is kept in a private archive repository.
 | (this commit) acceptance tool | 213 passed, 2 skipped | skipped: real KLBF 2021 annual report not supplied (acceptance PENDING); SIDO amortisation 0 (as before) |
 | (this commit) real annual report | **215 passed, 1 skipped** | real KLBF 2021 annual report acceptance runs and passes; skipped: SIDO amortisation 0 (as before) |
 | ROU-within-PPE guard | **261 passed, 1 skipped** | no double count when ROU is presented within fixed assets; skipped: SIDO amortisation 0 (as before) |
+| App design + downloads (28 Oct 2026) | **298 passed, 1 skipped** | approved design (guest → upload → reading → result); provisional score with assumptions marked ASSUMED (M-06/M-15 replaced "for now", Gail 28 Oct); confirmation moved to the PDF checklist; PDF report and Excel table in ID/EN; issuer from `data/company_master.csv` (unique match only). Reader, engine and the user-decision flows unchanged: behaviour snapshot on the 8 test documents identical to 27 Oct. Browser check on SIDO 2021 (ID and EN), PDF and Excel downloaded |
 | Beta: P0-2, bank block, texts (28 Oct 2026) | **291 passed, 1 skipped** | year labels read per statement, score withheld when missing or inconsistent (P0-2); bank/insurer/finance-company statements not scored; Beta label, author credit, approved texts. Behaviour on the 8 test documents identical to the 27 Oct snapshot (values, statuses, flags, M-scores) |
 | Bilingual app texts (27 Oct 2026) | **273 passed, 1 skipped** | one ID/EN text catalogue (`wars_scanner/text.py`); 12 new language tests (`tests/test_text.py`). Values, statuses, pages, flags, review items and M-scores on all 8 test documents identical before and after (behaviour snapshot compared field by field) |
 | `ae794de` (Phase 3) | **195 passed, 1 skipped** | + injected-error tests. Skipped: `test_digit_slip_is_caught[LK_SIDO_2021.pdf-amortization_intangibles-1000-t]`, because SIDO 2021 amortisation is 0 (UNDISCLOSED) and a digit slip on 0 does not apply |
@@ -44,7 +45,11 @@ B r1, report design R-01 to R-17 where they concern the app. Each catalogue entr
 wording comes from; `text.review_list()` lists the wording **not yet approved** (C6 short drafts and
 texts written during implementation). The engine is unchanged (its reason strings are mapped to the
 catalogue at display time). Displayed list of driver ratios now follows B r1 §3 (only DSRI, GMI, AQI,
-SGI, TATA; push > 0.005); only the −1.78 threshold is shown (M-09 A). The PDF report is not built yet.
+SGI, TATA; push > 0.005); only the −1.78 threshold is shown (M-09 A).
+
+**28 Oct 2026:** app redesigned to the approved canvas; PDF report (`wars_scanner/report_pdf.py`) and
+Excel table (`wars_scanner/report_xlsx.py`) built. Texts of the report and Excel marked `new` in the
+catalogue await Gail's review (`text.review_list()`).
 
 ## Reading-quality controls: APPROVED (M-12 A, Gail, 23 Oct 2026)
 

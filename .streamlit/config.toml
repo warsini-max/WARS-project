@@ -1,6 +1,57 @@
-# WARS Scanner - Streamlit settings (local runs and Streamlit Community Cloud)
+# WARS - Streamlit settings (local runs and Streamlit Community Cloud)
 [server]
 maxUploadSize = 50          # MB; one annual report (KLBF 2021, 470 pages) is 10.7 MB
+enableStaticServing = true  # serves static/ (the IBM Plex fonts) at app/static/
 
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#006B53"
+backgroundColor = "#F6F7F5"
+secondaryBackgroundColor = "#EEF1EE"
+textColor = "#1B1E23"
+borderColor = "#D9DCD8"
+font = "IBM Plex Sans, sans-serif"
+codeFont = "IBM Plex Mono, monospace"
+baseRadius = "10px"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/IBMPlexSans-Regular.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/IBMPlexSans-Italic.woff2"
+weight = 400
+style = "italic"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/IBMPlexSans-SemiBold.woff2"
+weight = 600
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/IBMPlexSans-Bold.woff2"
+weight = 700
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/IBMPlexMono-Regular.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/IBMPlexMono-SemiBold.woff2"
+weight = 600
+style = "normal"

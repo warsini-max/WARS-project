@@ -253,7 +253,7 @@ CATALOG: dict = {
     "_join": _e("", "", "internal"),
 
     # ---------------------------------------------------------------- app: fixed texts (C6 short drafts)
-    "app.title": _e("WARS Scanner", "WARS Scanner", "r0 7.1"),
+    "app.title": _e("Window-dressing Red-flag Scanner", "Window-dressing Red-flag Scanner", "Gail 28 Okt 10.41"),
     "app.subtitle": _e("Beneish M-score (1999) untuk laporan keuangan tahunan emiten BEI",
                        "Beneish M-score (1999) for annual financial statements of IDX-listed companies", "Gail 28 Okt C6 7.1"),
     "app.lang": _e("Bahasa / Language", "Bahasa / Language", "Gail 28 Okt impl"),
@@ -1097,6 +1097,242 @@ CATALOG: dict = {
                       "amortisation was read from the report; the status choice does not apply", "Gail 28 Okt impl", "M-15"),
     "err.am_notes": _e("pilih atau tulis catatan/halaman yang Anda periksa",
                        "select or type the notes/pages you examined", "r1 9.14", "M-15"),
+
+    # ---------------------------------------------------------------- app design (Gail 28 Okt 11.01: design approved)
+    # ID wording as on the approved canvas "WARS App Design"; EN versions written by Claude to the same rules.
+    "ui.tagline": _e("Beneish M-score untuk laporan keuangan tahunan emiten BEI",
+                     "Beneish M-score for annual financial statements of IDX-listed companies", "Gail 28 Okt desain"),
+    "ui.guest": _e("Masuk sebagai Tamu", "Continue as Guest", "Gail 28 Okt desain"),
+    "ui.guest_label": _e("Tamu", "Guest", "Gail 28 Okt desain"),
+    "ui.logout": _e("Keluar", "Sign out", "Gail 28 Okt desain"),
+    "ui.step.upload": _e("Unggah", "Upload", "Gail 28 Okt desain"),
+    "ui.step.read": _e("Dibaca", "Reading", "Gail 28 Okt desain"),
+    "ui.step.result": _e("Hasil", "Result", "Gail 28 Okt desain"),
+    "ui.up.title": _e("Unggah laporan keuangan", "Upload the financial statements", "Gail 28 Okt desain"),
+    "ui.up.sub": _e("PDF digital laporan keuangan tahunan. Satu file, maksimal 50 MB.",
+                    "Digital PDF of the annual financial statements. One file, up to 50 MB.", "Gail 28 Okt desain"),
+    "ui.up.drop": _e("Tarik PDF ke sini atau pilih berkas", "Drag the PDF here or choose a file", "Gail 28 Okt desain"),
+    "ui.up.scan": _e("PDF hasil pindai belum didukung", "Scanned PDFs are not supported yet", "Gail 28 Okt desain"),
+    "ui.up.ready": _e("{size} · siap dibaca", "{size} · ready to read", "Gail 28 Okt desain"),
+    "ui.up.replace": _e("Ganti", "Replace", "Gail 28 Okt desain"),
+    "ui.up.start": _e("Mulai analisis", "Start analysis", "Gail 28 Okt desain"),
+    "ui.up.bank": _e("Laporan keuangan bank, asuransi, dan lembaga pembiayaan belum dapat digunakan pada sistem ini.",
+                     "Financial statements of banks, insurers and finance companies cannot be used in this system yet.",
+                     "Gail 28 Okt desain"),
+    "ui.proc.title": _e("Membaca laporan", "Reading the report", "Gail 28 Okt desain"),
+    "ui.proc.sub": _e("{name} · {pages} halaman. Biasanya selesai dalam 10–30 detik.",
+                      "{name} · {pages} pages. This usually takes 10–30 seconds.", "Gail 28 Okt desain"),
+    "ui.proc.fs": _e("Laporan utama ditemukan", "Primary statements found", "Gail 28 Okt desain"),
+    "ui.proc.fs_detail": _e("Posisi keuangan hal. {a} · Laba rugi hal. {b} · Arus kas hal. {c} · tahun {t} dan {t1}",
+                            "Financial position p. {a} · Profit or loss p. {b} · Cash flows p. {c} · years {t} and {t1}",
+                            "Gail 28 Okt desain"),
+    "ui.proc.notes": _e("Catatan atas laporan keuangan dibaca", "Notes to the financial statements read",
+                        "Gail 28 Okt desain"),
+    "ui.proc.notes_detail": _e("Utang pajak, penyusutan, aset hak-guna, amortisasi",
+                               "Taxes payable, depreciation, right of use assets, amortisation", "Gail 28 Okt desain"),
+    "ui.proc.checks": _e("Pemeriksaan silang", "Cross-checks", "Gail 28 Okt desain"),
+    "ui.proc.checks_detail": _e("{ok} lolos · {err} gagal", "{ok} passed · {err} failed", "Gail 28 Okt desain"),
+    "ui.proc.calc": _e("Menghitung 8 indeks Beneish…", "Calculating the 8 Beneish indices…", "Gail 28 Okt desain"),
+    "ui.proc.summary": _e("Ringkasan pembacaan", "Reading summary", "new"),
+    "ui.res.another": _e("Analisis laporan lain", "Analyse another report", "Gail 28 Okt desain"),
+    "ui.res.meta": _e("Tahun buku {t} vs {t1} · {stype} · {unit} · {pages} halaman",
+                      "Financial year {t} vs {t1} · {stype} · {unit} · {pages} pages", "Gail 28 Okt desain"),
+    "ui.res.meta_file": _e("{name} · {pages} halaman", "{name} · {pages} pages", "new"),
+    "ui.res.stype.Consolidated": _e("Laporan keuangan konsolidasian", "Consolidated financial statements",
+                                    "Gail 28 Okt 11.01"),
+    "ui.res.stype.unknown": _e("Laporan keuangan (jenis tidak terbaca)", "Financial statements (type not read)", "new"),
+    "ui.res.issuer_unknown": _e("Emiten tidak teridentifikasi", "Issuer not identified", "new"),
+    "ui.res.issuer_note": _e("Nama dari data master emiten (buku kerja v0.6)", "Name from the issuer master list (workbook v0.6)",
+                             "new"),
+    "ui.res.chip_below": _e("Tidak melewati batas {thr}*", "Does not cross the {thr} threshold*", "Gail 28 Okt 11.01"),
+    "ui.res.chip_note": _e("*Bukan jaminan laporan bebas salah saji.",
+                           "*This does not guarantee the statements are free of misstatement.", "Gail 28 Okt 11.01"),
+    "ui.res.chip_above": _e("Melewati batas {thr}", "Crosses the {thr} threshold", "Gail 28 Okt desain"),
+    "ui.res.scale_neutral": _e("Netral {n}", "Neutral {n}", "Gail 28 Okt desain"),
+    "ui.res.scale_thr": _e("Batas {thr}", "Threshold {thr}", "Gail 28 Okt desain"),
+    "ui.res.provisional": _e("Hasil sementara.", "Provisional result.", "Gail 28 Okt desain"),
+    "ui.res.provisional_detail": _e("{n} angka perlu dicocokkan dengan PDF sumber. Daftar periksanya ada di laporan PDF.",
+                                    "{n} figures need to be checked against the source PDF. The checklist is in the PDF "
+                                    "report.", "Gail 28 Okt desain"),
+    "ui.res.assumed": _e("Termasuk {n} asumsi untuk angka yang tidak ditemukan; rinciannya di daftar periksa.",
+                         "This includes {n} assumptions for figures that were not found; details in the checklist.",
+                         "new"),
+    "ui.idx.title": _e("Kedelapan indeks", "The eight indices", "Gail 28 Okt desain"),
+    "ui.idx.col.index": _e("INDEKS", "INDEX", "Gail 28 Okt desain"),
+    "ui.idx.col.name": _e("ARTI", "MEANING", "Gail 28 Okt desain"),
+    "ui.idx.col.value": _e("NILAI", "VALUE", "Gail 28 Okt desain"),
+    "ui.idx.col.push": _e("DORONGAN", "PUSH", "Gail 28 Okt desain"),
+    "ui.idx.minor": _e("DEPI, SGAI dan LVGI tidak signifikan dalam model Beneish (1999); tidak dibahas sebagai temuan.",
+                       "DEPI, SGAI and LVGI are not significant in the Beneish (1999) model; they are not discussed as "
+                       "findings.", "Gail 28 Okt desain"),
+    "ui.dl.title": _e("Unduh hasil", "Download the results", "Gail 28 Okt desain"),
+    "ui.dl.pdf": _e("Laporan PDF", "PDF report", "Gail 28 Okt desain"),
+    "ui.dl.pdf_sub": _e("Rincian temuan, sumber halaman, daftar periksa angka, metodologi",
+                        "Findings in detail, source pages, checklist of figures, methodology", "Gail 28 Okt desain"),
+    "ui.dl.xlsx": _e("Tabel angka (Excel)", "Table of figures (Excel)", "Gail 28 Okt desain"),
+    "ui.dl.xlsx_sub": _e("Semua angka {t} dan {t1} dengan halaman dan baris sumbernya",
+                         "All {t} and {t1} figures with their source pages and lines", "Gail 28 Okt desain"),
+    "ui.dl.lang": _e("Pilih bahasa laporan dengan tombol ID / EN di atas sebelum mengunduh.",
+                     "Choose the report language with the ID / EN switch above before downloading.", "Gail 28 Okt desain"),
+    "ui.method": _e("Model dikembangkan berdasarkan Beneish (1999). Skor rendah tidak berarti bebas salah saji. Model: "
+                    "Beneish (1999), 8 variabel; tahun berjalan dan pembanding diambil dari laporan yang sama.",
+                    "The model is based on Beneish (1999). A low score does not mean the statements are free of "
+                    "misstatement. Model: Beneish (1999), 8 variables; the current year and the comparatives come from "
+                    "the same report.", "Gail 28 Okt 10.32"),
+    "ui.not_traced": _e("Sistem tidak dapat menelusuri nilai {items}; M-score tidak dapat ditampilkan.",
+                        "The system could not trace the value of {items}; the M-score cannot be shown.",
+                        "Gail 28 Okt 10.32 (dirapikan Claude)"),
+    "ui.unreadable_title": _e("Laporan tidak dapat dibaca", "The report could not be read", "new"),
+    "ui.read_details": _e("Detail pembacaan", "Reading details", "Gail 28 Okt impl"),
+
+    # ---------------------------------------------------------------- provisional assumptions (Gail 28 Okt 10.41)
+    "status.ASSUMED": _e("Asumsi hasil sementara", "Provisional assumption", "new"),
+    "note.assumed_am": _e("Aset takberwujud tidak ditemukan; amortisasi dianggap 0 untuk hasil sementara. Periksa "
+                          "di catatan atas laporan keuangan apakah memang tidak ada.",
+                          "No intangible assets were found; amortisation is taken as 0 for the provisional result. "
+                          "Check in the notes to the financial statements whether there are none.", "new"),
+    "note.assumed_np": _e("Penyusutan dan amortisasi aset selain aset tetap: dipakai jumlah yang terbaca ({source}); "
+                          "belum dapat dipastikan lengkap.",
+                          "Depreciation and amortisation of assets other than PPE: the amount read is used ({source}); "
+                          "it cannot yet be confirmed as complete.", "new"),
+    "note.assumed_np_zero": _e("Penyusutan dan amortisasi aset selain aset tetap tidak ditemukan; dianggap 0 untuk hasil "
+                               "sementara. Periksa di catatan atas laporan keuangan apakah memang tidak ada.",
+                               "Depreciation and amortisation of assets other than PPE were not found; taken as 0 for "
+                               "the provisional result. Check in the notes to the financial statements whether there "
+                               "are none.", "new"),
+
+    # ---------------------------------------------------------------- PDF report and Excel (new; awaiting review)
+    "rep.title": _e("Laporan Penyaringan Red Flag", "Red Flag Screening Report", "new"),
+    "rep.page": _e("Halaman {n} dari {m}", "Page {n} of {m}", "new"),
+    "rep.generated": _e("Dibuat {d}", "Generated {d}", "new"),
+    "rep.version": _e("Bahasa Indonesia", "English", "new"),
+    "rep.footer_disclaimer": _e(
+        "This is a red-flag screen using the Beneish M-score, not evidence of fraud. The flagged accounts need closer "
+        "examination. In case of any discrepancy, the Indonesian version prevails.",
+        "This is a red-flag screen using the Beneish M-score, not evidence of fraud. The flagged accounts need closer "
+        "examination. In case of any discrepancy, the Indonesian version prevails.", "Gail 23 Okt R-06 R-07 R-11"),
+    "rep.s1": _e("Ikhtisar", "Overview", "r0 report"),
+    "rep.s2": _e("Rincian skor", "Score breakdown", "r0 report"),
+    "rep.s3": _e("Temuan", "Findings", "r0 report"),
+    "rep.s4": _e("Daftar periksa", "Checklist", "new"),
+    "rep.s5": _e("Lampiran A · Angka yang dibaca", "Appendix A · Figures read", "new"),
+    "rep.s6": _e("Lampiran B · Pemeriksaan silang dan catatan pembacaan", "Appendix B · Cross-checks and reading notes",
+                 "new"),
+    "rep.s7": _e("Metodologi dan batasan", "Methodology and limitations", "Gail 28 Okt A3"),
+    "rep.f.entity": _e("ENTITAS", "ENTITY", "r0 report"),
+    "rep.f.ticker": _e("KODE SAHAM", "TICKER", "r0 report"),
+    "rep.f.period": _e("PERIODE DIBANDINGKAN", "PERIODS COMPARED", "r0 report"),
+    "rep.f.basis": _e("DASAR", "BASIS", "r0 report"),
+    "rep.f.unit": _e("SATUAN", "UNIT", "new"),
+    "rep.f.source": _e("SUMBER", "SOURCE", "r0 report"),
+    "rep.period": _e("{t} (t) vs {t1} (t−1)", "{t} (t) vs {t1} (t−1)", "new"),
+    "rep.source": _e("{name} · {pages} halaman · SHA-256 {sha}", "{name} · {pages} pages · SHA-256 {sha}", "new"),
+    "rep.score_label": _e("BENEISH M-SCORE · MODEL 8 VARIABEL", "BENEISH M-SCORE · 8-VARIABLE MODEL", "r0 report"),
+    "rep.box.figures": _e("ANGKA", "FIGURES", "new"),
+    "rep.box.figures_v": _e("{a} dari {b} angka terbaca dan tercocokkan", "{a} of {b} figures read and reconciled",
+                            "new"),
+    "rep.box.figures_d": _e("{n} perlu dicocokkan; lihat daftar periksa.", "{n} to be checked; see the checklist.", "new"),
+    "rep.box.rules": _e("ATURAN", "RULES", "new"),
+    "rep.box.rules_v": _e("Workbook v0.6", "Workbook v0.6", "Gail 23 Okt R-15"),
+    "rep.box.rules_d": _e("Rumus dan aturan pengisian sesuai buku kerja WARS Track B v0.6.",
+                          "Formulas and entry rules as in the WARS Track B v0.6 workbook.", "new"),
+    "rep.box.user": _e("KONFIRMASI PENGGUNA", "USER CONFIRMATION", "Gail 23 Okt R-15"),
+    "rep.box.user_v": _e("Belum dilakukan", "Not done yet", "new"),
+    "rep.box.user_d": _e("Isi daftar periksa. Konfirmasi pengguna bukan verifikasi independen.",
+                         "Complete the checklist. User confirmation is not independent verification.", "Gail 23 Okt R-15"),
+    "rep.summary": _e("Ringkasan", "Summary", "r0 report"),
+    "rep.breakdown_intro": _e(
+        "Setiap indeks membandingkan {t} dengan {t1}. Dorongan menunjukkan seberapa jauh suatu indeks menggeser skor "
+        "dari perusahaan netral ({n}). Jumlah delapan dorongan sama dengan selisih antara nilai netral dan skor akhir.",
+        "Each index compares {t} with {t1}. The push shows how far an index moves the score away from a neutral "
+        "company ({n}). The eight pushes add up to the difference between the neutral value and the final score.",
+        "new"),
+    "rep.col.coef": _e("KOEF.", "COEF.", "r0 report"),
+    "rep.sum_line": _e("Netral {n} + dorongan bersih {p} = M-score {m} · batas {thr}",
+                       "Neutral {n} + net push {p} = M-score {m} · threshold {thr}", "new"),
+    "rep.formula": _e(
+        "Indeks = rasio tahun berjalan ÷ rasio tahun pembanding; TATA = akrual total ÷ total aset tahun berjalan. "
+        "Dorongan = koefisien × (indeks − nilai netral); nilai netral 1 untuk indeks dan 0 untuk TATA. "
+        "M = {const} + Σ koefisien × indeks.",
+        "Index = current-year ratio ÷ comparative-year ratio; TATA = total accruals ÷ current-year total assets. "
+        "Push = coefficient × (index − neutral value); the neutral value is 1 for the indices and 0 for TATA. "
+        "M = {const} + Σ coefficient × index.", "new"),
+    "rep.no_findings": _e("Tidak ada rasio yang memenuhi kriteria temuan (DSRI, GMI, AQI, SGI atau TATA dengan dorongan "
+                          "di atas 0,005).",
+                          "No ratio meets the criteria for a finding (DSRI, GMI, AQI, SGI or TATA with a push above "
+                          "0.005).", "B r1 §3"),
+    "rep.no_score": _e("M-score tidak dihitung, sehingga tidak ada temuan.",
+                       "The M-score was not calculated, so there are no findings.", "new"),
+    "rep.finding": _e("Temuan {n} · {idx}", "Finding {n} · {idx}", "r0 report"),
+    "rep.push_tag": _e("DORONGAN {p}", "PUSH {p}", "Gail 23 Okt R-13"),
+    "rep.a": _e("A · ANGKA", "A · FIGURES", "r0 report"),
+    "rep.c": _e("C · KEMUNGKINAN PENJELASAN", "C · POSSIBLE EXPLANATIONS", "B r1 §4"),
+    "rep.d": _e("D · AREA UNTUK PEMERIKSAAN LEBIH LANJUT", "D · AREAS FOR FURTHER EXAMINATION", "r0 report"),
+    "rep.why": _e("Tentang indeks ini", "About this index", "r1 7.14"),
+    "rep.check_intro": _e(
+        "Buka halaman PDF yang disebut dan cocokkan tiap angka. Beri tanda pada kolom Sesuai atau Tidak sesuai. Satu "
+        "jawaban Tidak sesuai berarti M-score ini tidak dapat dipakai sampai angka tersebut diperbaiki. Konfirmasi "
+        "pengguna bukan verifikasi independen.",
+        "Open the PDF page shown and check each figure. Tick Matches or Does not match. One Does not match means this "
+        "M-score cannot be used until the figure is corrected. User confirmation is not independent verification.",
+        "new"),
+    "rep.check.none": _e("Tidak ada angka yang perlu dicocokkan.", "No figure needs checking.", "Gail 28 Okt impl"),
+    "rep.check.col.no": _e("No", "No", "new"),
+    "rep.check.col.item": _e("Pos", "Line item", "Gail 28 Okt impl"),
+    "rep.check.col.year": _e("Tahun", "Year", "new"),
+    "rep.check.col.value": _e("Nilai", "Value", "Gail 28 Okt impl"),
+    "rep.check.col.page": _e("Hal.", "Page", "new"),
+    "rep.check.col.why": _e("Yang perlu dicocokkan", "What to check", "new"),
+    "rep.check.col.ok": _e("Sesuai", "Matches", "Gail 28 Okt C6 7.18"),
+    "rep.check.col.bad": _e("Tidak sesuai", "Does not match", "Gail 28 Okt C6 7.18"),
+    "rep.check.assumed": _e("Asumsi untuk hasil sementara", "Assumptions for the provisional result", "new"),
+    "rep.check.sign": _e("Diperiksa oleh: ____________________    Tanggal: ____________    Paraf: ________",
+                         "Checked by: ____________________    Date: ____________    Initials: ________", "new"),
+    "rep.inputs_intro": _e("Angka dalam satuan laporan ({unit}). Baris sumber dikutip dari PDF.",
+                           "Figures in the report's unit ({unit}). Source lines are quoted from the PDF.", "new"),
+    "rep.checks.passed": _e("Lolos", "Passed", "new"),
+    "rep.checks.failed": _e("Gagal", "Failed", "new"),
+    "rep.checks.review": _e("Perlu diperiksa", "Needs review", "r1 2.2"),
+    "rep.method.p1": _e(
+        "Model dikembangkan berdasarkan Beneish (1999). Skor rendah tidak berarti bebas salah saji. Model: Beneish "
+        "(1999), 8 variabel; tahun berjalan dan pembanding diambil dari laporan yang sama.",
+        "The model is based on Beneish (1999). A low score does not mean the statements are free of misstatement. "
+        "Model: Beneish (1999), 8 variables; the current year and the comparatives come from the same report.",
+        "Gail 28 Okt 10.32"),
+    "rep.method.p2": _e(
+        "Batas yang ditampilkan hanya −1,78 (Beneish 1999). Skor di atas batas berarti angka terkait perlu diperiksa "
+        "lebih lanjut; skor bukan probabilitas kecurangan.",
+        "The only threshold shown is −1.78 (Beneish 1999). A score above it means the related figures warrant closer "
+        "examination; the score is not a probability of fraud.", "new"),
+    "rep.method.p3": _e(
+        "Angka dibaca otomatis dari PDF digital. Setiap angka tercatat dengan halaman dan baris sumbernya. Angka yang "
+        "tidak ditemukan tidak diisi; angka yang dianggap 0 untuk hasil sementara tercantum di daftar periksa.",
+        "Figures are read automatically from the digital PDF. Each figure is recorded with its source page and line. "
+        "Figures that were not found are not filled in; figures taken as 0 for the provisional result are listed in "
+        "the checklist.", "new"),
+    "rep.method.p4": _e(
+        "Laporan ini hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur "
+        "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",
+        "This report is an automated screen. It is not an audit opinion, does not replace examination procedures, and "
+        "is not evidence of fraud or misstatement.", "new"),
+    "rep.method.p5": _e("Dibuat oleh Warsini · linkedin.com/in/warsiniak · versi beta",
+                        "Made by Warsini · linkedin.com/in/warsiniak · beta version", "Gail 28 Okt B3"),
+
+    "xl.sheet.summary": _e("Ringkasan", "Summary", "new"),
+    "xl.sheet.figures": _e("Angka", "Figures", "new"),
+    "xl.sheet.indices": _e("Indeks", "Indices", "new"),
+    "xl.sheet.checklist": _e("Daftar periksa", "Checklist", "new"),
+    "xl.sheet.checks": _e("Pemeriksaan silang", "Cross-checks", "new"),
+    "xl.col.answer": _e("Jawaban (Sesuai / Tidak sesuai)", "Answer (Matches / Does not match)", "new"),
+    "xl.col.source_label": _e("Pos di laporan", "Line in the report", "new"),
+    "xl.col.source_line": _e("Baris sumber (kutipan PDF)", "Source line (PDF quote)", "new"),
+    "xl.col.check": _e("Pemeriksaan", "Check", "new"),
+    "xl.col.result": _e("Hasil", "Result", "Gail 28 Okt desain"),
+    "xl.col.detail": _e("Rincian", "Detail", "new"),
+    "xl.k.file": _e("Berkas", "File", "new"),
+    "xl.k.generated": _e("Dibuat", "Generated", "new"),
+    "xl.k.mscore": _e("M-score", "M-score", "new"),
+    "xl.k.status": _e("Status", "Status", "Gail 28 Okt impl"),
 }
 
 

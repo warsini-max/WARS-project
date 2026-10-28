@@ -1,0 +1,858 @@
+# source: WARS_TrackB_v0_6.xlsx sheet Company_Master, sha256 e602bb6c85555f56a5e052896ee9fc2b0ba69751d75a7b8f31f9a01a11a8c01e
+ticker,company_name,listing_status
+AADI,Adaro Andalan Indonesia Tbk.,Listed
+AALI,Astra Agro Lestari Tbk.,Listed
+ABBA,Mahaka Media Tbk.,Listed
+ABMM,ABM Investama Tbk.,Listed
+ACES,Aspirasi Hidup Indonesia Tbk.,Listed
+ACRO,Samcro Hyosung Adilestari Tbk.,Listed
+ACST,Acset Indonusa Tbk.,Listed
+ADCP,Adhi Commuter Properti Tbk.,Listed
+ADES,Akasha Wira International Tbk.,Listed
+ADHI,Adhi Karya (Persero) Tbk.,Listed
+ADMG,Polychem Indonesia Tbk,Listed
+ADMR,Alamtri Minerals Indonesia Tbk,Listed
+ADRO,Alamtri Resources Indonesia Tbk,Listed
+AEGS,Anugerah Spareparts Sejahtera,Listed
+AGAR,Asia Sejahtera Mina Tbk.,Listed
+AGII,Samator Indo Gas Tbk.,Listed
+AIMS,Artha Mahiya Investama Tbk.,Listed
+AISA,FKS Food Sejahtera Tbk.,Listed
+AKKU,Anugerah Kagum Karya Utama Tbk,Listed
+AKPI,Argha Karya Prima Industry Tbk,Listed
+AKRA,AKR Corporindo Tbk.,Listed
+AKSI,Mineral Sumberdaya Mandiri Tbk,Listed
+ALDO,Alkindo Naratama Tbk.,Listed
+ALII,Ancara Logistics Indonesia Tbk,Listed
+ALKA,Alakasa Industrindo Tbk,Listed
+ALMI,Alumindo Light Metal Industry,Listed
+ALTO,Tri Banyan Tirta Tbk.,Listed
+AMAN,Makmur Berkah Amanda Tbk.,Listed
+AMFG,Asahimas Flat Glass Tbk.,Listed
+AMIN,Ateliers Mecaniques D Indonesi,Listed
+AMMN,Amman Mineral Internasional Tb,Listed
+AMMS,Agung Menjangan Mas Tbk.,Listed
+AMRT,Sumber Alfaria Trijaya Tbk.,Listed
+ANDI,Andira Agro Tbk.,Listed
+ANJT,Austindo Nusantara Jaya Tbk.,Listed
+ANTM,ANTAM (Persero) Tbk.,Listed
+APEX,Apexindo Pratama Duta Tbk.,Listed
+APII,Arita Prima Indonesia Tbk.,Listed
+APLI,Asiaplast Industries Tbk.,Listed
+APLN,Agung Podomoro Land Tbk.,Listed
+ARCI,Archi Indonesia Tbk.,Listed
+AREA,Dunia Virtual Online Tbk.,Listed
+ARGO,Argo Pantes Tbk,Listed
+ARII,Atlas Resources Tbk.,Listed
+ARKA,Arkha Jayanti Persada Tbk.,Listed
+ARKO,Arkora Hydro Tbk.,Listed
+ARMY,Armidian Karyatama Tbk.,Suspended
+ARNA,Arwana Citramulia Tbk.,Listed
+ARTA,Arthavest Tbk,Listed
+ARTI,Ratu Prabu Energi Tbk,Listed
+ASGR,Astra Graphia Tbk.,Listed
+ASHA,Cilacap Samudera Fishing Indus,Listed
+ASII,Astra International Tbk.,Listed
+ASLC,Autopedia Sukses Lestari Tbk.,Listed
+ASLI,Asri Karya Lestari Tbk.,Listed
+ASPI,Andalan Sakti Primaindo Tbk.,Listed
+ASPR,Asia Pramulia Tbk.,Listed
+ASRI,Alam Sutera Realty Tbk.,Listed
+ASSA,Adi Sarana Armada Tbk.,Listed
+ATAP,Trimitra Prawara Goldland Tbk.,Listed
+ATIC,Anabatic Technologies Tbk.,Listed
+ATLA,Atlantis Subsea Indonesia Tbk.,Listed
+AUTO,Astra Otoparts Tbk.,Listed
+AVIA,Avia Avian Tbk.,Listed
+AWAN,Era Digital Media Tbk.,Listed
+AXIO,Tera Data Indonusa Tbk.,Listed
+AYAM,Janu Putra Sejahtera Tbk.,Listed
+AYLS,Arkayana Lestari Grup Tbk.,Listed
+BABY,Multitrend Indo Tbk.,Listed
+BACH,Bach Multi Global Tbk.,Listed
+BAIK,Bersama Mencapai Puncak Tbk.,Listed
+BAJA,Saranacentral Bajatama Tbk.,Listed
+BALI,Bali Towerindo Sentra Tbk.,Listed
+BAPA,Bekasi Asri Pemula Tbk.,Listed
+BAPI,Bhakti Agung Propertindo Tbk.,Listed
+BATA,Sepatu Bata Tbk.,Listed
+BATR,Benteng Api Technic Tbk.,Listed
+BAUT,Mitra Angkasa Sejahtera Tbk.,Listed
+BAYU,Bayu Buana Tbk,Listed
+BBRM,Pelayaran Nasional Bina Buana,Listed
+BBSS,Bumi Benowo Sukses Sejahtera T,Listed
+BCIP,Bumi Citra Permai Tbk.,Listed
+BDKR,Berdikari Pondasi Perkasa Tbk.,Listed
+BEBS,Berkah Beton Sadaya Tbk.,Listed
+BEEF,Estika Tata Tiara Tbk.,Listed
+BEER,Jobubu Jarum Minahasa Tbk.,Listed
+BELI,Global Digital Niaga Tbk.,Listed
+BELL,Trisula Textile Industries Tbk,Listed
+BESS,Batulicin Nusantara Maritim Tb,Listed
+BEST,Bekasi Fajar Industrial Estate,Listed
+BHIT,MNC Asia Holding Tbk.,Listed
+BIKA,Binakarya Jaya Abadi Tbk.,Listed
+BIKE,Bhineka Inovasi Ketahanan Ener,Listed
+BIMA,Primarindo Asia Infrastructure,Listed
+BINO,Perma Plasindo Tbk.,Listed
+BIPI,Astrindo Nusantara Infrastrukt,Listed
+BIPP,Bhuwanatala Indah Permai Tbk.,Listed
+BIRD,Blue Bird Tbk.,Listed
+BISI,BISI International Tbk.,Listed
+BKDP,Bukit Darmo Property Tbk,Listed
+BKSL,Sentul City Tbk.,Listed
+BLES,Superior Prima Sukses Tbk.,Listed
+BLOG,Trimitra Trans Persada Tbk.,Listed
+BLTA,Berlian Laju Tanker Tbk,Listed
+BLTZ,Graha Layar Prima Tbk.,Listed
+BLUE,Berkah Prima Perkasa Tbk.,Listed
+BMBL,Lavender Bina Cendikia Tbk.,Listed
+BMHS,Bundamedik Tbk.,Listed
+BMSR,Bintang Mitra Semestaraya Tbk,Listed
+BMTR,Global Mediacom Tbk.,Listed
+BNBR,Bakrie & Brothers Tbk,Listed
+BOAT,Newport Marine Services Tbk.,Listed
+BOBA,Formosa Ingredient Factory Tbk,Listed
+BOGA,Apollo Global Interactive Tbk.,Listed
+BOLA,Bali Bintang Sejahtera Tbk.,Listed
+BOLT,Garuda Metalindo Tbk.,Listed
+BOSS,Borneo Olah Sarana Sukses Tbk.,Listed
+BPTR,Batavia Prosperindo Trans Tbk.,Listed
+BRAM,Indo Kordsa Tbk.,Listed
+BREN,Barito Renewables Energy Tbk.,Listed
+BRMS,Bumi Resources Minerals Tbk.,Listed
+BRNA,Berlina Tbk.,Listed
+BRPT,Barito Pacific Tbk.,Listed
+BRRC,Raja Roti Cemerlang Tbk.,Listed
+BSBK,Wulandari Bangun Laksana Tbk.,Listed
+BSDE,Bumi Serpong Damai Tbk.,Listed
+BSML,Bintang Samudera Mandiri Lines,Listed
+BSSR,Baramulti Suksessarana Tbk.,Listed
+BTEK,Bumi Teknokultura Unggul Tbk,Listed
+BTEL,Bakrie Telecom Tbk.,Listed
+BTON,Betonjaya Manunggal Tbk.,Listed
+BUAH,Segar Kumala Indonesia Tbk.,Listed
+BUDI,Budi Starch & Sweetener Tbk.,Listed
+BUKA,Bukalapak.com Tbk.,Listed
+BUKK,Bukaka Teknik Utama Tbk.,Listed
+BULL,Buana Lintas Lautan Tbk.,Listed
+BUMI,Bumi Resources Tbk.,Listed
+BUVA,Bukit Uluwatu Villa Tbk.,Listed
+BWPT,Eagle High Plantations Tbk.,Listed
+BYAN,Bayan Resources Tbk.,Listed
+CAKK,Cahayaputra Asa Keramik Tbk.,Listed
+CAMP,Campina Ice Cream Industry Tbk,Listed
+CANI,Capitol Nusantara Indonesia Tb,Listed
+CARE,Metro Healthcare Indonesia Tbk,Listed
+CARS,Industri dan Perdagangan Bintr,Listed
+CASH,Cashlez Worldwide Indonesia Tb,Listed
+CASS,Cahaya Aero Services Tbk.,Listed
+CBDK,Bangun Kosambi Sukses Tbk.,Listed
+CBMF,Cahaya Bintang Medan Tbk.,Listed
+CBPE,Citra Buana Prasida Tbk.,Listed
+CBRE,Cakra Buana Resources Energi T,Listed
+CBUT,Citra Borneo Utama Tbk.,Listed
+CCSI,Communication Cable Systems In,Listed
+CDIA,Chandra Daya Investasi Tbk.,Listed
+CEKA,Wilmar Cahaya Indonesia Tbk.,Listed
+CENT,Centratama Telekomunikasi Indo,Listed
+CGAS,Citra Nusantara Gemilang Tbk.,Listed
+CHEK,Diastika Biotekindo Tbk.,Listed
+CHEM,Chemstar Indonesia Tbk.,Listed
+CHIP,Pelita Teknologi Global Tbk.,Listed
+CINT,Chitose Internasional Tbk.,Listed
+CITA,Cita Mineral Investindo Tbk.,Listed
+CITY,Natura City Developments Tbk.,Listed
+CLAY,Citra Putra Realty Tbk.,Listed
+CLEO,Sariguna Primatirta Tbk.,Listed
+CLPI,Colorpak Indonesia Tbk.,Listed
+CMNP,Citra Marga Nusaphala Persada,Listed
+CMNT,Cemindo Gemilang Tbk.,Listed
+CMPP,AirAsia Indonesia Tbk.,Listed
+CMRY,Cisarua Mountain Dairy Tbk.,Listed
+CNKO,Exploitasi Energi Indonesia Tb,Listed
+CNMA,Nusantara Sejahtera Raya Tbk.,Listed
+COAL,Black Diamond Resources Tbk.,Listed
+COCO,Wahana Interfood Nusantara Tbk,Listed
+COWL,Cowell Development Tbk.,Listed
+CPIN,Charoen Pokphand Indonesia Tbk,Listed
+CPRI,Capri Nusa Satu Properti Tbk.,Listed
+CPRO,Central Proteina Prima Tbk.,Listed
+CRAB,Toba Surimi Industries Tbk.,Listed
+CRSN,Carsurin Tbk.,Listed
+CSAP,Catur Sentosa Adiprana Tbk.,Listed
+CSIS,Cahayasakti Investindo Sukses,Listed
+CSMI,Cipta Selera Murni Tbk.,Listed
+CSRA,Cisadane Sawit Raya Tbk.,Listed
+CTBN,Citra Tubindo Tbk.,Listed
+CTRA,Ciputra Development Tbk.,Listed
+CTTH,Citatah Tbk.,Listed
+CUAN,Petrindo Jaya Kreasi Tbk.,Listed
+CYBR,ITSEC Asia Tbk.,Listed
+DAAZ,Daaz Bara Lestari Tbk.,Listed
+DADA,Diamond Citra Propertindo Tbk.,Listed
+DART,Duta Anggada Realty Tbk.,Listed
+DATA,Remala Abadi Tbk.,Listed
+DAYA,Duta Intidaya Tbk.,Listed
+DCII,DCI Indonesia Tbk.,Listed
+DEAL,Dewata Freightinternational Tb,Listed
+DEPO,Caturkarda Depo Bangunan Tbk.,Listed
+DEWA,Darma Henwa Tbk,Listed
+DEWI,Dewi Shri Farmindo Tbk.,Listed
+DFAM,Dafam Property Indonesia Tbk.,Listed
+DGIK,Nusa Konstruksi Enjiniring Tbk,Listed
+DGNS,Diagnos Laboratorium Utama Tbk,Listed
+DGWG,Delta Giri Wacana Tbk.,Listed
+DIGI,Arkadia Digital Media Tbk.,Listed
+DILD,Intiland Development Tbk.,Listed
+DIVA,Distribusi Voucher Nusantara T,Listed
+DKFT,Central Omega Resources Tbk.,Listed
+DKHH,Cipta Sarana Medika Tbk.,Listed
+DLTA,Delta Djakarta Tbk.,Listed
+DMAS,Puradelta Lestari Tbk.,Listed
+DMMX,Digital Mediatama Maxima Tbk.,Listed
+DMND,Diamond Food Indonesia Tbk.,Listed
+DOID,BUMA Internasional Grup Tbk.,Listed
+DOOH,Era Media Sejahtera Tbk.,Listed
+DOSS,Global Sukses Digital Tbk.,Listed
+DPNS,Duta Pertiwi Nusantara Tbk.,Listed
+DPUM,Dua Putra Utama Makmur Tbk.,Listed
+DRMA,Dharma Polimetal Tbk.,Listed
+DSFI,Dharma Samudera Fishing Indust,Listed
+DSNG,Dharma Satya Nusantara Tbk.,Listed
+DSSA,Dian Swastatika Sentosa Tbk,Listed
+DUCK,Jaya Bersama Indo Tbk.,Listed
+DUTI,Duta Pertiwi Tbk,Listed
+DVLA,Darya-Varia Laboratoria Tbk.,Listed
+DWGL,Dwi Guna Laksana Tbk.,Listed
+DYAN,Dyandra Media International Tb,Listed
+EAST,Eastparc Hotel Tbk.,Listed
+ECII,Electronic City Indonesia Tbk.,Listed
+EDGE,Indointernet Tbk.,Listed
+EKAD,Ekadharma International Tbk.,Listed
+ELIT,Data Sinergitama Jaya Tbk.,Listed
+ELPI,Pelayaran Nasional Ekalya Purn,Listed
+ELSA,Elnusa Tbk.,Listed
+ELTY,Bakrieland Development Tbk.,Listed
+EMAS,Merdeka Gold Resources Tbk.,Listed
+EMDE,Megapolitan Developments Tbk.,Listed
+EMMI,Esa Medika Mandiri Tbk.,Listed
+EMTK,Elang Mahkota Teknologi Tbk.,Listed
+ENAK,Champ Resto Indonesia Tbk.,Listed
+ENRG,Energi Mega Persada Tbk.,Listed
+ENVY,Envy Technologies Indonesia Tb,Listed
+ENZO,Morenzo Abadi Perkasa Tbk.,Listed
+EPAC,Megalestari Epack Sentosaraya,Listed
+EPMT,Enseval Putera Megatrading Tbk,Listed
+ERAA,Erajaya Swasembada Tbk.,Listed
+ERAL,Sinar Eka Selaras Tbk.,Listed
+ERTX,Eratex Djaja Tbk.,Listed
+ESIP,Sinergi Inti Plastindo Tbk.,Listed
+ESSA,ESSA Industries Indonesia Tbk.,Listed
+ESTA,Esta Multi Usaha Tbk.,Listed
+ESTI,Ever Shine Tex Tbk.,Listed
+ETWA,Eterindo Wahanatama Tbk,Listed
+EURO,Estee Gold Feet Tbk.,Listed
+EXCL,XLSMART Telecom Sejahtera Tbk.,Listed
+FAPA,FAP Agri Tbk.,Listed
+FAST,Fast Food Indonesia Tbk.,Listed
+FASW,Fajar Surya Wisesa Tbk.,Listed
+FILM,MD Entertainment Tbk.,Listed
+FIMP,Fimperkasa Utama Tbk.,Listed
+FIRE,Alfa Energi Investama Tbk.,Listed
+FISH,FKS Multi Agro Tbk.,Listed
+FITT,Fortune Resources Investment T,Listed
+FLMC,Falmaco Nonwoven Industri Tbk.,Listed
+FMII,Fortune Mate Indonesia Tbk,Listed
+FOLK,Multi Garam Utama Tbk.,Listed
+FOOD,Sentra Food Indonesia Tbk.,Listed
+FORE,Fore Kopi Indonesia Tbk.,Listed
+FORU,Fortune Indonesia Tbk,Listed
+FPNI,Lotte Chemical Titan Tbk.,Listed
+FUTR,Futura Energi Global Tbk.,Listed
+FWCT,Wijaya Cahaya Timber Tbk.,Listed
+GAMA,Aksara Global Development Tbk.,Listed
+GDST,Gunawan Dianjaya Steel Tbk.,Listed
+GDYR,Goodyear Indonesia Tbk.,Listed
+GEMA,Gema Grahasarana Tbk.,Listed
+GEMS,Golden Energy Mines Tbk.,Listed
+GGRM,Gudang Garam Tbk.,Listed
+GGRP,Gunung Raja Paksi Tbk.,Listed
+GHON,Gihon Telekomunikasi Indonesia,Listed
+GIAA,Garuda Indonesia (Persero) Tbk,Listed
+GJTL,Gajah Tunggal Tbk.,Listed
+GLOB,Globe Kita Terang Tbk.,Listed
+GLVA,Galva Technologies Tbk.,Listed
+GMFI,Garuda Maintenance Facility Ae,Listed
+GMTD,Gowa Makassar Tourism Developm,Listed
+GOLD,Visi Telekomunikasi Infrastruk,Listed
+GOLF,Intra Golflink Resorts Tbk.,Listed
+GOLL,Golden Plantation Tbk.,Listed
+GOOD,Garudafood Putra Putri Jaya Tb,Listed
+GOTO,GoTo Gojek Tokopedia Tbk.,Listed
+GPRA,Perdana Gapuraprima Tbk.,Listed
+GPSO,Geoprima Solusi Tbk.,Listed
+GRIA,Ingria Pratama Capitalindo Tbk,Listed
+GRPH,Griptha Putra Persada Tbk.,Listed
+GRPM,Graha Prima Mentari Tbk.,Listed
+GTBO,Garda Tujuh Buana Tbk,Listed
+GTRA,Grahaprima Suksesmandiri Tbk.,Listed
+GTSI,GTS Internasional Tbk.,Listed
+GULA,Aman Agrindo Tbk.,Listed
+GUNA,Gunanusa Eramandiri Tbk.,Listed
+GWSA,Greenwood Sejahtera Tbk.,Listed
+GZCO,Gozco Plantations Tbk.,Listed
+HADE,Himalaya Energi Perkasa Tbk.,Listed
+HAIS,Hasnur Internasional Shipping,Listed
+HAJJ,Arsy Buana Travelindo Tbk.,Listed
+HALO,Haloni Jane Tbk.,Listed
+HATM,Habco Trans Maritima Tbk.,Listed
+HBAT,Minahasa Membangun Hebat Tbk.,Listed
+HDIT,Hensel Davest Indonesia Tbk.,Listed
+HEAL,Medikaloka Hermina Tbk.,Listed
+HELI,Jaya Trishindo Tbk.,Listed
+HERO,DFI Retail Nusantara Tbk.,Listed
+HEXA,Hexindo Adiperkasa Tbk.,Listed
+HGII,Hero Global Investment Tbk.,Listed
+HILL,Hillcon Tbk.,Listed
+HITS,Humpuss Intermoda Transportasi,Listed
+HKMU,HK Metals Utama Tbk.,Listed
+HMSP,H.M. Sampoerna Tbk.,Listed
+HOKI,Buyung Poetra Sembada Tbk.,Listed
+HOME,Hotel Mandarine Regency Tbk.,Listed
+HOMI,Grand House Mulia Tbk.,Listed
+HOPE,Harapan Duta Pertiwi Tbk.,Listed
+HOTL,Saraswati Griya Lestari Tbk.,Listed
+HRME,Menteng Heritage Realty Tbk.,Listed
+HRTA,Hartadinata Abadi Tbk.,Listed
+HRUM,Harum Energy Tbk.,Listed
+HUMI,Humpuss Maritim Internasional,Listed
+HYGN,Ecocare Indo Pasifik Tbk.,Listed
+IATA,Karya Pacific Energy Tbk.,Listed
+IBFN,Intan Baru Prana Tbk.,Listed
+IBOS,Indo Boga Sukses Tbk.,Listed
+IBST,Inti Bangun Sejahtera Tbk.,Listed
+ICBP,Indofood CBP Sukses Makmur Tbk,Listed
+ICON,Island Concepts Indonesia Tbk.,Listed
+IDEA,Idea Indonesia Akademi Tbk.,Listed
+IDPR,Indonesia Pondasi Raya Tbk.,Listed
+IFII,Indonesia Fibreboard Industry,Listed
+IFSH,Ifishdeco Tbk.,Listed
+IGAR,Champion Pacific Indonesia Tbk,Listed
+IIKP,Inti Agri Resources Tbk,Listed
+IKAI,Intikeramik Alamasri Industri,Listed
+IKAN,Era Mandiri Cemerlang Tbk.,Listed
+IKBI,Sumi Indo Kabel Tbk.,Listed
+IKPM,Ikapharmindo Putramas Tbk.,Listed
+IMAS,Indomobil Sukses Internasional,Listed
+IMJS,Indomobil Multi Jasa Tbk.,Listed
+IMPC,Impack Pratama Industri Tbk.,Listed
+INAF,Indofarma Tbk.,Listed
+INAI,Indal Aluminium Industry Tbk.,Listed
+INCF,Indo Komoditi Korpora Tbk.,Listed
+INCI,Intanwijaya Internasional Tbk,Listed
+INCO,Vale Indonesia Tbk.,Listed
+INDF,Indofood Sukses Makmur Tbk.,Listed
+INDO,Royalindo Investa Wijaya Tbk.,Listed
+INDR,Indo-Rama Synthetics Tbk.,Listed
+INDS,Indospring Tbk.,Listed
+INDX,Tanah Laut Tbk,Listed
+INDY,Indika Energy Tbk.,Listed
+INET,Sinergi Inti Andalan Prima Tbk,Listed
+INKP,Indah Kiat Pulp & Paper Tbk.,Listed
+INOV,Inocycle Technology Group Tbk.,Listed
+INPP,Indonesian Paradise Property T,Listed
+INPS,Indah Prakasa Sentosa Tbk.,Listed
+INRU,Toba Pulp Lestari Tbk.,Listed
+INTA,Intraco Penta Tbk.,Listed
+INTD,Inter Delta Tbk,Listed
+INTP,Indocement Tunggal Prakarsa Tb,Listed
+IOTF,Sumber Sinergi Makmur Tbk.,Listed
+IPAC,Era Graharealty Tbk.,Listed
+IPCC,Indonesia Kendaraan Terminal T,Listed
+IPCM,Jasa Armada Indonesia Tbk.,Listed
+IPOL,Indopoly Swakarsa Industry Tbk,Listed
+IPPE,Indo Pureco Pratama Tbk.,Suspended
+IPTV,MNC Vision Networks Tbk.,Listed
+IRRA,Itama Ranoraya Tbk.,Listed
+IRSX,Folago Global Nusantara Tbk.,Listed
+ISAP,Isra Presisi Indonesia Tbk.,Listed
+ISAT,Indosat Tbk.,Listed
+ISEA,Indo American Seafoods Tbk.,Listed
+ISSP,Steel Pipe Industry of Indones,Listed
+ITIC,Indonesian Tobacco Tbk.,Listed
+ITMA,Sumber Energi Andalan Tbk.,Listed
+ITMG,Indo Tambangraya Megah Tbk.,Listed
+JARR,Jhonlin Agro Raya Tbk.,Listed
+JAST,Jasnita Telekomindo Tbk.,Listed
+JATI,Informasi Teknologi Indonesia,Listed
+JAWA,Jaya Agra Wattie Tbk.,Listed
+JAYA,Armada Berjaya Trans Tbk.,Listed
+JECC,Jembo Cable Company Tbk.,Listed
+JECX,Nitrasanata Dharma Tbk.,Listed
+JELI,Niramas Utama Tbk.,Listed
+JGLE,Graha Andrasentra Propertindo,Listed
+JIHD,Jakarta International Hotels &,Listed
+JKON,Jaya Konstruksi Manggala Prata,Listed
+JPFA,Japfa Comfeed Indonesia Tbk.,Listed
+JRPT,Jaya Real Property Tbk.,Listed
+JSKY,Sky Energy Indonesia Tbk.,Listed
+JSMR,Jasa Marga (Persero) Tbk.,Listed
+JSPT,Jakarta Setiabudi Internasiona,Listed
+JTPE,Jasuindo Tiga Perkasa Tbk.,Listed
+KAEF,Kimia Farma (Persero) Tbk.,Listed
+KAQI,Jantra Grupo Indonesia Tbk.,Listed
+KARW,Meratus Jasa Prima Tbk.,Listed
+KAYU,Darmi Bersaudara Tbk.,Listed
+KBAG,Karya Bersama Anugerah Tbk.,Listed
+KBLI,KMI Wire & Cable Tbk.,Listed
+KBLM,Kabelindo Murni Tbk.,Listed
+KBLV,First Media Tbk.,Listed
+KBRI,Kertas Basuki Rachmat Indonesi,Listed
+KDSI,Kedawung Setia Industrial Tbk.,Listed
+KDTN,Puri Sentul Permai Tbk.,Listed
+KEEN,Kencana Energi Lestari Tbk.,Listed
+KEJU,Mulia Boga Raya Tbk.,Listed
+KETR,Ketrosden Triasmitra Tbk.,Listed
+KIAS,Keramika Indonesia Assosiasi T,Listed
+KICI,Kedaung Indah Can Tbk,Listed
+KIJA,Kawasan Industri Jababeka Tbk.,Listed
+KING,Hoffmen Cleanindo Tbk.,Listed
+KINO,Kino Indonesia Tbk.,Listed
+KIOS,Kioson Komersial Indonesia Tbk,Listed
+KJEN,Krida Jaringan Nusantara Tbk.,Listed
+KKES,Kusuma Kemindo Sentosa Tbk.,Listed
+KKGI,Resource Alam Indonesia Tbk.,Listed
+KLAS,Pelayaran Kurnia Lautan Semest,Listed
+KLBF,Kalbe Farma Tbk.,Listed
+KLIN,Klinko Karya Imaji Tbk.,Listed
+KMDS,Kurniamitra Duta Sentosa Tbk.,Listed
+KMTR,Kirana Megatara Tbk.,Listed
+KOBX,Kobexindo Tractors Tbk.,Listed
+KOCI,Kokoh Exa Nusantara Tbk.,Listed
+KOIN,Kokoh Inti Arebama Tbk,Listed
+KOKA,Koka Indonesia Tbk.,Listed
+KONI,Perdana Bangun Pusaka Tbk,Listed
+KOPI,Mitra Energi Persada Tbk.,Listed
+KOTA,DMS Propertindo Tbk.,Listed
+KPIG,MNC Tourism Indonesia Tbk.,Listed
+KRAS,Krakatau Steel (Persero) Tbk.,Listed
+KREN,Quantum Clovera Investama Tbk.,Listed
+KRYA,Bangun Karya Perkasa Jaya Tbk.,Listed
+KSIX,Kentanix Supra International T,Listed
+KUAS,Ace Oldfields Tbk.,Listed
+LABA,Green Power Group Tbk.,Listed
+LABS,UBC Medical Indonesia Tbk.,Listed
+LAJU,Jasa Berdikari Logistics Tbk.,Listed
+LAND,Trimitra Propertindo Tbk.,Listed
+LAPD,Leyand International Tbk.,Listed
+LCGP,Eureka Prima Jakarta Tbk.,Listed
+LCKM,LCK Global Kedaton Tbk.,Listed
+LEAD,Logindo Samudramakmur Tbk.,Listed
+LFLO,Imago Mulia Persada Tbk.,Listed
+LINK,Link Net Tbk.,Listed
+LION,Lion Metal Works Tbk.,Listed
+LIVE,Homeco Victoria Makmur Tbk.,Listed
+LMAS,Limas Indonesia Makmur Tbk,Listed
+LMAX,Lupromax Pelumas Indonesia Tbk,Listed
+LMPI,Langgeng Makmur Industri Tbk.,Listed
+LMSH,Lionmesh Prima Tbk.,Listed
+LOPI,Logisticsplus International Tb,Listed
+LPCK,Lippo Cikarang Tbk,Listed
+LPIN,Multi Prima Sejahtera Tbk,Listed
+LPKR,Lippo Karawaci Tbk.,Listed
+LPLI,Star Pacific Tbk,Listed
+LPPF,MDS Retailing Tbk.,Listed
+LRNA,Eka Sari Lorena Transport Tbk.,Listed
+LSIP,PP London Sumatra Indonesia Tbk.,Listed
+LTLS,Lautan Luas Tbk.,Listed
+LUCK,Sentral Mitra Informatika Tbk.,Listed
+LUCY,Lima Dua Lima Tiga Tbk.,Listed
+MABA,Marga Abhinaya Abadi Tbk.,Listed
+MAGP,Multi Agro Gemilang Plantation,Listed
+MAHA,Mandiri Herindo Adiperkasa Tbk,Listed
+MAIN,Malindo Feedmill Tbk.,Listed
+MANG,Manggung Polahraya Tbk.,Listed
+MAPA,Map Aktif Adiperkasa Tbk.,Listed
+MAPB,MAP Boga Adiperkasa Tbk.,Listed
+MAPI,Mitra Adiperkasa Tbk.,Listed
+MARI,Mahaka Radio Integra Tbk.,Listed
+MARK,Mark Dynamics Indonesia Tbk.,Listed
+MAXI,Maxindo Karya Anugerah Tbk.,Listed
+MBAP,Mitrabara Adiperdana Tbk.,Listed
+MBMA,Merdeka Battery Materials Tbk.,Listed
+MBSS,Mitrabahtera Segara Sejati Tbk,Listed
+MBTO,Martina Berto Tbk.,Listed
+MCAS,M Cash Integrasi Tbk.,Listed
+MCOL,Prima Andalan Mandiri Tbk.,Listed
+MDIA,Intermedia Capital Tbk.,Listed
+MDIY,Daya Intiguna Yasa Tbk.,Listed
+MDKA,Merdeka Copper Gold Tbk.,Listed
+MDKI,Emdeki Utama Tbk.,Listed
+MDLA,Medela Potentia Tbk.,Listed
+MDLN,Modernland Realty Tbk.,Listed
+MDRN,Modern Internasional Tbk.,Listed
+MEDC,Medco Energi Internasional Tbk,Listed
+MEDS,Hetzer Medical Indonesia Tbk.,Listed
+MEJA,Harta Djaya Karya Tbk.,Listed
+MENN,Menn Teknologi Indonesia Tbk.,Listed
+MERI,Merry Riana Edukasi Tbk.,Listed
+MERK,Merck Tbk.,Listed
+META,Nusantara Infrastructure Tbk.,Listed
+MFMI,Multifiling Mitra Indonesia Tb,Listed
+MGLV,NexAI Digital Infrastruktur Tb,Listed
+MGNA,Magna Investama Mandiri Tbk.,Listed
+MGRO,Mahkota Group Tbk.,Listed
+MHKI,Multi Hanna Kreasindo Tbk.,Listed
+MICE,Multi Indocitra Tbk.,Listed
+MIDI,Midi Utama Indonesia Tbk.,Listed
+MIKA,Mitra Keluarga Karyasehat Tbk.,Listed
+MINA,Sanurhasta Mitra Tbk.,Listed
+MINE,Sinar Terang Mandiri Tbk.,Listed
+MIRA,Mitra International Resources,Listed
+MITI,Mitra Investindo Tbk.,Listed
+MKAP,Multikarya Asia Pasifik Raya T,Listed
+MKNT,Mitra Komunikasi Nusantara Tbk,Listed
+MKPI,Metropolitan Kentjana Tbk.,Listed
+MKTR,Menthobi Karyatama Raya Tbk.,Listed
+MLBI,Multi Bintang Indonesia Tbk.,Listed
+MLIA,Mulia Industrindo Tbk,Listed
+MLPL,Multipolar Tbk.,Listed
+MLPT,Multipolar Technology Tbk.,Listed
+MMIX,Multi Medika Internasional Tbk,Listed
+MMLP,Mega Manunggal Property Tbk.,Listed
+MNCN,Media Nusantara Citra Tbk.,Listed
+MOLI,Madusari Murni Indah Tbk.,Listed
+MORA,Ekamas Mora Republik Tbk.,Listed
+MPIX,Mitra Pedagang Indonesia Tbk.,Listed
+MPMX,Mitra Pinasthika Mustika Tbk.,Listed
+MPOW,Megapower Makmur Tbk.,Listed
+MPPA,Matahari Putra Prima Tbk.,Listed
+MPRO,Maha Properti Indonesia Tbk.,Listed
+MPXL,MPX Logistics International Tb,Listed
+MRAT,Mustika Ratu Tbk.,Listed
+MSIE,Multisarana Intan Eduka Tbk.,Listed
+MSIN,MNC Digital Entertainment Tbk.,Listed
+MSJA,Multi Spunindo Jaya Tbk.,Listed
+MSKY,MNC Sky Vision Tbk.,Listed
+MSTI,Mastersystem Infotama Tbk.,Listed
+MTDL,Metrodata Electronics Tbk.,Listed
+MTEL,Dayamitra Telekomunikasi Tbk.,Listed
+MTFN,Capitalinc Investment Tbk.,Listed
+MTLA,Metropolitan Land Tbk.,Listed
+MTMH,Murni Sadar Tbk.,Listed
+MTPS,Meta Epsi Tbk.,Listed
+MTRA,Mitra Pemuda Tbk.,Listed
+MTSM,Metro Realty Tbk.,Listed
+MUTU,Mutuagung Lestari Tbk.,Listed
+MYOH,Samindo Resources Tbk.,Listed
+MYOR,Mayora Indah Tbk.,Listed
+MYTX,Asia Pacific Investama Tbk.,Listed
+NAIK,Adiwarna Anugerah Abadi Tbk.,Listed
+NANO,Nanotech Indonesia Global Tbk.,Listed
+NASA,Andalan Perkasa Abadi Tbk.,Listed
+NASI,Wahana Inti Makmur Tbk.,Listed
+NATO,Olympus Strategic Indonesia Tb,Listed
+NAYZ,Hassana Boga Sejahtera Tbk.,Listed
+NCKL,Trimegah Bangun Persada Tbk.,Listed
+NELY,Pelayaran Nelly Dwi Putri Tbk.,Listed
+NEST,Esta Indonesia Tbk.,Listed
+NETV,MDTV Media Technologies Tbk.,Listed
+NFCX,NFC Indonesia Tbk.,Listed
+NICE,Adhi Kartiko Pratama Tbk.,Listed
+NICL,PAM Mineral Tbk.,Listed
+NIKL,Pelat Timah Nusantara Tbk.,Listed
+NINE,Techno9 Indonesia Tbk.,Listed
+NIRO,City Retail Developments Tbk.,Listed
+NPGF,Nusa Palapa Gemilang Tbk.,Listed
+NRCA,Nusa Raya Cipta Tbk.,Listed
+NSSS,Nusantara Sawit Sejahtera Tbk.,Listed
+NTBK,Nusatama Berkah Tbk.,Listed
+NUSA,Sinergi Megah Internusa Tbk.,Listed
+NZIA,Nusantara Almazia Tbk.,Listed
+OASA,Maharaksa Biru Energi Tbk.,Listed
+OBAT,Brigit Biofarmaka Teknologi Tb,Listed
+OBMD,OBM Drilchem Tbk.,Listed
+OILS,Indo Oil Perkasa Tbk.,Listed
+OKAS,Ancora Indonesia Resources Tbk,Listed
+OLIV,Atlas Nexus Group Tbk.,Listed
+OMED,Jayamas Medica Industri Tbk.,Listed
+OMRE,Indonesia Prima Property Tbk,Listed
+OPMS,Optima Prima Metal Sinergi Tbk,Listed
+PACK,Abadi Nusantara Hijau Investam,Listed
+PADA,Personel Alih Daya Tbk.,Listed
+PAMG,Bima Sakti Pertiwi Tbk.,Listed
+PANI,Pantai Indah Kapuk Dua Tbk.,Listed
+PANR,Panorama Sentrawisata Tbk.,Listed
+PART,Cipta Perdana Lancar Tbk.,Listed
+PBID,Panca Budi Idaman Tbk.,Listed
+PBRX,Pan Brothers Tbk.,Listed
+PBSA,Paramita Bangun Sarana Tbk.,Listed
+PCAR,Prima Cakrawala Abadi Tbk.,Listed
+PDES,Destinasi Tirta Nusantara Tbk,Listed
+PDPP,Primadaya Plastisindo Tbk.,Listed
+PEHA,Phapros Tbk.,Listed
+PEVE,Penta Valent Tbk.,Listed
+PGAS,Perusahaan Gas Negara (Persero,Listed
+PGEO,Pertamina Geothermal Energy Tb,Listed
+PGJO,Bahtera Bumi Raya Tbk.,Listed
+PGLI,Pembangunan Graha Lestari Inda,Listed
+PGUN,Pradiksi Gunatama Tbk.,Listed
+PICO,Pelangi Indah Canindo Tbk,Listed
+PIPA,Oxala Energy International Tbk,Listed
+PJAA,Pembangunan Jaya Ancol Tbk.,Listed
+PJHB,Pelayaran Jaya Hidup Baru Tbk.,Listed
+PKPK,Paragon Karya Perkasa Tbk.,Listed
+PLAN,Planet Properindo Jaya Tbk.,Listed
+PLIN,Plaza Indonesia Realty Tbk.,Listed
+PMJS,Putra Mandiri Jembar Tbk.,Listed
+PMMP,Panca Mitra Multiperdana Tbk.,Listed
+PMUI,Prima Multi Usaha Indonesia Tb,Listed
+PNGO,AEP Pinago Plantations Tbk.,Listed
+PNSE,Pudjiadi & Sons Tbk.,Listed
+POLI,Pollux Hotels Group Tbk.,Listed
+POLL,Pollux Properties Indonesia Tb,Listed
+POLU,Golden Flower Tbk.,Listed
+POLY,Asia Pacific Fibers Tbk,Listed
+PORT,Nusantara Pelabuhan Handal Tbk,Listed
+POSA,Bliss Properti Indonesia Tbk.,Listed
+POWR,Cikarang Listrindo Tbk.,Listed
+PPGL,Prima Globalindo Logistik Tbk.,Listed
+PPRE,PP Presisi Tbk.,Listed
+PPRI,Paperocks Indonesia Tbk.,Listed
+PPRO,PP Properti Tbk.,Listed
+PRAY,Famon Awal Bros Sedaya Tbk.,Listed
+PRDA,Prodia Widyahusada Tbk.,Listed
+PRDL,Prodia Diagnostic Line Tbk.,Listed
+PRIM,Royal Prima Tbk.,Listed
+PSAB,J Resources Asia Pasifik Tbk.,Listed
+PSAT,Pancaran Samudera Transport Tb,Listed
+PSDN,Prasidha Aneka Niaga Tbk,Listed
+PSGO,Palma Serasih Tbk.,Listed
+PSKT,Red Planet Indonesia Tbk.,Listed
+PSSI,IMC Pelita Logistik Tbk.,Listed
+PTBA,Bukit Asam (Persero) Tbk.,Listed
+PTDU,Djasa Ubersakti Tbk.,Listed
+PTIS,Indo Straits Tbk.,Listed
+PTMP,Mitra Pack Tbk.,Listed
+PTMR,Master Print Tbk.,Listed
+PTPP,PP (Persero) Tbk.,Listed
+PTPS,Pulau Subur Tbk.,Listed
+PTPW,Pratama Widya Tbk.,Listed
+PTRO,Petrosea Tbk.,Listed
+PTSN,Sat Nusapersada Tbk,Listed
+PTSP,Pioneerindo Gourmet Internatio,Listed
+PUDP,Pudjiadi Prestige Tbk.,Listed
+PURA,Putra Rajawali Kencana Tbk.,Listed
+PURE,Trinitan Metals and Minerals T,Listed
+PURI,Puri Global Sukses Tbk.,Listed
+PWON,Pakuwon Jati Tbk.,Listed
+PYFA,Pyridam Farma Tbk,Listed
+PZZA,Sarimelati Kencana Tbk.,Listed
+RAAM,Tripar Multivision Plus Tbk.,Listed
+RAFI,Sari Kreasi Boga Tbk.,Listed
+RAJA,Rukun Raharja Tbk.,Listed
+RALS,Ramayana Lestari Sentosa Tbk.,Listed
+RANC,Supra Boga Lestari Tbk.,Listed
+RANS,Rans Entertainmen Indonesia Tb,Listed
+RATU,Raharja Energi Cepu Tbk.,Listed
+RBMS,Ristia Bintang Mahkotasejati T,Listed
+RCCC,Utama Radar Cahaya Tbk.,Listed
+RDTX,Roda Vivatex Tbk,Listed
+REAL,Repower Asia Indonesia Tbk.,Listed
+RELF,Graha Mitra Asia Tbk.,Listed
+RGAS,Kian Santang Muliatama Tbk.,Listed
+RICY,Ricky Putra Globalindo Tbk,Listed
+RIGS,Rig Tenders Indonesia Tbk.,Listed
+RIMO,Rimo International Lestari Tbk,Listed
+RISE,Jaya Sukses Makmur Sentosa Tbk,Listed
+RLCO,Abadi Lestari Indonesia Tbk.,Listed
+RMKE,RMK Energy Tbk.,Listed
+RMKO,Royaltama Mulia Kontraktorindo,Listed
+ROCK,Rockfields Properti Indonesia,Listed
+RODA,Pikko Land Development Tbk.,Listed
+RONY,Aracord Nusantara Group Tbk.,Listed
+ROTI,Nippon Indosari Corpindo Tbk.,Listed
+RSCH,Charlie Hospital Semarang Tbk.,Listed
+RSGK,Kedoya Adyaraya Tbk.,Listed
+RUIS,Radiant Utama Interinsco Tbk.,Listed
+RUNS,Global Sukses Solusi Tbk.,Listed
+SAFE,Steady Safe Tbk,Listed
+SAGE,Saptausaha Gemilangindah Tbk.,Listed
+SAME,Sarana Meditama Metropolitan T,Listed
+SAMF,Saraswanti Anugerah Makmur Tbk,Listed
+SAPX,Satria Antaran Prima Tbk.,Listed
+SATU,Kota Satu Properti Tbk.,Listed
+SBAT,Sejahtera Bintang Abadi Textil,Listed
+SBMA,Surya Biru Murni Acetylene Tbk,Listed
+SCCO,Supreme Cable Manufacturing &,Listed
+SCMA,Surya Citra Media Tbk.,Listed
+SCNP,Selaras Citra Nusantara Perkas,Listed
+SCPI,Organon Pharma Indonesia Tbk.,Listed
+SDMU,Sidomulyo Selaras Tbk.,Listed
+SDPC,Millennium Pharmacon Internati,Listed
+SEMA,Semacom Integrated Tbk.,Listed
+SGER,Sumber Global Energy Tbk.,Listed
+SGRO,Prime Agri Resources Tbk.,Listed
+SHID,Hotel Sahid Jaya International,Listed
+SHIP,Sillo Maritime Perdana Tbk.,Listed
+SICO,Sigma Energy Compressindo Tbk.,Listed
+SIDO,Industri Jamu dan Farmasi Sido,Listed
+SILO,Siloam International Hospitals,Listed
+SIMA,Siwani Makmur Tbk,Listed
+SIMP,Salim Ivomas Pratama Tbk.,Listed
+SINI,Singaraja Putra Tbk.,Listed
+SIPD,Sreeya Sewu Indonesia Tbk.,Listed
+SKBM,Sekar Bumi Tbk.,Listed
+SKLT,Sekar Laut Tbk.,Listed
+SKRN,Superkrane Mitra Utama Tbk.,Listed
+SKYB,Northcliff Citranusa Indonesia,Listed
+SLIS,Gaya Abadi Sempurna Tbk.,Listed
+SMAR,Sinar Mas Agro Resources and T,Listed
+SMBR,Semen Baturaja (Persero) Tbk.,Listed
+SMCB,Solusi Bangun Indonesia Tbk.,Listed
+SMDM,Suryamas Dutamakmur Tbk.,Listed
+SMDR,Samudera Indonesia  Tbk.,Listed
+SMGA,Sumber Mineral Global Abadi Tb,Listed
+SMGR,Semen Indonesia (Persero) Tbk.,Listed
+SMIL,Sarana Mitra Luas Tbk.,Listed
+SMKL,Satyamitra Kemas Lestari Tbk.,Listed
+SMKM,Sumber Mas Konstruksi Tbk.,Listed
+SMLE,Sinergi Multi Lestarindo Tbk.,Listed
+SMMT,Golden Eagle Energy Tbk.,Listed
+SMRA,Summarecon Agung Tbk.,Listed
+SMRU,SMR Utama Tbk.,Listed
+SMSM,Selamat Sempurna Tbk.,Listed
+SNLK,Sunter Lakeside Hotel Tbk.,Listed
+SOCI,Soechi Lines Tbk.,Listed
+SOFA,Solusi Environment Asia Tbk.,Listed
+SOHO,Soho Global Health Tbk.,Listed
+SOLA,Xolare RCR Energy Tbk.,Listed
+SONA,Sona Topas Tourism Industry Tb,Listed
+SOSS,ALSOK Indonesia Services Tbk.,Listed
+SOTS,Satria Mega Kencana Tbk.,Listed
+SOUL,Mitra Tirta Buwana Tbk.,Listed
+SPMA,Suparma Tbk.,Listed
+SPRE,Soraya Berjaya Indonesia Tbk.,Listed
+SPTO,Surya Pertiwi Tbk.,Listed
+SQMI,Wilton Makmur Indonesia Tbk.,Listed
+SRAJ,Sejahteraraya Anugrahjaya Tbk.,Listed
+SRIL,Sri Rejeki Isman Tbk.,Listed
+SRSN,Indo Acidatama Tbk,Listed
+SSIA,Surya Semesta Internusa Tbk.,Listed
+SSMS,Sawit Sumbermas Sarana Tbk.,Listed
+SSTM,Sunson Textile Manufacture Tbk,Listed
+STAA,Sumber Tani Agung Resources Tb,Listed
+STRK,Lovina Beach Brewery Tbk.,Listed
+STTP,Siantar Top Tbk.,Listed
+SUGI,Sugih Energy Tbk.,Listed
+SULI,SLJ Global Tbk.,Listed
+SUNI,Sunindo Pratama Tbk.,Listed
+SUPR,Solusi Tunas Pratama Tbk.,Listed
+SURE,Super Energy Tbk.,Listed
+SURI,Maja Agung Latexindo Tbk.,Listed
+SWAT,Sriwahana Adityakarta Tbk.,Listed
+SWID,Saraswanti Indoland Developmen,Listed
+TALF,Tunas Alfin Tbk.,Listed
+TAMA,Lancartama Sejati Tbk.,Listed
+TAMU,Pelayaran Tamarin Samudra Tbk.,Listed
+TAPG,Triputra Agro Persada Tbk.,Listed
+TARA,Agung Semesta Sejahtera Tbk.,Listed
+TAXI,Express Transindo Utama Tbk.,Listed
+TAYS,Jaya Swarasa Agung Tbk.,Listed
+TBIG,Tower Bersama Infrastructure T,Listed
+TBLA,Tunas Baru Lampung Tbk.,Listed
+TBMS,Tembaga Mulia Semanan Tbk.,Listed
+TCID,Mandom Indonesia Tbk.,Listed
+TCPI,Transcoal Pacific Tbk.,Listed
+TDPM,Tianrong Chemicals Industry Tbk,Suspended
+TEBE,Dana Brata Luhur Tbk.,Listed
+TECH,Indosterling Technomedia Tbk.,Listed
+TELE,Omni Inovasi Indonesia Tbk.,Listed
+TFAS,Telefast Indonesia Tbk.,Listed
+TFCO,Tifico Fiber Indonesia Tbk.,Listed
+TGKA,Tigaraksa Satria Tbk.,Listed
+TGRA,Terregra Asia Energy Tbk.,Listed
+TGUK,Platinum Wahab Nusantara Tbk.,Listed
+TINS,TIMAH (Persero) Tbk.,Listed
+TIRA,Tira Austenite Tbk,Listed
+TIRT,Tirta Mahakam Resources Tbk,Listed
+TKIM,Pabrik Kertas Tjiwi Kimia Tbk.,Listed
+TLDN,Teladan Prima Agro Tbk.,Listed
+TLKM,Telkom Indonesia (Persero) Tbk,Listed
+TMAS,Temas Tbk.,Listed
+TMPO,Tempo Intimedia Tbk.,Listed
+TNCA,Trimuda Nuansa Citra Tbk.,Listed
+TOBA,TBS Energi Utama Tbk.,Listed
+TOOL,Rohartindo Nusantara Luas Tbk.,Listed
+TOPS,Totalindo Eka Persada Tbk.,Listed
+TOSK,Topindo Solusi Komunika Tbk.,Listed
+TOTL,Total Bangun Persada Tbk.,Listed
+TOTO,Surya Toto Indonesia Tbk.,Listed
+TOWR,Sarana Menara Nusantara Tbk.,Listed
+TOYS,Sunindo Adipersada Tbk.,Listed
+TPIA,Chandra Asri Pacific Tbk.,Listed
+TPMA,Trans Power Marine Tbk.,Listed
+TRAM,Trada Alam Minera Tbk.,Listed
+TRGU,Cerestar Indonesia Tbk.,Listed
+TRIL,Triwira Insanlestari Tbk.,Listed
+TRIN,Perintis Triniti Properti Tbk.,Listed
+TRIO,Trikomsel Oke Tbk.,Suspended
+TRIS,Trisula International Tbk.,Listed
+TRJA,Transkon Jaya Tbk.,Listed
+TRON,Teknologi Karya Digital Nusa T,Listed
+TRST,Trias Sentosa Tbk.,Listed
+TRUE,Triniti Dinamik Tbk.,Listed
+TRUK,Guna Timur Raya Tbk.,Listed
+TSPC,Tempo Scan Pacific Tbk.,Listed
+TYRE,King Tire Indonesia Tbk.,Listed
+UANG,Pakuan Tbk.,Listed
+UCID,Uni-Charm Indonesia Tbk.,Listed
+UDNG,Agro Bahari Nusantara Tbk.,Listed
+UFOE,Damai Sejahtera Abadi Tbk.,Listed
+ULTJ,Ultrajaya Milk Industry & Trad,Listed
+UNIC,Unggul Indah Cahaya Tbk.,Listed
+UNIQ,Ulima Nitra Tbk.,Listed
+UNIT,Nusantara Inti Corpora Tbk,Listed
+UNSP,Bakrie Sumatera Plantations Tb,Listed
+UNTD,Terang Dunia Internusa Tbk.,Listed
+UNTR,United Tractors Tbk.,Listed
+UNVR,Unilever Indonesia Tbk.,Listed
+URBN,Urban Jakarta Propertindo Tbk.,Listed
+UVCR,Trimegah Karya Pratama Tbk.,Listed
+VAST,Vastland Indonesia Tbk.,Listed
+VERN,Verona Indah Pictures Tbk.,Listed
+VICI,Victoria Care Indonesia Tbk.,Listed
+VISI,Satu Visi Putra Tbk.,Listed
+VIVA,Visi Media Asia Tbk.,Listed
+VKTR,VKTR Teknologi Mobilitas Tbk.,Listed
+VOKS,Voksel Electric Tbk.,Listed
+WAPO,Wahana Pronatural Tbk.,Listed
+WBSA,BSA Logistics Indonesia Tbk.,Listed
+WEGE,Wijaya Karya Bangunan Gedung T,Listed
+WEHA,WEHA Transportasi Indonesia Tb,Listed
+WGSH,Wira Global Solusi Tbk.,Listed
+WICO,Wicaksana Overseas Internation,Listed
+WIDI,Widiant Jaya Krenindo Tbk.,Listed
+WIFI,Solusi Sinergi Digital Tbk.,Listed
+WIIM,Wismilak Inti Makmur Tbk.,Listed
+WIKA,Wijaya Karya (Persero) Tbk.,Listed
+WINE,Hatten Bali Tbk.,Listed
+WINR,Winner Nusantara Jaya Tbk.,Listed
+WINS,Wintermar Offshore Marine Tbk.,Listed
+WIRG,WIR ASIA Tbk.,Listed
+WMPP,Widodo Makmur Perkasa Tbk.,Listed
+WMUU,Widodo Makmur Unggas Tbk.,Listed
+WOOD,Integra Indocabinet Tbk.,Listed
+WOWS,Ginting Jaya Energi Tbk.,Listed
+WSBP,Waskita Beton Precast Tbk.,Listed
+WSKT,Waskita Karya (Persero) Tbk.,Listed
+WTON,Wijaya Karya Beton Tbk.,Listed
+YELO,Yelooo Integra Datanet Tbk.,Listed
+YPAS,Yanaprima Hastapersada Tbk,Listed
+YUPI,Yupi Indo Jelly Gum Tbk.,Listed
+ZATA,Bersama Zatta Jaya Tbk.,Listed
+ZBRA,Dosni Roha Indonesia Tbk.,Listed
+ZINC,Kapuas Prima Coal Tbk.,Listed
+ZONE,Mega Perintis Tbk.,Listed
+ZYRX,Zyrexindo Mandiri Buana Tbk.,Listed

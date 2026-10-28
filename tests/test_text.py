@@ -71,7 +71,10 @@ calk pasal neto berjalan pembanding ditemukan ditetapkan pengguna kuning merah h
 ribuan miliar juta dicek cek bukan skor batas rasio indeks periksa lihat""".split()
 FIXED_TERMS = ["red flag", "M-score", "WARS Scanner", "Window-dressing Accounting Red-flag Scanner", "PDF", "CSV",
                "SHA-256", "OCR", "Beneish", "PSAK", "goodwill", "DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI",
-               "TATA", "WARS", "Rp", "IDX", "vs", "Status"]
+               "TATA", "WARS", "Rp", "IDX", "vs", "Status", "Workbook v0.6", "Window-dressing Red-flag Scanner",
+               "BENEISH M-SCORE", "Excel", "Track B", "Red Flag"]
+# R-06 (Gail 23 Oct 2026): the report footer disclaimer is English in both versions, by decision.
+ENGLISH_BY_DECISION = {"rep.footer_disclaimer"}
 ENGLISH = r"""the and of not is are was were found review check see with from for only assets asset table notes note page
 year current statement statements threshold workbook score screen flag figures read reading value values
 total liabilities equity revenue sales depreciation amortisation amortization""".split()
@@ -87,6 +90,8 @@ def test_english_version_has_no_indonesian_words():
 
 def test_indonesian_version_has_no_english_words_except_fixed_terms():
     for k, e in ENTRIES.items():
+        if k in ENGLISH_BY_DECISION:
+            continue
         s = _plain(e["id"])
         for term in sorted(FIXED_TERMS, key=len, reverse=True):
             s = s.replace(term, " ")
@@ -193,6 +198,6 @@ def test_disclaimer_is_shown_in_both_languages_without_an_upload():
         at = AppTest.from_file(str(root / "app.py"), default_timeout=60)
         at.session_state["lang"] = lang
         at.run()
-        shown = " ".join(x.value for x in at.info) + " ".join(x.value for x in at.caption)
+        shown = " ".join(x.value for x in at.markdown)
         assert CATALOG["app.disclaimer"][lang] in shown, lang
         assert not at.exception

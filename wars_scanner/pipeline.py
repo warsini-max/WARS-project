@@ -11,9 +11,9 @@ import copy
 import re
 from dataclasses import dataclass, field, replace
 
-from . import engine, validation
+from . import company, engine, validation
 from .parameters import NON_PPE_STATUSES
-from .pdf_reader import Extraction, Value, read
+from .pdf_reader import Extraction, read
 from .text import Amt, Msg, Pages, Raw, join
 
 USABLE = {"FOUND", "REVIEW", "UNDISCLOSED", "BUILT FROM DISCLOSED COMPONENTS"}
@@ -37,6 +37,8 @@ class Result:
     passed: list = field(default_factory=list)        # app checks that ran and passed
     decisions: dict = field(default_factory=dict)     # M-06: non-PPE status set by the user, per year
     amort_decisions: dict = field(default_factory=dict)  # M-15: amortisation status set by the user, per year
+    assumed: list = field(default_factory=list)       # (field, column, note): provisional assumptions (28 Oct 2026)
+    issuer: object = None                             # company.Issuer when the header matches the master list
 
     @property
     def m_score_raw(self):
@@ -139,7 +141,8 @@ def run(pdf_path, ticker: str = "UPLOAD") -> Result:
         unreadable = Msg("issue.notes_not_found")
     flags = validation.check(p, ex) if not unreadable else []
     passed = validation.passed_checks(p, ex) if not unreadable else []
-    return Result(ex, p, calc, review, missing, assumptions, unreadable, flags, passed)
+    issuer, _ = company.identify(company.header_text(ex.statements))
+    return Result(ex, p, calc, review, missing, assumptions, unreadable, flags, passed, issuer=issuer)
 
 
 # ------------------------------------------------------------------------------ M-06 (approved 22 Oct 2026)
@@ -289,6 +292,53 @@ def apply_amort_decisions(r: Result, decisions: dict) -> Result:
     ex = replace(r.extraction, values=values)
     return replace(r, extraction=ex, inputs=p, calc=calc, review=review, missing=missing, flags=flags,
                    amort_decisions=applied)
+
+
+def apply_provisional(r: Result) -> Result:
+    """Gail, 28 Oct 2026 ("untuk saat ini", replaces the in-app M-06 / M-15 choices): the score is shown
+    at once as a provisional result. For every year still NOT ASSESSED:
+      - amortisation (no intangible assets read, M-15): 0, marked ASSUMED;
+      - depreciation/amortisation of other assets (M-06): the amount read from the notes, or 0 when
+        none was read, under the workbook rule PARTIAL_UNDISCLOSED (REVIEW, G-22); marked ASSUMED.
+    Every assumption is kept in `r.assumptions` and listed in the PDF checklist, where the user
+    confirms or rejects it. The engine rules are unchanged: only workbook statuses are entered.
+    """
+    if r.unreadable:
+        return r
+    am_years, np_years = list(r.amort_pending), list(r.non_ppe_pending)
+    p = dict(r.inputs)
+    values = copy.deepcopy(r.extraction.values)
+    review = [x for x in r.review if not (x[0] in ("amortization_intangibles", "amort_status") and x[1] in am_years)]
+    missing = [x for x in r.missing if not (x[0] in ("amortization_intangibles", "amort_status") and x[1] in am_years)]
+    assumed = []
+    for c in am_years:
+        note = Msg("note.assumed_am")
+        p[f"amortization_intangibles_{c}"] = 0
+        for v in values:
+            if v.column == c and v.field in ("amortization_intangibles", "amort_status"):
+                v.value = 0 if v.field == "amortization_intangibles" else None
+                v.status, v.note = "ASSUMED", note
+        review.append(("amortization_intangibles", c, "ASSUMED", note))
+        assumed.append(("amortization_intangibles", c, note))
+    ex = replace(r.extraction, values=values)
+    r = replace(r, extraction=ex, inputs=p, review=review, missing=missing)
+    if np_years:
+        r = apply_non_ppe_decisions(r, {c: {"status": "PARTIAL_UNDISCLOSED", "notes": []} for c in np_years})
+        read_amounts = (r.extraction.non_ppe_evidence or {}).get("amounts_read", {})
+        for c in np_years:
+            note = Msg("note.assumed_np", source=(r.extraction.non_ppe_evidence or {}).get("amount_source", "")) \
+                if c in read_amounts else Msg("note.assumed_np_zero")
+            for v in r.extraction.values:
+                if v.column == c and v.field in ("depreciation_amortization_non_ppe", "non_ppe_status"):
+                    v.status, v.note = "ASSUMED", note
+            r.review[:] = [x for x in r.review if not (x[0] == "depreciation_amortization_non_ppe" and x[1] == c)]
+            r.review.append(("depreciation_amortization_non_ppe", c, "ASSUMED", note))
+            assumed.append(("depreciation_amortization_non_ppe", c, note))
+        r.decisions = {}
+    else:
+        r = replace(r, calc=engine.calculate(p),
+                    flags=validation.check(p, None) + [f for f in r.flags if f.code.startswith(validation.EXTRACTION_ONLY)])
+    return replace(r, assumed=assumed)
 
 
 def apply_user_decisions(r: Result, non_ppe: dict, amort: dict) -> Result:

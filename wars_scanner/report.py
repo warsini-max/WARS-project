@@ -30,7 +30,8 @@ SUB_ROWS = {"rou_assets_net", "rou_depreciation"}          # shown indented unde
 
 GREEN, YELLOW, RED = "green", "yellow", "red"
 STATUS_COLOUR = {"FOUND": GREEN, "USER SET": GREEN, "REVIEW": YELLOW, "UNDISCLOSED": YELLOW,
-                 "BUILT FROM DISCLOSED COMPONENTS": YELLOW}
+                 "BUILT FROM DISCLOSED COMPONENTS": YELLOW, "ASSUMED": YELLOW}
+NEUTRAL_M = M_CONSTANT + sum(v for k, v in COEFFICIENTS.items() if k not in ("const", "TATA"))   # all indices 1, TATA 0: -2.48
 
 # Confirmation answers are stored as codes, so switching the language keeps the user's answers.
 PENDING_ANSWER, OK_ANSWER, BAD_ANSWER = "PENDING", "OK", "BAD"
@@ -268,7 +269,7 @@ def review_items(r: Result, lang="id"):
     for fl in getattr(r, "flags", []):
         if fl.severity != "REVIEW":
             continue
-        if fl.fields and all(f in covered for f in fl.fields) and fl.code.startswith("r_amort"):
+        if fl.fields and all(f in covered for f in fl.fields) and fl.code.startswith(("r_amort", "r_non_ppe")):
             continue        # same point as the input item already listed
         key = f"chk:{fl.code}:{','.join(fl.fields)}:{fl.column}"
         if key in seen:
@@ -294,7 +295,7 @@ def _reason(r):
     return engine_reason(raw)
 
 
-def verdict(r: Result, confirm=None, lang="id", reviewer=""):
+def verdict(r: Result, confirm=None, lang="id", reviewer="", provisional_note=True):
     """(headline, detail, level) in screening language only (B r1 §6). level: high / low / none.
 
     `confirm` is the result of confirmation_summary(); without it the result counts as unconfirmed.
@@ -318,11 +319,10 @@ def verdict(r: Result, confirm=None, lang="id", reviewer=""):
         why = "; ".join(dict.fromkeys(render(f.message, lang) for f in r.errors))
         return t("v.unusable", lang), t("v.unusable_detail", lang, checks=Raw(why)), "none"
     if m is None:
-        detail = t("v.not_calc_detail", lang, reason=_reason(r))
         miss = sorted({title(f, lang) for f, c, st_, _ in getattr(r, "missing", []) if f"label.{f}" in _labels()})
-        if miss:
-            detail += " " + t("v.missing_inputs", lang, items=Raw(", ".join(miss))) + "."
-        return t("v.not_calc", lang), detail, "none"
+        if miss:          # Gail 28 Oct 10.32: say which values the system could not trace
+            return t("v.not_calc", lang), t("ui.not_traced", lang, items=Raw(", ".join(miss))), "none"
+        return t("v.not_calc", lang), t("v.not_calc_detail", lang, reason=_reason(r)), "none"
     thr = Num(THRESHOLD, 2)
     if m > THRESHOLD:
         head, level = t("v.above", lang, m=Num(m, 2), thr=thr), "high"
@@ -344,6 +344,8 @@ def verdict(r: Result, confirm=None, lang="id", reviewer=""):
         elif fl.code == "r_comparative_label":
             detail += " " + t("v.restated", lang, psak208=Psak("208", "25", fy, "¶49"))
     n = len(review_items(r, lang))
+    if not provisional_note:
+        return head, detail, level
     if confirm and confirm["state"] == "confirmed":
         detail += " " + t("v.confirmed", lang, m=n, name=Raw(who))
     elif n:
@@ -360,3 +362,64 @@ def status_text(r: Result, confirm=None, lang="id"):
             return t("st.confirmed", lang)
     key = f"st.{r.status}"
     return t(key, lang) if key in _labels() else r.status
+
+
+# ----------------------------------------------------------------------------------- header and source lines
+
+def issuer_line(r: Result, lang="id"):
+    """(ticker, name) from the master list (R-16, T-1); not identified -> ("", text). Never guessed."""
+    who = getattr(r, "issuer", None)
+    if who is None:
+        return "", t("ui.res.issuer_unknown", lang)
+    return who.ticker, who.name
+
+
+AMOUNT = r"\(?-?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?\)?"
+
+
+def source_label(quote: str, lang="id"):
+    """The label part of a source line in the chosen language (Gail 28 Oct, item 4).
+
+    Bilingual reports print "Indonesian label  amounts  English label" on one line: the Indonesian
+    label is the text before the first amount, the English label the text after the last one. A line
+    without an English part (Indonesian-only report) is returned in full. The full line is always
+    kept next to it in the downloads, so nothing of the quote is lost."""
+    import re
+    q = (quote or "").strip()
+    hits = list(re.finditer(AMOUNT, q))
+    if not hits:
+        return q
+    left = q[:hits[0].start()].strip()           # a note number printed before the amounts stays in
+    right = re.sub(r"^(-\s+)+", "", q[hits[-1].end():].strip()).strip()
+    if lang == "en":
+        return right or q
+    return left or q
+
+
+def checklist_rows(r: Result, lang="id"):
+    """The PDF / Excel checklist (Gail 28 Oct: confirmation moves from the app to the report).
+
+    One row per review item with the value as read, its pages and its source line, so the user can
+    open the page and tick Matches / Does not match."""
+    by = {(v.field, v.column): v for v in r.extraction.values}
+    fy = getattr(r.extraction, "fiscal_year", None)
+    years = {"t": str(fy) if fy else "t", "t1": str(fy - 1) if fy else "t−1"}
+    rows = []
+    for n, i in enumerate(review_items(r, lang), 1):
+        kind, rest = i["key"].split(":", 1)
+        f = rest.split(":")[0] if kind == "in" else (rest.split(":")[1].split(",")[0] if rest.count(":") >= 2 else "")
+        cols = [i["column"]] if i["column"] in ("t", "t1") else ["t", "t1"]
+        vals = [by.get((f, c)) for c in cols]
+        value = " / ".join(amount(v.value, lang) if v is not None and v.value is not None else "—" for v in vals)
+        pages = ", ".join(str(p) for p in sorted({p for v in vals if v for p in v.pages})) or "—"
+        quote = next((v.quotes[0] for v in vals if v is not None and v.quotes), "")
+        year = years.get(i["column"]) or t("col.both", lang, a=years["t"], b=years["t1"])
+        rows.append({"no": n, "key": i["key"], "item": i["title"], "year": year, "value": value, "pages": pages,
+                     "why": i["why"], "source": source_label(quote, lang), "quote": quote,
+                     "assumed": any(v is not None and v.status == "ASSUMED" for v in vals)})
+    return rows
+
+
+def fmt_push(v, lang="id"):
+    """A push with its sign, e.g. +0,183 / −0.157."""
+    return fmt_number(v, lang, 3, sign=True)
