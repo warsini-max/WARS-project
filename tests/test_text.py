@@ -69,9 +69,9 @@ INDONESIAN = r"""dan yang tidak dengan untuk dari atau ini itu ada aset utang pi
 beban penyusutan amortisasi pajak kas laba rugi pendapatan penjualan belum sudah perlu diperiksa angka nilai
 calk pasal neto berjalan pembanding ditemukan ditetapkan pengguna kuning merah hijau sesuai konsolidasian jutaan
 ribuan miliar juta dicek cek bukan skor batas rasio indeks periksa lihat""".split()
-FIXED_TERMS = ["red flag", "M-score", "WARS Scanner", "Window-dressing Accounting Red-flag Scanner", "PDF", "CSV",
+FIXED_TERMS = ["red flag", "M-score", "WARS Scanner", "Window-dressing Accounting Red-Flag Scanner", "PDF", "CSV",
                "SHA-256", "OCR", "Beneish", "PSAK", "goodwill", "DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI",
-               "TATA", "WARS", "Rp", "IDX", "vs", "Status", "Workbook v0.6", "Window-dressing Red-flag Scanner",
+               "TATA", "WARS", "Rp", "IDX", "vs", "Status", "Workbook v0.6", "Window-dressing Accounting Red-Flag Scanner",
                "BENEISH M-SCORE", "Excel", "Track B", "Red Flag"]
 # R-06 (Gail 23 Oct 2026): the report footer disclaimer is English in both versions, by decision.
 ENGLISH_BY_DECISION = {"rep.footer_disclaimer", "rep.title"}     # report title: Gail, 28 Oct 2026

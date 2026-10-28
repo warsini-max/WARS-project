@@ -1,4 +1,4 @@
-# WARS Scanner: Window-dressing Accounting Red-flag Scanner
+# WARS Scanner: Window-dressing Accounting Red-Flag Scanner
 
 By **Warsini** · [LinkedIn](https://www.linkedin.com/in/warsiniak)
 

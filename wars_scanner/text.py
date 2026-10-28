@@ -264,7 +264,7 @@ CATALOG: dict = {
     "_join": _e("", "", "internal"),
 
     # ---------------------------------------------------------------- app: fixed texts (C6 short drafts)
-    "app.title": _e("Window-dressing Red-flag Scanner", "Window-dressing Red-flag Scanner", "Gail 28 Okt 10.41"),
+    "app.title": _e("Window-dressing Accounting Red-Flag Scanner", "Window-dressing Accounting Red-Flag Scanner", "Gail 28 Okt 20.07"),
     "app.subtitle": _e("Beneish M-score (1999) untuk laporan keuangan tahunan emiten BEI",
                        "Beneish M-score (1999) for annual financial statements of IDX-listed companies", "Gail 28 Okt C6 7.1"),
     "app.lang": _e("Bahasa / Language", "Bahasa / Language", "Gail 28 Okt impl"),

@@ -114,7 +114,7 @@ def _decorate(c, page, pages, info):
         pass
     c.setFont("Plex", 6.8)
     c.setFillColor(MUTED)
-    c.drawString(18 * mm, h - 24 * mm, "Window-dressing Red-flag Scanner")
+    c.drawString(18 * mm, h - 24 * mm, "Window-dressing Accounting Red-Flag Scanner")
     c.setFont("Plex-Semi", 9)
     c.setFillColor(INK)
     c.drawRightString(w - 18 * mm, h - 13 * mm, t("rep.title", lang))
@@ -133,7 +133,7 @@ def _decorate(c, page, pages, info):
     c.drawString(18 * mm, 18 * mm, "WARS")
     c.setFont("Plex", 6.8)
     c.setFillColor(SOFT)
-    c.drawString(18 * mm, 14.8 * mm, "Window-dressing Red-flag Scanner · Beta")
+    c.drawString(18 * mm, 14.8 * mm, "Window-dressing Accounting Red-Flag Scanner · Beta")
     c.setFillColor(MUTED)
     c.drawString(18 * mm, 11.6 * mm, t("rep.page", lang, n=page, m=pages) + " · " + info["date"])
     c._annotationCount = info.setdefault("annots", 0)      # the two-pass canvas restores the page state; keep
@@ -152,38 +152,34 @@ CONTACT_EMAIL = "warsiniak@gmail.com"
 
 
 def _contact(c, x, y, lang):
-    """'Contact us' with two clickable items: a profile icon + LinkedIn, and an envelope icon (mailto link).
-    Generic icons are drawn (not LinkedIn's logo)."""
+    """'Contact us' followed by two icons of the same size on one line (Gail, 28 Oct 2026): a profile icon that
+    opens LinkedIn and an envelope icon that opens an email. Generic icons are drawn, not LinkedIn's logo."""
     c.setFont("Plex-Semi", 6.8)
     c.setFillColor(SOFT)
     label = t("rep.contact", lang)
     c.drawString(x, y, label)
-    x += c.stringWidth(label, "Plex-Semi", 6.8) + 3 * mm
-    s = 2.6 * mm
-    # profile icon: rounded square with head and shoulders
-    c.setFillColor(GREEN)
-    c.roundRect(x, y - 0.5 * mm, s, s, 0.5 * mm, stroke=0, fill=1)
-    c.setFillColor(colors.white)
-    c.circle(x + s / 2, y - 0.5 * mm + s * 0.66, s * 0.17, stroke=0, fill=1)
-    c.wedge(x + s * 0.18, y - 0.5 * mm - s * 0.25, x + s * 0.82, y - 0.5 * mm + s * 0.55, 0, 180, stroke=0, fill=1)
-    c.setFont("Plex", 6.8)
-    c.setFillColor(GREEN)
-    c.drawString(x + s + 1.2 * mm, y, "LinkedIn")
-    w1 = s + 1.2 * mm + c.stringWidth("LinkedIn", "Plex", 6.8)
-    c.linkURL(LINKEDIN_URL, (x, y - 1 * mm, x + w1, y + 2.6 * mm), relative=0)
-    x += w1 + 4 * mm
-    # envelope icon
-    c.setStrokeColor(GREEN)
-    c.setFillColor(GREEN)
-    c.setLineWidth(0.6)
-    c.rect(x, y - 0.3 * mm, s * 1.25, s * 0.85, stroke=1, fill=0)
-    p = c.beginPath()
-    p.moveTo(x, y - 0.3 * mm + s * 0.85)
-    p.lineTo(x + s * 0.625, y - 0.3 * mm + s * 0.35)
-    p.lineTo(x + s * 1.25, y - 0.3 * mm + s * 0.85)
-    c.drawPath(p, stroke=1, fill=0)
-    c.linkURL("mailto:" + CONTACT_EMAIL, (x - 0.5 * mm, y - 1 * mm, x + s * 1.25 + 0.5 * mm, y + 2.6 * mm),
-              relative=0)                                 # icon only; the address is not printed (Gail, 28 Oct 2026)
+    s, gap = 3.4 * mm, 1.6 * mm
+    x += c.stringWidth(label, "Plex-Semi", 6.8) + 2.4 * mm
+    bottom = y + 0.85 * mm - s / 2                      # icons centred on the text's x-height
+    for kind, url in (("profile", LINKEDIN_URL), ("mail", "mailto:" + CONTACT_EMAIL)):
+        c.setFillColor(GREEN)
+        c.roundRect(x, bottom, s, s, 0.6 * mm, stroke=0, fill=1)
+        c.setFillColor(colors.white)
+        c.setStrokeColor(colors.white)
+        if kind == "profile":
+            c.circle(x + s / 2, bottom + s * 0.64, s * 0.15, stroke=0, fill=1)
+            c.wedge(x + s * 0.22, bottom - s * 0.12, x + s * 0.78, bottom + s * 0.52, 0, 180, stroke=0, fill=1)
+        else:
+            c.setLineWidth(0.5)
+            l, r_, b, t_ = x + s * 0.2, x + s * 0.8, bottom + s * 0.28, bottom + s * 0.72
+            c.rect(l, b, r_ - l, t_ - b, stroke=1, fill=0)
+            pth = c.beginPath()
+            pth.moveTo(l, t_)
+            pth.lineTo((l + r_) / 2, (b + t_) / 2)
+            pth.lineTo(r_, t_)
+            c.drawPath(pth, stroke=1, fill=0)
+        c.linkURL(url, (x, bottom, x + s, bottom + s), relative=0)
+        x += s + gap
 
 
 class _Scale(Flowable):

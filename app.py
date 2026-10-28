@@ -1,4 +1,4 @@
-"""WARS web app: Window-dressing Red-flag Scanner (Beneish M-score) for annual financial statements.
+"""WARS web app: Window-dressing Accounting Red-Flag Scanner (Beneish M-score) for annual financial statements.
 
 Flow (design approved by Gail, 28 Oct 2026, canvas "WARS App Design"):
   continue as guest -> upload the PDF -> reading -> short result -> download the PDF report / Excel table.
@@ -25,7 +25,7 @@ from wars_scanner.text import Msg, Num, Raw, fmt_number, render, t, unit_msg
 ROOT = os.path.dirname(os.path.abspath(__file__))
 LINKEDIN = "https://www.linkedin.com/in/warsiniak"
 
-st.set_page_config(page_title="WARS · Window-dressing Red-flag Scanner",
+st.set_page_config(page_title="WARS · Window-dressing Accounting Red-Flag Scanner",
                    page_icon=os.path.join(ROOT, "assets", "wars_icon.png"), layout="wide",
                    initial_sidebar_state="collapsed")
 
