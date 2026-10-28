@@ -1,0 +1,6 @@
+# WARS Scanner - Streamlit settings (local runs and Streamlit Community Cloud)
+[server]
+maxUploadSize = 50          # MB; one annual report (KLBF 2021, 470 pages) is 10.7 MB
+
+[browser]
+gatherUsageStats = false

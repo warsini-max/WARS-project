@@ -1,0 +1,9 @@
+file_name,issuer,ticker,fiscal_year,sector,role,sha256,pages,bytes,text_layer_note
+LK_SIDO_2020.pdf,PT Industri Jamu dan Farmasi Sido Muncul Tbk,SIDO,2020,pharma,TEST (non-case),59e49ac06667bef56c584e8ee0fda85c67d0c46084409287b8103c965567b974,97,1181123,digital
+LK_SIDO_2021.pdf,PT Industri Jamu dan Farmasi Sido Muncul Tbk,SIDO,2021,pharma,TEST (non-case),71514729a80e025f8b0228a802014e25cd2b33066278835d877d15d1c05c04e6,95,1274122,digital; auditor report page is an image
+LK_KLBF_2020.pdf,PT Kalbe Farma Tbk,KLBF,2020,pharma,TEST (non-case),435853b12b09519c4ac8aaf3be5d606228d9af6116256d31fcd7383c63a9db25,173,1961843,digital
+LK_KLBF_2021.pdf,PT Kalbe Farma Tbk,KLBF,2021,pharma,TEST (non-case),1a4e53e378962add8198beaa10f3d7449ab50122d4ac3728f978a8635198be71,163,2970136,digital
+LK_KLBF_2023_upload.pdf,PT Kalbe Farma Tbk,KLBF,2023,pharma,TEST (non-case),9737653c0635cb5758c4ae8f7005148de8037330a55da040307c4582dc24ec57,160,2515442,digital
+LK_MYOR_2020.pdf,PT Mayora Indah Tbk,MYOR,2020,food/consumer,TEST (non-case),7b3cec97302aa5654d409f8750a0b9ade842a92f70aa64f07f8598b4a48e86bc,95,1078526,digital
+LK_MYOR_2021.pdf,PT Mayora Indah Tbk,MYOR,2021,food/consumer,TEST (non-case),6642547181bf3c908ffaf845d5d6315836282c987ae2cd16cb73a346374c7693,96,1650310,PDF p1-10 (incl. all primary statements) are scanned images; notes have a text layer
+AR_KLBF_2021.pdf,PT Kalbe Farma Tbk,KLBF,2021,pharma,TEST (non-case) - annual report (Laporan Tahunan) containing the audited LK,4b0ff160e5515e17d813b3fa387f094a1c382612c537de64ae7dea8d10d7e02b,470,10707144,digital; 4 image-only pages; supplied by Gail 23 Oct 2026 from kalbe.co.id (URL in docs/phaseD_acceptance_KLBF_2021.md)

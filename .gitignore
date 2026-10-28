@@ -1,0 +1,11 @@
+# Source documents are NOT stored in this repository (size; case material stays private).
+*.pdf
+data/private/
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+# Streamlit
+.streamlit/secrets.toml

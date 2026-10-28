@@ -1,0 +1,8 @@
+# Runtime (added per phase)
+pdfplumber>=0.11   # Phase 2: PDF text extraction (word positions)
+pypdfium2>=4      # Phase 2b: fast page text to find note pages
+streamlit>=1.40   # Phase 4: web app
+pandas>=2
+# Development
+pytest>=8
+openpyxl>=3.1     # tools/export_workbook_fixtures.py only

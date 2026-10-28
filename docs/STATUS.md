@@ -1,0 +1,98 @@
+# Phase status and evidence
+
+Updated 28 Oct 2026. Phase definitions and completion criteria: `docs/WARS_App_Plan_r0.md` §4.
+A phase is DONE only when its completion criterion is met, not when the code exists.
+
+This public repository starts from the state of 28 Oct 2026. Earlier development history (and the commit
+references in the tables below) is kept in a private archive repository.
+
+| Phase | Criterion (plan §4) | Status | Evidence |
+|---|---|---|---|
+| 0 Golden data | Golden dataset for the test reports | **Partly.** SIDO 2021 only: 42 rows AI-CHECKED-2, 18 DRAFT. Human verification by Gail **still open** (three AI readings agreeing is not VERIFIED) | `data/golden/SIDO_2021.csv` |
+| 1 Engine | Engine = workbook v0.6 | **Done** | 95 synthetic pairs × 53 columns, `tests/test_engine_vs_workbook.py` |
+| 2 / 2b Reader | Zero unflagged wrong numbers vs golden; find rate reported | **Done for SIDO 2021** (40/40 fields match, 0 silent). Other reports have no golden yet | `tests/test_pdf_reader.py`, `tests/test_notes_reader.py`, `docs/pdf_reader.md` |
+| 3 Cross-checks + confirmation | Every injected error (unit, swapped columns, missing value) caught as yellow or red | **Technical criterion met.** Formally open: four reading-quality controls are PROPOSED (below) and need Gail's decision | `tests/test_validation.py`, `docs/validation.md` |
+| 4 Web app | **Gail runs SIDO 2021 from upload to download, without help** | **NOT DONE; DEFERRED by Gail (23 Oct 2026)** after the Windows SmartScreen warning on `run_windows.bat`. App runs locally in the build environment only. Blocks Phases 5–6, nothing else | `app.py`, `run_windows.bat`, `docs/run_locally_windows.md` |
+| 5 Tests U1–U5 | See plan | Not started (U1, U2 partly covered by the automated tests) | — |
+| 6 Online | Public link working for all test PDFs | Not started. **No deployment before Phase 6** | — |
+| 7 Case evaluation | S1 rules | Frozen until Phase 7 (WR-2 M2) | — |
+| D Annual report 300+ pages | Real Laporan Tahunan read correctly vs the audited LK (Gail, 23 Oct 2026: KLBF 2021) | **PASSED (Gail, 23 Oct 2026) for the one annual report tested** (KLBF 2021, 470 pages, LK embedded whole). Not a claim that other annual-report formats are covered. Source URL (from Gail): kalbe.co.id, see `docs/phaseD_acceptance_KLBF_2021.md`; hash not re-verified from the URL (site unreachable from the build environment) | `docs/phaseD_acceptance_KLBF_2021.md`, `tools/accept_real_annual_report.py`, `tests/test_annual_report.py` |
+
+## Test evidence
+
+| Commit | Result | Notes |
+|---|---|---|
+| `8281113` (Phase 2b) | 143 passed | Notes reader, pipeline |
+| `ea215ae` (Phase 4 minimal app) | 149 passed | + presentation tests |
+| `02e33f2` (M-06) | 203 passed, 1 skipped | non-PPE status set by the user |
+| `f376e04` (Phase D) | **212 passed, 1 skipped** | statements located in the whole document; 9 annual-report tests |
+| (this commit) acceptance tool | 213 passed, 2 skipped | skipped: real KLBF 2021 annual report not supplied (acceptance PENDING); SIDO amortisation 0 (as before) |
+| (this commit) real annual report | **215 passed, 1 skipped** | real KLBF 2021 annual report acceptance runs and passes; skipped: SIDO amortisation 0 (as before) |
+| ROU-within-PPE guard | **261 passed, 1 skipped** | no double count when ROU is presented within fixed assets; skipped: SIDO amortisation 0 (as before) |
+| Beta: P0-2, bank block, texts (28 Oct 2026) | **291 passed, 1 skipped** | year labels read per statement, score withheld when missing or inconsistent (P0-2); bank/insurer/finance-company statements not scored; Beta label, author credit, approved texts. Behaviour on the 8 test documents identical to the 27 Oct snapshot (values, statuses, flags, M-scores) |
+| Bilingual app texts (27 Oct 2026) | **273 passed, 1 skipped** | one ID/EN text catalogue (`wars_scanner/text.py`); 12 new language tests (`tests/test_text.py`). Values, statuses, pages, flags, review items and M-scores on all 8 test documents identical before and after (behaviour snapshot compared field by field) |
+| `ae794de` (Phase 3) | **195 passed, 1 skipped** | + injected-error tests. Skipped: `test_digit_slip_is_caught[LK_SIDO_2021.pdf-amortization_intangibles-1000-t]`, because SIDO 2021 amortisation is 0 (UNDISCLOSED) and a digit slip on 0 does not apply |
+
+Document tests run only where the non-case test PDFs are available (`WARS_TEST_PDF_DIR`);
+they are identified by SHA-256 in `data/test_documents.csv`.
+
+## App texts: bilingual catalogue (27 Oct 2026)
+
+Every text the user reads comes from `wars_scanner/text.py`: Bahasa Indonesia or English, chosen in
+the app. Decisions applied: UI review r1 (Gail 23 Oct, A–E, 1.7, 7.5, language rule), analysis rules
+B r1, report design R-01 to R-17 where they concern the app. Each catalogue entry records where its
+wording comes from; `text.review_list()` lists the wording **not yet approved** (C6 short drafts and
+texts written during implementation). The engine is unchanged (its reason strings are mapped to the
+catalogue at display time). Displayed list of driver ratios now follows B r1 §3 (only DSRI, GMI, AQI,
+SGI, TATA; push > 0.005); only the −1.78 threshold is shown (M-09 A). The PDF report is not built yet.
+
+## Reading-quality controls: APPROVED (M-12 A, Gail, 23 Oct 2026)
+
+These are technical controls on automatic reading (misread unit, digit slip, swapped
+columns). They are **not** WARS evaluation rules (S1) and **not** workbook rules. Approved with
+the thresholds below. They never change a number and say nothing about the issuer: an ERROR means
+the figures **as read** may be wrong, so the score is withheld until checked.
+
+| Control | Rule | Severity | Effect on the M-score | Basis |
+|---|---|---|---|---|
+| `a_unit_implausible` | total assets × unit outside Rp1 miliar – Rp3.000 triliun | ERROR | Score withheld | Technical control; threshold chosen by Claude |
+| `a_part_exceeds_total` | receivables or cash > current assets; tax payable or current maturities > current liabilities; long-term debt > non-current liabilities | ERROR | Score withheld | Extension of workbook `e_impossible_values` |
+| `a_part_exceeds_total` (SG&A) | SG&A > revenue | REVIEW | Provisional | Technical control |
+| `a_cash_tie` | cash-flow closing cash ≠ balance-sheet cash: equal to the other year's cash (swapped columns) / otherwise different | ERROR / REVIEW | Withheld / provisional | Technical control |
+| `a_year_jump` | one year ≥ 5× the other | REVIEW | Provisional | Technical control; 5× chosen by Claude |
+
+## Methodology decisions (`claude/WARS_Methodology_Decisions_r2.md` in the Project)
+
+- **M-01 APPROVED (22 Oct 2026):** owned + ROU depreciation may be the sum of two printed figures (same
+  period, entity, basis; both pages recorded; BUILT FROM DISCLOSED COMPONENTS; no subtraction). Already
+  the reader's behaviour.
+- **M-06 APPROVED (22 Oct 2026):** the non-PPE status is set by the user per year; the machine shows
+  evidence only; NONE_PRESENT requires the notes examined; the score is held while NOT ASSESSED.
+  **Implemented 23 Oct 2026.**
+- **M-14 DECIDED:** no manual correction of values.
+- **Approved 23 Oct 2026 (Gail: "Setuju 1–6 dengan catatan Claude"),** recorded in
+  `claude/WARS_Methodology_Decisions_r3.md`: Phase D passed (scope: one report); **M-03 A** (FX line
+  excluded from amortisation, REVIEW); **M-08 a, b, c** (port workbook `r_standard_transition`,
+  `r_standard_transition_other`, `r_comparative_label`; detection from disclosures/labels, never from
+  the year); **M-12 A**; **M-15 C with four choices** (Gail, 23 Oct 2026, 11:26: none / goodwill only /
+  indefinite lives only / not disclosed; notes or pages examined required; per year; a user who cannot
+  decide or who found an unread amount leaves it unset and the score stays held: no manual correction, M-14); **G-06 A** (contract assets out of
+  receivables, REVIEW).
+- Still PROPOSED: M-02, M-04, M-05, M-07, M-09, M-10, M-11, M-13.
+
+## Other decisions pending (Gail)
+
+- Clarification of `ppe_depreciation_disclosed` = owned + ROU as the sum of two printed figures
+  (workbook text says owned + ROU and "always a PRINTED figure").
+- KLBF amortisation difference (expense notes > intangible note): kept REVIEW.
+- KLBF 2023 foreign-currency line inside the amortisation block: excluded, REVIEW.
+- Segment D&A aggregate for TATA: not used.
+- Foreign tax: excluded from `taxes_payable` (proposed clarification of D-03).
+- Manual correction of values in the app: **not built** (agreed 22 Oct 2026: keep
+  Belum dicek / Sesuai / Tidak sesuai; a rejected input withholds the score).
+
+## Known limits
+
+- A whole income statement with both year columns swapped consistently is not caught by the
+  cross-checks (only by the header year labels). See `docs/validation.md`.
+- Confirmation in the app is the user's own check, not independent verification.
