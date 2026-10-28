@@ -167,8 +167,9 @@ def finding(r: Result, k: str, confirm=None, lang="id"):
     """B r1 §4: A (figures and pages), C (possible explanations), D (areas for examination), and the
     model's rationale for the 'About this index' fold. Returns dict(a, c, d, why, caveats)."""
     unit = getattr(r.extraction, "unit_scale", None)
+    ccy = getattr(r.extraction, "currency", None) or "IDR"
     fy = getattr(r.extraction, "fiscal_year", None)
-    m = lambda v: Money(v, unit) if v is not None else Raw("—")        # noqa: E731
+    m = lambda v: Money(v, unit, currency=ccy) if v is not None else Raw("—")        # noqa: E731
     push = next(x["push_vs_neutral"] for x in index_rows(r, lang) if x["index"] == k)
     idx, pu = Num(r.calc.get(k), 2), Num(push, 2, True)
     g = lambda f, c="t": _val(r, f, c)                                   # noqa: E731
@@ -197,7 +198,7 @@ def finding(r: Result, k: str, confirm=None, lang="id"):
             return (a_ or 0) - (b_ or 0)
         d_ca = d("current_assets") - d("cash_and_cash_equivalents")
         d_cl = d("current_liabilities") - d("current_maturities_long_term_debt") - d("taxes_payable")
-        common = dict(tata=Pct(r.calc.get("TATA")), d_ca=Money(d_ca, unit, True), d_cl=Money(d_cl, unit, True),
+        common = dict(tata=Pct(r.calc.get("TATA")), d_ca=Money(d_ca, unit, True, ccy), d_cl=Money(d_cl, unit, True, ccy),
                       da=m(g("depreciation_amortization_total")), p_ca=_page(r, "current_assets"))
         ni, cfo = g("net_income"), g("cash_flow_from_operations")
         if ni is not None and cfo is not None:
@@ -307,6 +308,10 @@ def verdict(r: Result, confirm=None, lang="id", reviewer="", provisional_note=Tr
         return (t("v.unusable", lang),
                 t("v.rejected_detail", lang, name=Raw(who), n=confirm["bad"], items=Raw(names)), "none")
     m = r.m_score
+    inv = (getattr(r.extraction, "non_ppe_evidence", None) or {}).get("invprop_face")
+    if m is None and r.status == "AWAITING NON-PPE STATUS" and inv:
+        return (t("v.withheld", lang), t("v.held_invprop", lang, p=inv["page"], years=_years(r.non_ppe_pending, lang)),
+                "none")
     if m is None and r.status == "AWAITING NON-PPE STATUS":
         return (t("v.withheld", lang), t("v.held_nonppe", lang, years=_years(r.non_ppe_pending, lang),
                                          section=t("np.title", lang)), "none")

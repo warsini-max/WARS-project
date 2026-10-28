@@ -8,7 +8,7 @@ provisional until the user has checked them.
 from __future__ import annotations
 
 import copy
-import re
+
 from dataclasses import dataclass, field, replace
 
 from . import company, engine, validation
@@ -81,12 +81,9 @@ class Result:
 
 
 def _currency(ex: Extraction):
-    head = " ".join(ln.text for s in ex.statements.values() for ln in s.lines[:25]).lower()
-    if re.search(r"dolar|dollar|us\$", head):
-        return None                       # not supported yet: leave blank (basis not specified)
-    if "rupiah" in head:
-        return "IDR"
-    return None
+    """IDR or USD as read from the statement headings (P4, Gail 28 Oct 2026); otherwise blank (basis not
+    specified, so the engine does not calculate)."""
+    return getattr(ex, "currency", None)
 
 
 def build_inputs(ex: Extraction, ticker: str = "UPLOAD", doc_version: int = 1):
@@ -322,6 +319,11 @@ def apply_provisional(r: Result) -> Result:
         assumed.append(("amortization_intangibles", c, note))
     ex = replace(r.extraction, values=values)
     r = replace(r, extraction=ex, inputs=p, review=review, missing=missing)
+    # P8 (28 Oct 2026): investment property on the face whose depreciation was not read is never taken
+    # as 0; that year stays NOT ASSESSED and the score is withheld (verdict v.held_invprop).
+    ev = r.extraction.non_ppe_evidence or {}
+    if ev.get("invprop_face"):
+        np_years = [c for c in np_years if c in ev.get("amounts_read", {})]
     if np_years:
         r = apply_non_ppe_decisions(r, {c: {"status": "PARTIAL_UNDISCLOSED", "notes": []} for c in np_years})
         read_amounts = (r.extraction.non_ppe_evidence or {}).get("amounts_read", {})

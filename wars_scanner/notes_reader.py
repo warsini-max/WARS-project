@@ -36,7 +36,25 @@ def _year_header(ln, fiscal_year=None):
     """{"t"/"t1": (year, x-centre)} when the line is a column header such as '2021 2020' or
     '31 Desember 2021/ 31 Desember 2020/'. A one-year header ('2020', first year of a new
     standard) is accepted when the fiscal year is known."""
-    if not ln.words or not all(HEADER_WORD.match(w.text.strip()) for w in ln.words):
+    if not ln.words:
+        return None
+    digits = [w.text.strip() for w in ln.words]
+    if len(digits) in (4, 8) and all(re.match(r"^\d$", d) for d in digits):     # "2 0 2 1   2 0 2 0"
+        cols, order = {}, []
+        for k in range(0, len(digits), 4):
+            y = int("".join(digits[k:k + 4]))
+            if not 2000 <= y <= 2099:
+                return None
+            cols.setdefault(y, (ln.words[k].x0 + ln.words[k + 3].x1) / 2)
+            order.append(y)
+        years = sorted(cols, reverse=True)
+        if len(years) == 2 and years[0] - years[1] == 1:
+            return {"t": (years[0], cols[years[0]]), "t1": (years[1], cols[years[1]]), "t_first": order[0] == years[0]}
+        if len(years) == 1 and fiscal_year in (years[0], years[0] + 1):
+            side = "t" if years[0] == fiscal_year else "t1"
+            return {side: (years[0], cols[years[0]]), "t_first": True}
+        return None
+    if not all(HEADER_WORD.match(w.text.strip()) for w in ln.words):
         return None
     cols = {}
     for w in ln.words:
@@ -164,20 +182,21 @@ def note_lines(lines, fiscal_year=None):
 class PageCache:
     """Word-level lines of note pages, parsed on demand, with figures assigned to t / t-1."""
 
-    def __init__(self, plumber_pdf, pdf_path, fiscal_year=None, text=None, notes_start=None):
+    def __init__(self, plumber_pdf, pdf_path, fiscal_year=None, text=None, notes_start=None, fmt="dot"):
         self.pdf = plumber_pdf
+        self.fmt = fmt
         self.fiscal_year = fiscal_year
         self.notes_start = notes_start
         if text is None:
             doc = pdfium.PdfDocument(str(pdf_path))
-            text = [doc[i].get_textpage().get_text_range() for i in range(len(doc))]
+            text = [doc[i].get_textpage().get_text_range().replace("\ufffe", "") for i in range(len(doc))]
             doc.close()
         self.text = text
         self._lines = {}
 
     def lines(self, p):
         if p not in self._lines:
-            self._lines[p] = note_lines(_lines(self.pdf.pages[p - 1], p), self.fiscal_year)
+            self._lines[p] = note_lines(_lines(self.pdf.pages[p - 1], p, self.fmt), self.fiscal_year)
         return self._lines[p]
 
     def pages_matching(self, *patterns, start=1):
@@ -275,6 +294,10 @@ def allocation_tables(cache, first_note_page):
                 if _complete(nxt):
                     if re.match(r"^(total|jumlah)\b", nl):
                         total = nxt
+                        break
+                    if not nl and len(comps) >= 2 and all(
+                            sum(x.amounts.get(c, 0) for x in comps) == nxt.amounts[c] for c in nxt.amounts):
+                        total = nxt                     # total line printed without a label (FASW 2021)
                         break
                     comps.append(nxt)
                 elif nxt.label and not nxt.amounts and ALLOC_TITLE.search(nl):
@@ -548,7 +571,106 @@ def note_headings(cache, first_note_page):
     return [{"heading": h, "page": p} for _, (h, p) in sorted(out.items())]
 
 
-def non_ppe_evidence(cache, first_note_page, invprop_table):
+INVPROP_FACE = re.compile(r"^properti investasi\b")
+INVPROP_SENTENCE = re.compile(
+    r"(?:beban\s+)?penyusutan\s+(?:atas\s+|untuk\s+)?properti\s+investasi[^;]{0,400}?(?:sebesar|adalah)", re.I | re.S)
+INVPROP_FAIR_VALUE = re.compile(r"properti investasi[^.]{0,250}?(model nilai wajar|fair value model|diukur (?:pada|sebesar|dengan) "
+                                r"nilai wajar)", re.I | re.S)
+
+
+MONEY_TOKEN = re.compile(r"(?<![\d.,])\(?\d{1,3}(?:[.,]\d{3})+\)?(?![\d,]|\.\d)")
+
+
+def sentence_pair(after, context=""):
+    """The two amounts of a disclosure sentence ("... masing-masing sebesar Rp X dan Rp Y ..."), read from
+    the text that follows 'sebesar'. Bilingual pages interleave the Indonesian and English sentences, so
+    the same amount can appear twice (1.327.297.173 and 1,327,297,173): figures are compared by value
+    and the first two distinct values are taken. Dots or commas both read as thousands separators,
+    because only figures with at least one full group of three digits are taken. The years named in
+    the sentence decide the order (default: current year first). Returns {"t": x, "t1": y} or {}."""
+    vals = []
+    for tok in MONEY_TOKEN.findall(after):
+        t = tok.strip("()")
+        sep = "." if "." in t else ","
+        if ("." in t) and ("," in t):
+            continue
+        v = int(t.replace(sep, ""))
+        if v not in vals:
+            vals.append(v)
+        if len(vals) == 2:
+            break
+    if len(vals) < 2:
+        return {}
+    years = [int(y) for y in re.findall(r"\b(20\d\d)\b", context + " " + after[:400])]
+    first_older = len(years) >= 2 and years[0] < years[1] and years[1] - years[0] == 1
+    return {"t": vals[1], "t1": vals[0]} if first_older else {"t": vals[0], "t1": vals[1]}
+
+
+PPE_DEP_SENTENCE = re.compile(r"penyusutan\b(?![^.]{0,60}(properti investasi|hak guna|hak-guna|tak ?berwujud))"
+                              r"[^.]{0,250}?(?:dibebankan|dialokasikan|dicatat)[^.]{0,300}?sebesar", re.I | re.S)
+
+
+def ppe_depreciation_sentence(cache, first_note_page, face_ppe):
+    """Trial 1 (KOIN 2021): owned-PPE depreciation given only in a sentence of the fixed-asset note,
+    "Penyusutan dibebankan pada beban umum dan administrasi masing-masing sebesar Rp X dan Rp Y".
+    Accepted only when each amount lies between 0,05% and 100% of the fixed assets on the face for
+    that year (a figure in another unit fails). Returns (values {t, t1}, page, quote) or None."""
+    for i in range(first_note_page, len(cache.text) + 1):
+        raw = cache.text[i - 1]
+        if not re.search(r"(?i)aset tetap", raw):
+            continue
+        txt = " ".join(raw.split())
+        for m in PPE_DEP_SENTENCE.finditer(txt):
+            got = sentence_pair(txt[m.end():m.end() + 260], txt[max(0, m.start() - 200):m.end()])
+            ok = got and all(face_ppe.get(c) and 0.0005 * face_ppe[c] <= got[c] <= face_ppe[c] for c in got)
+            if ok:
+                return got, i, txt[m.start():m.end() + 80]
+    return None
+
+
+INVPROP_COST = re.compile(r"properti investasi[^.]{0,250}?(model biaya|cost model|biaya perolehan dikurangi akumulasi)", re.I | re.S)
+
+
+def invprop_face_line(statements):
+    """Investment property on the face of the statement of financial position (any year above 0)."""
+    pos = statements.get("position")
+    for ln in (pos.lines if pos else []):
+        lab = _norm(ln.full_label or ln.label)
+        if (INVPROP_FACE.search(_norm(ln.label)) or re.search(r"(?:^|\s)properti investasi\b", lab)) \
+                and ln.amounts and any(abs(v) > 0 for v in ln.amounts.values()):
+            return ln
+    return None
+
+
+def invprop_depreciation(cache, first_note_page, face_ln):
+    """Trial 1, P8 (approved 28 Oct 2026): read the depreciation of investment property when no
+    allocation table gives it. Two sources, both REVIEW:
+      - the policy says investment property is measured at fair value: no depreciation (PSAK 213), 0;
+      - a sentence "Beban penyusutan properti investasi ... sebesar Rp X dan Rp Y".
+    A sentence amount is accepted only when it lies between 0,1% and 20% of the carrying amount on
+    the face for that year: a figure written in another unit (full Rupiah against statements in
+    thousands) fails this test and is not used. Returns ({column: amount}, source Msg) or ({}, "")."""
+    cost_on_face = bool(face_ln is not None and "akumulasi penyusutan" in _norm(face_ln.full_label or face_ln.label))
+    for i in range(first_note_page, len(cache.text) + 1):
+        txt = " ".join(cache.text[i - 1].split())
+        m = INVPROP_FAIR_VALUE.search(txt)
+        if m and not cost_on_face and not INVPROP_COST.search(txt):
+            return {"t": 0, "t1": 0}, Msg("np.source_fv", p=i, text=Raw(txt[m.start():m.end()][:90]))
+    for i in range(first_note_page, len(cache.text) + 1):
+        txt = " ".join(cache.text[i - 1].split())
+        for m in INVPROP_SENTENCE.finditer(txt):
+            pair = sentence_pair(txt[m.end():m.end() + 260], txt[max(0, m.start() - 200):m.end()])
+            got = {}
+            for c, v in pair.items():
+                carrying = abs(face_ln.amounts.get(c) or 0) if face_ln else 0
+                if carrying and 0.001 * carrying <= v <= 0.2 * carrying:
+                    got[c] = v
+            if got:
+                return got, Msg("np.source", p=i, text=Raw(txt[m.start():m.end() + 80][:110]))
+    return {}, ""
+
+
+def non_ppe_evidence(cache, first_note_page, invprop_table, statements=None):
     """What the machine searched and found for the three non-PPE groups of Q6. Never a status."""
     groups = []
     for key, label, rx in NON_PPE_GROUPS:
@@ -556,15 +678,18 @@ def non_ppe_evidence(cache, first_note_page, invprop_table):
         for p in cache.pages_matching("(?i)" + rx, start=first_note_page):
             for raw in cache.text[p - 1].splitlines():
                 if re.search(rx, raw, re.I):
-                    has_amount = bool(re.search(r"\d{1,3}(\.\d{3}){1,}", raw))
+                    has_amount = bool(re.search(r"\d{1,3}([.,]\d{3}){1,}", raw))
                     hits.append({"page": p, "text": raw.strip()[:160], "with_amount": has_amount})
         groups.append({"key": key, "label": label, "found": bool(hits), "hits": hits[:8], "n_hits": len(hits)})
-    amounts = {}
+    amounts, source = {}, ""
     if invprop_table:
         amounts = {c: abs(v) for c, v in invprop_table["total"].amounts.items()}
-    return {"groups": groups, "amounts_read": amounts,
-            "amount_source": (Msg("np.source", p=invprop_table["page"], text=Raw(invprop_table["total"].text[:80]))
-                              if invprop_table else ""),
+        source = Msg("np.source", p=invprop_table["page"], text=Raw(invprop_table["total"].text[:80]))
+    face = invprop_face_line(statements or {})
+    if face is not None and not amounts:
+        amounts, source = invprop_depreciation(cache, first_note_page, face)
+    return {"groups": groups, "amounts_read": amounts, "amount_source": source,
+            "invprop_face": {"page": face.page, "text": face.text[:90]} if face is not None else None,
             "notes": note_headings(cache, first_note_page)}
 
 
@@ -638,8 +763,15 @@ def read_notes(cache, statements, face_values):
         return out
 
     ppe, rou, intang_t, invprop = pick("PPE"), pick("ROU"), pick("INTANGIBLE"), pick("INVESTMENT_PROPERTY")
+    face_ppe = {v.column: v.value for v in face_values if v.field == "property_plant_equipment_net" and v.value}
+    sent = None if ppe else ppe_depreciation_sentence(cache, first_note, face_ppe)
     if ppe:
         values += table_values("ppe_depreciation_owned", ppe, "note.alloc_ppe")
+    elif sent:
+        got, pg, quote = sent
+        for c in ("t", "t1"):
+            values.append(Value("ppe_depreciation_owned", c, got[c], "REVIEW", [pg], [quote],
+                                note=Msg("note.ppe_dep_sentence")))
     else:
         values += _missing("ppe_depreciation_owned", "NOT FOUND", Msg("note.alloc_none"))
     if rou:
@@ -727,7 +859,7 @@ def read_notes(cache, statements, face_values):
     # --- other (non-PPE) depreciation: evidence only (M-06, approved 22 Oct 2026)
     # The machine never sets the status and never enters 0 because nothing was found. It reports
     # what it searched and found; the user sets the status per year (Q6). Until then: NOT ASSESSED.
-    evidence = non_ppe_evidence(cache, first_note, invprop)
+    evidence = non_ppe_evidence(cache, first_note, invprop, statements)
     for c in ("t", "t1"):
         values.append(Value("depreciation_amortization_non_ppe", c, None, "NOT ASSESSED",
                             note=Msg("note.nonppe_not_assessed")))

@@ -87,17 +87,28 @@ class Pct:
 
 @dataclass(frozen=True)
 class Money:
-    """Amount with the report's unit: Rp3.335.411 juta / IDR 3,335,411 million; a change may carry its sign."""
+    """Amount with the report's unit: Rp3.335.411 juta / IDR 3,335,411 million; a change may carry its sign.
+    Reports presented in US dollars (P4, Gail 28 Oct 2026) show USD in both languages."""
     value: float
     unit: str | None
     sign: bool = False
+    currency: str | None = "IDR"
 
     def render(self, lang, codes=False):
         n = fmt_number(abs(self.value), lang, 0)
         word = {"id": {"Thousands": " ribu", "Millions": " juta", "Billions": " miliar"},
                 "en": {"Thousands": " thousand", "Millions": " million", "Billions": " billion"}}[lang].get(self.unit, "")
         pre = "−" if self.value < 0 else ("+" if self.sign and self.value > 0 else "")
+        if self.currency == "USD":
+            return pre + f"USD {n}{word}"
         return pre + (f"Rp{n}{word}" if lang == "id" else f"IDR {n}{word}")
+
+
+def unit_msg(unit, currency=None):
+    """The presentation unit as a catalogue message, per currency."""
+    if not unit:
+        return Msg("unit.unknown")
+    return Msg(f"unit.USD.{unit}" if currency == "USD" else f"unit.{unit}")
 
 
 @dataclass(frozen=True)
@@ -1137,6 +1148,33 @@ CATALOG: dict = {
     "ui.res.another": _e("Analisis laporan lain", "Analyse another report", "Gail 28 Okt desain"),
     "ui.res.meta": _e("Tahun buku {t} vs {t1} · {stype} · {unit} · {pages} halaman",
                       "Financial year {t} vs {t1} · {stype} · {unit} · {pages} pages", "Gail 28 Okt desain"),
+    "unit.USD.Units": _e("Dolar AS", "US dollars", "Gail 28 Okt P4"),
+    "unit.USD.Thousands": _e("ribuan Dolar AS", "thousands of US dollars", "Gail 28 Okt P4"),
+    "unit.USD.Millions": _e("jutaan Dolar AS", "millions of US dollars", "Gail 28 Okt P4"),
+    "unit.USD.Billions": _e("miliaran Dolar AS", "billions of US dollars", "Gail 28 Okt P4"),
+    "note.debt_nil_g24": _e("Nihil karena tidak ada baris utang berbunga di bagian ini, neraca seimbang di kedua tahun, "
+                            "dan tidak ada catatan pinjaman jangka panjang, obligasi atau sewa; periksa di PDF",
+                            "Nil because the section has no interest-bearing line, the balance sheet balances in both "
+                            "years, and no note covers long-term borrowings, bonds or leases; check in the PDF",
+                            "new", "G-24"),
+    "note.ppe_dep_sentence": _e("Penyusutan aset tetap milik diambil dari kalimat di catatan aset tetap (tidak ada tabel "
+                                "alokasi); periksa angkanya di halaman tersebut",
+                                "Owned-PPE depreciation taken from a sentence in the fixed-asset note (no allocation "
+                                "table); check the figures on that page", "new"),
+    "np.source_fv": _e("hal. {p}: properti investasi diukur dengan model nilai wajar, sehingga tidak disusutkan: \"{text}\"",
+                       "p. {p}: investment property is measured under the fair value model, so it is not depreciated: "
+                       "\"{text}\"", "new"),
+    "v.held_invprop": _e(
+        "Properti investasi ada di laporan posisi keuangan (hal. {p}), tetapi penyusutannya tidak terbaca dari catatan "
+        "atas laporan keuangan untuk {years}. M-score ditahan, karena menganggapnya 0 dapat membuat skor salah.",
+        "Investment property is on the statement of financial position (p. {p}), but its depreciation could not be "
+        "read from the notes for {years}. The M-score is withheld, because taking it as 0 could make the score "
+        "wrong.", "new"),
+    "issue.number_format": _e(
+        "Format angka tidak dapat dipastikan: laporan utama memakai titik dan koma sebagai pemisah ribuan secara "
+        "bercampur. Angka tidak dibaca, karena salah pemisah mengubah nilai seribu kali lipat.",
+        "The number format could not be determined: the primary statements mix dots and commas as thousands "
+        "separators. No figure was read, because a wrong separator changes amounts a thousandfold.", "new"),
     "ui.res.meta_file": _e("{name} · {pages} halaman", "{name} · {pages} pages", "new"),
     "ui.res.stype.Consolidated": _e("Laporan keuangan konsolidasian", "Consolidated financial statements",
                                     "Gail 28 Okt 11.01"),

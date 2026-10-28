@@ -23,19 +23,20 @@ from .text import Amt, Msg, Pages, Psak, Raw, join
 
 AMOUNT_DOTTED = re.compile(r"^\(?-?\d{1,3}(?:\.\d{3})+\)?$")
 AMOUNT_SMALL = re.compile(r"^\(?-?\d{1,3}\)?$")
-NIL = {"-", "–", "—"}
+NIL = {"-", "–", "—", "--"}
 SCANNED_MIN_CHARS = 20          # a page with fewer non-space characters has no usable text layer
 STATEMENT_WINDOW = 15           # the three primary statements lie within this many pages of each other
 NOTES_WITHIN = 10               # the notes (CALK) start within this many pages after the last statement
-NOTE_REF = re.compile(r"^\d{1,2}[a-z]?(?:,\s?\d{1,2}[a-z]?)*,?$", re.I)
+NOTE_REF = re.compile(r"^\d{1,2}(?:\.?[a-z])?(?:\s?[,&]\s?\d{1,2}(?:\.?[a-z])?)*,?$", re.I)
 
 
 @dataclass
 class Word:
-    text: str
+    text: str                   # as read; figures normalised to the dot-thousands form (see number_format)
     x0: float
     x1: float
     top: float
+    raw: str = ""               # the text exactly as printed (quotes always use this)
 
 
 @dataclass
@@ -49,7 +50,7 @@ class Line:
 
     @property
     def text(self):
-        return " ".join(w.text for w in self.words)
+        return " ".join(w.raw or w.text for w in self.words)
 
 
 @dataclass
@@ -88,6 +89,8 @@ class Extraction:
     transition: dict = field(default_factory=dict)         # M-08 package: transition / restated-comparative inputs + evidence
     year_labels: dict = field(default_factory=dict)        # P0-2: per statement {year, t_first, page, quote}; year None = not read
     financial_institution: list = field(default_factory=list)  # bank / insurer line items found on the face (page, label)
+    number_format: str = "dot"                             # thousands separator of the figures: dot / comma / mixed
+    currency: Optional[str] = None                         # IDR / USD from the statement headings; None = not read
 
 
 # ------------------------------------------------------------------------------------- parsing
@@ -104,8 +107,59 @@ def parse_amount(text: str) -> Optional[int]:
     return -v if neg or t.startswith("-") else v
 
 
-def _lines(page, page_no):
-    words = [Word(w["text"], w["x0"], w["x1"], w["top"]) for w in page.extract_words(keep_blank_chars=False)]
+DOT_MULTI = re.compile(r"(?<![\d.,])\(?\d{1,3}(?:\.\d{3}){2,}\)?(?![\d.,])")
+COMMA_MULTI = re.compile(r"(?<![\d.,])\(?\d{1,3}(?:,\d{3}){2,}\)?(?![\d.,])")
+COMMA_AMOUNT = re.compile(r"^(\(?-?)(\d{1,3}(?:,\d{3})+)(\)?)$")
+DOT_DECIMAL = re.compile(r"^\(?-?\d+\.\d+\)?$")
+
+
+def number_format(texts):
+    """Thousands separator of the figures in the primary statements (Trial 1, 28 Oct 2026).
+
+    IDX reports print 1.234.567 (Indonesian style) or 1,234,567 (English style). Only figures with
+    two or more groups are counted, because "22,31" (note references) or "1.234" are ambiguous.
+    Returns "dot", "comma", or "mixed" when neither style clearly dominates (the figures are then
+    not read: a wrong separator would multiply or divide every amount by 1,000)."""
+    joined = "\n".join(texts)
+    dots, commas = len(DOT_MULTI.findall(joined)), len(COMMA_MULTI.findall(joined))
+    if commas >= 5 and commas >= 4 * dots:
+        return "comma"
+    if dots >= 5 and dots >= 4 * commas or commas < 5:
+        return "dot"
+    return "mixed"
+
+
+UNBALANCED_CLOSE = re.compile(r"(?<![(\d.,])\d{1,3}(?:[.,]\d{3})+\)")
+BALANCED = re.compile(r"\(\d{1,3}(?:[.,]\d{3})+\)")
+
+
+def paren_artifact(texts):
+    """Some PDFs print a closing bracket after every positive figure ("145.027)") because of the
+    accounting number format; their text layer then shows unbalanced brackets. Detected per document."""
+    joined = "\n".join(texts)
+    un, bal = len(UNBALANCED_CLOSE.findall(joined)), len(BALANCED.findall(joined))
+    return un >= 10 and un >= bal
+
+
+def _normalise(text, fmt):
+    """In an English-style report, rewrite figures to the dot form the reader parses: 1,234,567 ->
+    1.234.567. A dot there is a decimal point (2.50 per share), so such a token is made unreadable as
+    an amount instead of being taken for thousands. The printed text is kept in Word.raw."""
+    if fmt.endswith("+paren") and re.match(r"^-?\d{1,3}(?:[.,]\d{3})*\)$", text):
+        text = text[:-1]                              # "145.027)" -> "145.027" (format artefact)
+    if not fmt.startswith("comma"):
+        return text
+    m = COMMA_AMOUNT.match(text)
+    if m:
+        return m.group(1) + m.group(2).replace(",", ".") + m.group(3)
+    if DOT_DECIMAL.match(text):
+        return text.replace(".", "·")
+    return text
+
+
+def _lines(page, page_no, fmt="dot"):
+    words = [Word(_normalise(w["text"], fmt), w["x0"], w["x1"], w["top"], w["text"])
+             for w in page.extract_words(keep_blank_chars=False)]
     words.sort(key=lambda w: (round(w.top), w.x0))
     out, cur = [], []
     for w in words:
@@ -134,7 +188,7 @@ def _merge_split_numbers(words):
         if out and NUMERIC_PIECE.match(out[-1].text) and NUMERIC_PIECE.match(w.text) and w.x0 - out[-1].x1 < 1.5:
             joined = out[-1].text + w.text
             if AMOUNT_DOTTED.match(joined.strip("()")):
-                out[-1] = Word(joined, out[-1].x0, w.x1, out[-1].top)
+                out[-1] = Word(joined, out[-1].x0, w.x1, out[-1].top, (out[-1].raw or out[-1].text) + (w.raw or w.text))
                 continue
         out.append(w)
     return out
@@ -200,7 +254,10 @@ def _assign_amounts(line, notes_x=None, t_first=True, amount_left=None):
         if txt in NIL and not seen_number and re.match(r"^[A-Za-z(]", nxt):
             label_words.append(w)
             continue
-        if prev.startswith("rp") and parse_amount(txt) is not None:
+        in_paren = prev.count("(") > prev.count(")") or (txt.endswith(")") and not txt.startswith("(")
+                                                         and any("(" in x.text and ")" not in x.text for x in words[max(0, i - 3):i]))
+        if (re.search(r"(^|[(:])(rp\.?|usd|us\$)$", prev) or (in_paren and re.search(r"\d{4}|rp|usd", prev))) \
+                and parse_amount(txt) is not None:
             if not seen_number:
                 label_words.append(w)
             continue
@@ -266,14 +323,37 @@ def _year_header(lines):
     """(year t, t is the first column, the header line) from the year labels at the top of a statement."""
     for ln in lines[:40]:
         years = [int(m.group()) for w in ln.words for m in [re.search(r"20\d\d", w.text)] if m]
+        if len(set(years)) < 2:          # years printed with spaced digits: "2 0 2 1   2 0 2 0"
+            spaced = re.findall(r"(?<!\d)2 0 (\d) (\d)(?!\d)", ln.text)
+            years = [2000 + int(a + b) for a, b in spaced] if len(spaced) >= 2 else years
         distinct = list(dict.fromkeys(years))
         if len(distinct) >= 2 and abs(distinct[0] - distinct[1]) == 1:
             return max(distinct[0], distinct[1]), distinct[0] > distinct[1], ln
     return None, True, None
 
 
+USD = re.compile(r"dolar amerika|dollar amerika|united states dollars?|u\.?s\.? dollars?|\bus\$|\busd\b")
+
+
+def _currency(text):
+    """Presentation currency from the statement headings (P4, Gail 28 Oct 2026: US dollars accepted)."""
+    t = text.lower()
+    usd, idr = bool(USD.search(t)), "rupiah" in t
+    if usd and not idr:
+        return "USD"
+    if idr and not usd:
+        return "IDR"
+    return None                      # neither, or both named in the heading: not decided here
+
+
 def _unit_scale(text):
     t = text.lower()
+    if re.search(r"(ribuan|thousands of) (dolar|dollar|us|united states)", t):
+        return "Thousands"
+    if re.search(r"(jutaan|millions of) (dolar|dollar|us|united states)", t):
+        return "Millions"
+    if re.search(r"dalam (dolar|dollar) amerika|in (us|united states) dollars?|expressed in (us|united states) dollars?", t):
+        return "Units"
     if "jutaan rupiah" in t or "millions of" in t:
         return "Millions"
     if "ribuan rupiah" in t or "thousands of" in t:
@@ -289,7 +369,8 @@ def _unit_scale(text):
 
 def _norm(s):
     s = s.lower().replace("–", "-").replace(",", " ")
-    return re.sub(r"\s+", " ", s).strip(" :")
+    s = re.sub(r"\s+", " ", s).strip(" :")
+    return re.sub(r"^-\s+", "", s)                  # "- Pihak Ketiga - Bersih" (list dash)
 
 
 FACE_RULES = [
@@ -299,7 +380,7 @@ FACE_RULES = [
     ("net_income", "profit_loss", r"^(laba|rugi|laba \(rugi\)|laba/rugi) (neto |bersih )?tahun berjalan$", "FOUND"),
     ("total_assets", "position", r"^(total|jumlah) aset$", "FOUND"),
     ("current_assets", "position", r"^(total|jumlah) aset lancar$", "FOUND"),
-    ("cash_and_cash_equivalents", "position", r"^kas dan (setara kas|bank)$", "FOUND"),
+    ("cash_and_cash_equivalents", "position", r"^kas dan (setara kas|bank)$|^kas$", "FOUND"),
     ("property_plant_equipment_net", "position", r"^aset tetap( -)?( neto| bersih)?$|^aset tetap - setelah dikurangi akumulasi", "REVIEW"),
     ("current_liabilities", "position", r"^(total|jumlah) liabilitas jangka pendek$", "FOUND"),
     ("total_liabilities", "position", r"^(total|jumlah) liabilitas$", "FOUND"),
@@ -329,6 +410,43 @@ def _value_pair(field_name, ln, status, note=""):
     return out
 
 
+def _revenue_line(lines, pattern):
+    """Revenue on one line, or a 'Pendapatan' heading followed by its components and a subtotal
+    ('Subjumlah' / 'Jumlah pendapatan') within eight lines. The gross-profit check confirms it."""
+    ln = _first(lines, pattern)
+    if ln:
+        return ln
+    rx = re.compile(pattern)
+    for i, h in enumerate(lines):
+        if h.amounts or not rx.search(_norm(h.label)):
+            continue
+        for nxt in lines[i + 1:i + 9]:
+            nl = _norm(nxt.label)
+            if re.match(r"^(sub ?jumlah|sub ?total|jumlah|total)( pendapatan| penjualan)?( neto| bersih)?$", nl) \
+                    and "t" in nxt.amounts and "t1" in nxt.amounts:
+                return nxt
+            if re.match(r"^(beban|harga) pokok|^laba", nl):
+                break
+    return None
+
+
+def _net_income_line(lines, pattern):
+    """'Laba tahun berjalan', or a bare '(Rugi) laba' / 'Laba (rugi)' line right after the income-tax line."""
+    ln = _first(lines, pattern)
+    if ln:
+        return ln
+    after_tax = False
+    for ln in lines:
+        nl = _norm(ln.full_label or ln.label)
+        if re.search(r"(beban|manfaat).{0,20}pajak penghasilan|pajak penghasilan.{0,10}(neto|bersih)?$", nl) and ln.amounts:
+            after_tax = True
+            continue
+        if after_tax and "t" in ln.amounts and "t1" in ln.amounts and re.match(
+                r"^(\(rugi\) laba|laba \(rugi\)|laba|rugi)( neto| bersih)?( tahun berjalan)?$", _norm(ln.label)):
+            return ln
+    return None
+
+
 def _cfo_line(lines):
     for ln in lines:
         lab = _norm(ln.label)
@@ -337,6 +455,40 @@ def _cfo_line(lines):
     # labels split over two lines: "Kas Neto Diperoleh dari" / "Aktivitas Operasi 1.199.317"
     for ln in lines:
         if re.search(r"^aktivitas operasi$", _norm(ln.label)) and "t" in ln.amounts:
+            return ln
+    # Trial 1: "Kas neto dari aktivitas" / "operasi 171.116": the label wrapped anywhere
+    for ln in lines:
+        full = _norm(ln.full_label)
+        if "t" in ln.amounts and re.search(r"(kas|arus kas) (neto|bersih)\b[^.]{0,40}aktivitas operasi$", full):
+            return ln
+    return None
+
+
+PPE_WRAPPED = re.compile(r"(?:^|\s)aset tetap\s*-?\s*(setelah dikurangi|neto|bersih)")
+NOT_PPE_BEFORE = re.compile(r"(uang muka|pembelian|untuk dijual|pengampunan|tersedia untuk|dalam penyelesaian)\s*$")
+
+
+def _ppe_line(lines, pattern):
+    """Fixed assets on the face. The label is often wrapped over several lines ("Aset Tetap - Setelah
+    Dikurangi / Akumulasi Penyusutan sebesar Rp ... / ... 175.367.937.126"); the figures are on the
+    last line. The wrapped label must contain 'aset tetap' followed by net-of-depreciation wording,
+    and must not be another item that names fixed assets (advances for, assets held for sale)."""
+    ln = _first(lines, pattern)
+    if ln:
+        return ln
+    for i, ln in enumerate(lines):
+        if "t" not in ln.amounts or "t1" not in ln.amounts:
+            continue
+        back = []
+        for prev in reversed(lines[max(0, i - 8):i]):
+            if prev.amounts:
+                break
+            back.insert(0, prev.label)
+        full = _norm(" ".join(back + [ln.label]))
+        m = None
+        for m in PPE_WRAPPED.finditer(full):
+            pass
+        if m and not NOT_PPE_BEFORE.search(full[:m.start()]):
             return ln
     return None
 
@@ -403,26 +555,67 @@ def _debt(lines):
     """
     lt, cm, excluded, section = [], [], [], None
     interest = re.compile(r"(utang|pinjaman) bank|pinjaman|obligasi|sukuk|liabilitas sewa|utang sewa|wesel bayar|medium term notes|mtn")
-    for ln in lines:
+    figs = lambda x: "t" in x.amounts or "t1" in x.amounts                    # noqa: E731
+    seen = {"current": False, "noncurrent": False}
+    for i, ln in enumerate(lines):
         lab = _norm(ln.full_label or ln.label)
-        if re.search(r"^liabilitas jangka pendek\b", _norm(ln.label)) and not ln.amounts:
+        # section headings may wrap: "LIABILITAS JANGKA" / "PENDEK" (BIRD 2021)
+        own = _norm(ln.label)
+        if not figs(ln) and re.search(r"^liabilitas jangka$", own) and i + 1 < len(lines) and not figs(lines[i + 1]):
+            own = own + " " + _norm(lines[i + 1].label)
+        if re.search(r"^liabilitas jangka pendek\b", own) and not figs(ln):
             section = "current"
+            seen["current"] = True
             continue
-        if re.search(r"^liabilitas jangka panjang\b", _norm(ln.label)) and not ln.amounts:
-            section = "noncurrent"
+        if re.search(r"^liabilitas jangka panjang\b", own) and not figs(ln):
+            nxt = " ".join(_norm(x.label) for x in lines[i + 1:i + 3] if not figs(x))
+            heading = _norm(ln.label) + " " + nxt
+            if section == "current" and re.search(r"jatuh tempo dalam (waktu )?(satu|1) tahun|bagian (lancar|jangka pendek)", heading) \
+                    and "setelah dikurangi" not in heading:
+                section = "current_maturities"        # sub-heading of current liabilities
+            else:
+                section = "noncurrent"
+                seen["noncurrent"] = True
             continue
-        if re.search(r"^(total|jumlah) liabilitas", _norm(ln.label)) or re.search(r"^ekuitas", _norm(ln.label)):
+        if re.search(r"^(total|jumlah) liabilitas", _norm(ln.full_label or ln.label)) and figs(ln) \
+                or re.search(r"^ekuitas", _norm(ln.label)):
             section = None
             continue
         if section is None or not ("t" in ln.amounts or "t1" in ln.amounts) or not interest.search(lab):
             continue
         if section == "noncurrent":
             lt.append(ln)
+        elif section == "current_maturities":
+            cm.append(ln)
         elif re.search(r"bagian (lancar|yang jatuh tempo|jangka pendek)|jatuh tempo dalam (waktu )?(satu|1) tahun|sewa", lab):
             cm.append(ln)
         else:
             excluded.append(ln)
-    return lt, cm, excluded
+    return lt, cm, excluded, seen
+
+
+BORROWING_NOTE = re.compile(r"(?im)^\s*\d{1,2}[a-z]?\.\s+.*(pinjaman|utang bank) jangka panjang|^\s*\d{1,2}[a-z]?\.\s+.*"
+                            r"(obligasi|sukuk|wesel bayar|medium term notes|liabilitas sewa|utang sewa|pinjaman jangka panjang)")
+
+
+def _nil_by_absence(values, checks, sections, text, notes_start):
+    """G-24 (S2, approved): long-term debt or its current portion may be 0 only when (1) the balance
+    sheet adds up in both years, (2) the section was read and holds no interest-bearing line, (3) no note
+    heading names long-term borrowings, bonds or leases, and (4) the evidence is recorded. Otherwise the
+    field stays blank. Always REVIEW."""
+    bal = [ok for name, c, ok, _ in checks if getattr(name, "key", "") == "check.balance"]
+    if len(bal) < 2 or not all(bal) or not notes_start:
+        return values
+    notes = "\n".join(text[notes_start - 1:])
+    if BORROWING_NOTE.search(notes):
+        return values
+    out = []
+    for v in values:
+        sec = {"long_term_debt": "noncurrent", "current_maturities_long_term_debt": "current"}.get(v.field)
+        if sec and v.value is None and sections.get(sec):
+            v = Value(v.field, v.column, 0, "REVIEW", [], [], note=Msg("note.debt_nil_g24"))
+        out.append(v)
+    return out
 
 
 def _checks(pos, pl, values):
@@ -475,7 +668,7 @@ def locate_financial_statements(pdf_path) -> dict:
         page = doc[i]
         w, h = page.get_size()
         tp = page.get_textpage()
-        full = tp.get_text_range()
+        full = tp.get_text_range().replace("\ufffe", "").replace("\uffff", "")
         head = tp.get_text_bounded(0, h * 0.70, w, h)
         text.append(full)
         heads.append(re.sub(r"\s+", " ", head).upper())
@@ -523,10 +716,17 @@ def read(pdf_path) -> Extraction:
                    "candidates": loc["candidates"], "scanned_count": len(scanned)}
     wanted = sorted({p for k in ("position", "profit_loss", "cash_flow") for p in (chosen or {}).get(k, [])})
     pages = {}
+    stmt_text = [loc["text"][i - 1] for i in range(wanted[0], wanted[-1] + 1)] if wanted else []
+    fmt = number_format(stmt_text) if wanted else "dot"
+    if fmt != "mixed" and paren_artifact(stmt_text):
+        fmt += "+paren"
+    if fmt == "mixed":
+        issues.append(Msg("issue.number_format"))
+        wanted = []                                       # nothing is read rather than read at the wrong scale
     if wanted:
         with pdfplumber.open(pdf_path) as pdf:
             for i in range(wanted[0], wanted[-1] + 1):       # the statement block only, word by word
-                pages[i] = (_lines(pdf.pages[i - 1], i), pdf.pages[i - 1].height)
+                pages[i] = (_lines(pdf.pages[i - 1], i, fmt), pdf.pages[i - 1].height)
     else:
         issues.append(_not_found_message(loc))
     if chosen and not chosen.get("notes_start"):
@@ -538,7 +738,7 @@ def read(pdf_path) -> Extraction:
         if k:
             kinds.setdefault(k, []).append(i)
 
-    statements, fiscal_year, unit, stype = {}, None, None, None
+    statements, fiscal_year, unit, stype, currency = {}, None, None, None, None
     year_labels = {}
     for kind, pnos in kinds.items():
         # keep the first contiguous run of pages (the statement itself, not later references)
@@ -569,6 +769,7 @@ def read(pdf_path) -> Extraction:
         statements[kind] = Statement(kind, run, all_lines)
         head = " ".join(ln.text for ln in all_lines[:25])
         unit = unit or _unit_scale(head)
+        currency = currency or _currency(head)
         if stype is None and re.search(r"KONSOLIDASIAN|CONSOLIDATED", head.upper()):
             stype = "Consolidated"
 
@@ -583,6 +784,12 @@ def read(pdf_path) -> Extraction:
         st = statements.get(kind)
         if field_name == "cash_flow_from_operations":
             ln = _cfo_line(st.lines) if st else None
+        elif field_name == "property_plant_equipment_net":
+            ln = _ppe_line(st.lines, pattern) if st else None
+        elif field_name == "revenue":
+            ln = _revenue_line(st.lines, pattern) if st else None
+        elif field_name == "net_income":
+            ln = _net_income_line(st.lines, pattern) if st else None
         else:
             ln = _first(st.lines, pattern) if st else None
         if ln:
@@ -608,7 +815,7 @@ def read(pdf_path) -> Extraction:
             ca_note = Msg("note.contract_assets", p=Pages(tuple(x.page for x in ca_sep)))
             values += _sum_values("contract_assets", ca_sep, "REVIEW", ca_note)
             issues.append(ca_note)
-        lt, cm, excl = _debt(pos.lines)
+        lt, cm, excl, debt_sections = _debt(pos.lines)
         if excl:
             issues.append(Msg("issue.short_term_loans", lines=Raw("; ".join(e.text[:60] for e in excl))))
         values += _sum_values("long_term_debt", lt, "REVIEW", Msg("note.debt")) if lt \
@@ -624,12 +831,13 @@ def read(pdf_path) -> Extraction:
         if face_rou:
             values += _value_pair("rou_assets_net", face_rou, "REVIEW", Msg("note.rou_face"))
         checks += _checks(pos, statements.get("profit_loss"), values)
+        values = _nil_by_absence(values, checks, debt_sections, loc["text"], (chosen or {}).get("notes_start"))
 
     # ---- notes (Phase 2b); only when the notes (CALK) were located after the statements
     if pos and chosen and chosen.get("notes_start"):
         from .notes_reader import PageCache, read_notes
         with pdfplumber.open(pdf_path) as pdf:
-            cache = PageCache(pdf, pdf_path, fiscal_year, text=loc["text"], notes_start=chosen["notes_start"])
+            cache = PageCache(pdf, pdf_path, fiscal_year, text=loc["text"], notes_start=chosen["notes_start"], fmt=fmt)
             n_values, n_checks, n_issues, _, non_ppe_ev = read_notes(cache, statements, values)
         values += n_values
         checks += n_checks
@@ -668,7 +876,7 @@ def read(pdf_path) -> Extraction:
 
     return Extraction(Path(pdf_path).name, n, scanned, fiscal_year, unit, stype, statements, values,
                       issues, checks, extra_non_ppe, fs_location, trans, year_labels,
-                      _financial_institution(statements))
+                      _financial_institution(statements), fmt, currency)
 
 
 # Bank / insurer / finance-company line items (labels on the face of the statements). The Beneish model

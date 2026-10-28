@@ -28,7 +28,7 @@ from reportlab.pdfgen import canvas as rl_canvas
 
 from . import report
 from .report import NEUTRAL_M, THRESHOLD, dec
-from .text import Msg, Num, render, t
+from .text import Num, render, t, unit_msg
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONTS = os.path.join(ROOT, "assets", "fonts")
@@ -213,7 +213,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     rid = f"WARS-{ticker or 'NA'}-FY{fy or 'NA'}-{(sha or '')[:8]}-{lang.upper()}"
     who = f"{name} ({ticker})" if ticker else name
     info = {"lang": lang, "who": f"{who} · {yt} vs {yt1}", "rid": rid, "date": _date(now, lang)}
-    unit = Msg(f"unit.{ex.unit_scale}") if ex.unit_scale else Msg("unit.unknown")
+    unit = unit_msg(ex.unit_scale, getattr(ex, "currency", None))
     W = A4[0] - 36 * mm
 
     buf = io.BytesIO()

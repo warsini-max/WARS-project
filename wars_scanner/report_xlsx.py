@@ -10,11 +10,12 @@ import io
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 from . import report
-from .text import Msg, render, t
+from .text import render, t, unit_msg
 
 HEAD_FILL = PatternFill("solid", fgColor="006B53")
 HEAD_FONT = Font(name="Calibri", bold=True, color="FFFFFF")
@@ -56,7 +57,7 @@ def build(r, lang="id", file_name="", sha="", generated="") -> bytes:
     # ---------------------------------------------------------------- summary
     ws = _sheet(wb, t("xl.sheet.summary", lang), ["", ""], [34, 90])
     head, detail, _ = report.verdict(r, None, lang, provisional_note=False)
-    unit = Msg(f"unit.{ex.unit_scale}") if ex.unit_scale else Msg("unit.unknown")
+    unit = unit_msg(ex.unit_scale, getattr(ex, "currency", None))
     stype = t("ui.res.stype.Consolidated" if ex.statement_type == "Consolidated" else "ui.res.stype.unknown", lang)
     rows = [(t("rep.f.entity", lang), name), (t("rep.f.ticker", lang), ticker or "—"),
             (t("rep.f.period", lang), t("rep.period", lang, t=yt, t1=yt1)), (t("rep.f.basis", lang), stype),
@@ -134,6 +135,11 @@ def build(r, lang="id", file_name="", sha="", generated="") -> bytes:
         ws.append([render(i_, lang, codes=True), "", ""])
     _finish(ws)
 
+    for ws in wb.worksheets:              # PDF text layers can carry control characters (NRCA 2021)
+        for row in ws.iter_rows():
+            for c in row:
+                if isinstance(c.value, str):
+                    c.value = ILLEGAL_CHARACTERS_RE.sub("", c.value).replace("\ufffe", "").replace("\uffff", "")
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

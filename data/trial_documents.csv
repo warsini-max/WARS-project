@@ -1,0 +1,13 @@
+# Cross-sector trial documents (28 Oct 2026). Not case issuers. Not to be used as controls in Phase 7 (S5).
+file_name,ticker,fiscal_year,sector,role,sha256,bytes
+LK_BIPP_2021.pdf,BIPP,2021,Properties & Real Estate,TRIAL 1 (development: reader fixes),f1b6c5a8fd7e7ce78ac4b304612fa8eb656cf5c23f088b56d1f2cdf2d79c2b1b,2233050
+LK_BIRD_2021.pdf,BIRD,2021,Transportation & Logistics,TRIAL 1 (development: reader fixes),178c8b7f8f3620ecc59ff24b98217cf7d83fdfcd94c5f0f6ca06721f062e1c04,3316054
+LK_DEWA_2021.pdf,DEWA,2021,Energy,TRIAL 1 (development: reader fixes),17e2ef0062960f35b3feb68398a5087cf49780d867f42f7b7b3ed352ba4e6088,4861284
+LK_FASW_2021.pdf,FASW,2021,Basic Materials,TRIAL 1 (development: reader fixes),71dcb1813af83210585b20576cf46f69217456a5f666bb4dd731c88ec917e219,5968801
+LK_KOIN_2021.pdf,KOIN,2021,Industrials,TRIAL 1 (development: reader fixes),ca6edaf8075d03aef108b3e98b5fb72a4b014d2c4767f5ded3be43d0ccd3566d,1876641
+LK_NRCA_2021.pdf,NRCA,2021,Infrastructures,TRIAL 1 (development: reader fixes),4f1de01848ae4fd9d63f971e4a25f8f157e220c775287fe7a45dd0b3ac871830,3071501
+LK_POLY_2021.pdf,POLY,2021,Consumer Cyclicals,TRIAL 1 (development: reader fixes),b2b5a122abdc6c0d595c9badb78fb23f040cd3c68b4752bd68aa59f832bff322,5795305
+LK_PTSN_2021.pdf,PTSN,2021,Technology,TRIAL 1 (development: reader fixes),b33e4155550d01f4832622fd56ba75c834b6f516efc5f6f0cc2f8f5abfecbdb8,3204267
+LK_SILO_2021.pdf,SILO,2021,Healthcare,TRIAL 1 (development: reader fixes),5b68e51c78deb820c35640ce22c5990801d95c32202bd56d2a4b0a177f7374c9,2652151
+LK_ULTJ_2021.pdf,ULTJ,2021,Consumer Non-Cyclicals,TRIAL 1 (development: reader fixes),e0e30ae9153f9f7edf1657e1ad4556e5f51b8da5056351423fa340868297c91c,4574603
+LK_PWON_2021.pdf,PWON,2021,Properties & Real Estate,TRIAL 0 (first sector test; PDF not yet in the build environment),266977b37e009606583561353c644734cbdfd8df3e65ca7a7851a2d41f1cfda4,

@@ -20,7 +20,7 @@ import streamlit as st
 
 from wars_scanner import pipeline, report, report_pdf, report_xlsx
 from wars_scanner.report import NEUTRAL_M, THRESHOLD, dec
-from wars_scanner.text import Msg, Num, Raw, fmt_number, render, t
+from wars_scanner.text import Msg, Num, Raw, fmt_number, render, t, unit_msg
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 LINKEDIN = "https://www.linkedin.com/in/warsiniak"
@@ -373,7 +373,7 @@ def page_result():
     fy = ex.fiscal_year
     yt, yt1 = (str(fy), str(fy - 1)) if fy else ("t", "t−1")
     ticker, name = report.issuer_line(r, L)
-    unit = Msg(f"unit.{ex.unit_scale}") if ex.unit_scale else Msg("unit.unknown")
+    unit = unit_msg(ex.unit_scale, getattr(ex, "currency", None))
     stype = Msg("ui.res.stype.Consolidated") if ex.statement_type == "Consolidated" else Msg("ui.res.stype.unknown")
 
     steps(3)

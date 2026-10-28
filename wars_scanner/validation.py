@@ -19,7 +19,7 @@ import re
 from dataclasses import dataclass
 
 from .pdf_reader import _norm, parse_amount
-from .text import Money, Msg, Pct, Psak, Raw
+from .text import Money, Msg, Pct, Psak, Raw, unit_msg
 
 YOY_CHANGE_THRESHOLD = 1.0      # workbook Parameters: yoy_change_threshold (1.0 = 100%)
 YOY_FIELDS = ["revenue", "accounts_receivable", "cost_of_goods_sold", "selling_general_administrative_expenses",
@@ -27,6 +27,7 @@ YOY_FIELDS = ["revenue", "accounts_receivable", "cost_of_goods_sold", "selling_g
 JUMP_RATIO = 5.0                # app check: one year 5x the other (either direction) = possible digit/unit slip
 SCALE = {"Units": 1, "Thousands": 1_000, "Millions": 1_000_000, "Billions": 1_000_000_000}
 TA_MIN_RP, TA_MAX_RP = 10 ** 9, 3 * 10 ** 15     # Rp1 miliar .. Rp3.000 triliun (largest IDX issuer, a bank, is below Rp2.500 triliun)
+TA_MIN_USD, TA_MAX_USD = 5 * 10 ** 4, 2 * 10 ** 11   # the same range in US dollars at about Rp15.000/USD (P4; chosen by Claude)
 
 
 @dataclass
@@ -168,10 +169,13 @@ def check(p: dict, ex=None) -> list:
     unit = p.get("unit_scale")
     ta = _g(p, "total_assets", "t")
     if unit in SCALE and ta:
+        ccy = p.get("reporting_currency")
+        lo, hi = (TA_MIN_USD, TA_MAX_USD) if ccy == "USD" else (TA_MIN_RP, TA_MAX_RP)
         rp = ta * SCALE[unit]
-        if not TA_MIN_RP <= rp <= TA_MAX_RP:
+        if not lo <= rp <= hi:
             flags.append(Flag("a_unit_implausible", "ERROR", "app",
-                              Msg("flag.unit", unit=Msg(f"unit.{unit}"), x=Money(rp, None)), ("total_assets",), "t"))
+                              Msg("flag.unit", unit=unit_msg(unit, ccy), x=Money(rp, None, currency=ccy)),
+                              ("total_assets",), "t"))
 
     # ---------------------------------------------------------------- app: parts within totals (ERROR)
     for c in cols:
