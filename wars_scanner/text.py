@@ -1152,6 +1152,37 @@ CATALOG: dict = {
     "unit.USD.Thousands": _e("ribuan Dolar AS", "thousands of US dollars", "Gail 28 Okt P4"),
     "unit.USD.Millions": _e("jutaan Dolar AS", "millions of US dollars", "Gail 28 Okt P4"),
     "unit.USD.Billions": _e("miliaran Dolar AS", "billions of US dollars", "Gail 28 Okt P4"),
+    "check.section_ca": _e("Baris aset lancar dijumlahkan sama dengan jumlah aset lancar",
+                           "Current asset lines add up to total current assets", "new"),
+    "check.section_nca": _e("Baris aset tidak lancar dijumlahkan sama dengan jumlah aset tidak lancar",
+                            "Non-current asset lines add up to total non-current assets", "new"),
+    "issue.section_sum": _e("{sec}: tidak cocok untuk kolom {col} ({a} terbaca, {b} tercetak, hal. {p}). Ada baris yang "
+                            "terlewat, terbaca ganda atau berupa subjumlah; periksa di PDF",
+                            "{sec}: does not agree for column {col} ({a} read, {b} printed, p. {p}). A line was missed, "
+                            "read twice or is a subtotal; check in the PDF", "new"),
+    "issue.ambiguous": _e("Lebih dari satu baris dengan angka berbeda cocok untuk {item}: {lines}. Baris pertama dipakai "
+                          "dan ditandai untuk diperiksa",
+                          "More than one line with different figures matches {item}: {lines}. The first line is used "
+                          "and marked for review", "new"),
+    "note.tax_no_face_match": _e("Tabel pajak dengan PPh Pasal 25/29 ditemukan, tetapi jumlahnya tidak cocok dengan utang "
+                                 "pajak di laporan posisi keuangan; angkanya tidak dipakai",
+                                 "A tax table with Articles 25/29 was found, but its total does not agree with taxes "
+                                 "payable on the statement of financial position; its figures are not used", "new", "D-03"),
+    "note.tax_zero_evidence": _e("Tabel utang pajak di catatan (hal. {p}) cocok dengan laporan posisi keuangan dan tidak "
+                                 "memuat PPh badan Pasal 25/29 (misalnya pajak final atau lebih bayar); utang PPh badan "
+                                 "= 0. Periksa di PDF",
+                                 "The taxes-payable table in the notes (p. {p}) agrees with the statement of financial "
+                                 "position and holds no corporate income tax (Articles 25/29), e.g. final tax or an "
+                                 "overpayment; corporate income tax payable = 0. Check in the PDF", "new", "D-03"),
+    "flag.ppe_note": _e("Angka yang dibaca: aset tetap di laporan posisi keuangan tidak ditemukan sebagai nilai tercatat "
+                        "di catatan aset tetap (yang terbaca di catatan: {seen}). Kemungkinan baris yang salah terambil; "
+                        "periksa di PDF",
+                        "Figures as read: the fixed assets on the statement of financial position were not found as a "
+                        "carrying amount in the fixed-asset note (read in the note: {seen}). The wrong line may have been "
+                        "taken; check in the PDF", "new"),
+    "check.ppe_note": _e("Aset tetap di laporan posisi keuangan sama dengan nilai tercatat di catatan aset tetap (hal. {p})",
+                         "Fixed assets on the statement of financial position agree with the carrying amount in the "
+                         "fixed-asset note (p. {p})", "new"),
     "note.cogs_direct": _e("Beban langsung dipakai sebagai beban pokok penjualan: laporan laba rugi menyajikan laba bruto "
                            "sesudahnya dan pendapatan dikurangi beban langsung sama dengan laba bruto di kedua tahun",
                            "Direct costs used as cost of sales: the statement of profit or loss shows gross profit "
@@ -1172,6 +1203,10 @@ CATALOG: dict = {
                             "Nil because the section has no interest-bearing line, the balance sheet balances in both "
                             "years, and no note covers long-term borrowings, bonds or leases; check in the PDF",
                             "new", "G-24"),
+    "note.amort_sentence": _e("Amortisasi aset takberwujud diambil dari kalimat di catatan (tidak ada tabel); periksa angkanya "
+                              "di halaman tersebut",
+                              "Intangible amortisation taken from a sentence in the notes (no table); check the figures on "
+                              "that page", "new"),
     "note.ppe_dep_sentence": _e("Penyusutan aset tetap milik diambil dari kalimat di catatan aset tetap (tidak ada tabel "
                                 "alokasi); periksa angkanya di halaman tersebut",
                                 "Owned-PPE depreciation taken from a sentence in the fixed-asset note (no allocation "

@@ -28,7 +28,8 @@ def _num(txt):
     return parse_amount(txt)
 
 
-HEADER_WORD = re.compile(r"^(\(?20\d\d\)?[/,]?|31,?|30,?|desember|december|juni|june|catatan|notes|/)$", re.I)
+HEADER_WORD = re.compile(r"^(\(?20\d\d\)?[/,]?|31,?|30,?|desember|december|juni|june|catatan|notes|/|dalam|in|rupiah|rp|usd|"
+                         r"dolar|dollar|as|us|penuh|full)$", re.I)
 YEAR = re.compile(r"20\d\d")
 
 
@@ -243,9 +244,9 @@ def _sum_lines(field, lines, status, note):
 
 # ------------------------------------------------------------------------------ allocation tables
 
-ALLOC_TITLE = re.compile(r"^(beban |pembebanan )?(penyusutan|amortisasi)( dan (penyusutan|amortisasi))?\b.*"
+ALLOC_TITLE = re.compile(r"^(beban |pembebanan )?(penyusutan|amortisasi|depresiasi)( dan (penyusutan|amortisasi))?\b.*"
                          r"(dibebankan|dialokasikan|untuk tahun|adalah sebagai berikut|sebagai berikut)"
-                         r"|^(beban|pembebanan) (penyusutan|amortisasi)\b")
+                         r"|^(beban|pembebanan) (penyusutan|amortisasi|depresiasi)\b")
 
 
 def _kind(text):
@@ -274,7 +275,7 @@ def allocation_tables(cache, first_note_page):
     the table title when it names the asset class, otherwise from the note heading.
     """
     tables = []
-    for p in cache.pages_matching(r"(?i)(penyusutan|amortisasi)", start=first_note_page):
+    for p in cache.pages_matching(r"(?i)(penyusutan|amortisasi|depresiasi)", start=first_note_page):
         lines = cache.lines(p)
         for i, ln in enumerate(lines):
             lab = _norm(ln.label)
@@ -288,8 +289,8 @@ def allocation_tables(cache, first_note_page):
                     started = True
                     continue
                 if not started:
-                    if k > 8:
-                        break
+                    if k > 8 or re.match(r"^\d{1,2}\.\s", nxt.label.strip()):
+                        break                       # a new note starts before any table (KOIN 2021: a sentence)
                     continue
                 if _complete(nxt):
                     if re.match(r"^(total|jumlah)\b", nl):
@@ -325,13 +326,13 @@ def _movement_additions(cache, table, value):
     """Is `value` printed in a movement-table row of accumulated depreciation/amortisation in the
     same note? (A row with four or more figures whose label is a total of accumulated
     depreciation or 'amortisasi tahun berjalan'.) Confirms what the allocation table covers."""
-    rx = re.compile(r"^(total|jumlah|sub-?total)?\s*(akumulasi )?(penyusutan|amortisasi)|^(total|jumlah|sub-?total)$", re.I)
+    rx = re.compile(r"^(total|jumlah|sub-?total)?\s*(akumulasi )?(penyusutan|amortisasi|depresiasi)|^(total|jumlah|sub-?total)$", re.I)
     for q in range(max(1, table["page"] - 3), table["page"] + 1):
         lines = cache.lines(q)
         in_acc = False
         for ln in lines:
             low = _norm(" ".join(w.text for w in ln.words))
-            if re.search(r"akumulasi (penyusutan|amortisasi)", low) and not ln.amounts:
+            if re.search(r"akumulasi (penyusutan|amortisasi|depresiasi)", low) and not ln.amounts:
                 in_acc = True
             nums = [_num(w.text.strip()) for w in ln.words]
             nums = [abs(v) for v in nums if v is not None]
@@ -402,42 +403,111 @@ def combine_ppe_depreciation(own, rdep, rou_inside_ppe, fiscal_year=None):
 
 # ------------------------------------------------------------------------------ tax payable (D-03)
 
-CORPORATE = re.compile(r"\b(pasal|pph|article)\s*(25|29)\b|pph badan|pajak penghasilan badan|corporate income tax")
+CORPORATE = re.compile(r"\b(pasal|pph|article)\s*(25|29)\b|pph badan|pajak penghasilan badan|corporate income tax"
+                       r"|kurang bayar pajak penghasilan|underpayment of (current )?income tax")
+TAX_TOTAL = re.compile(r"^(total|jumlah)\b|^utang pajak penghasilan( badan)?$")
 WITHHOLDING_OR_OTHER = re.compile(r"\b(pasal|pph|article)\s*(4\s*\(2\)|4 ayat 2|15\b|21\b|22\b|23\b|26\b)|pertambahan nilai|ppn|"
-                                  r"bumi dan bangunan|daerah|restoran|pajak final|lain-lain|lainnya|others")
+                                  r"bumi dan bangunan|daerah|restoran|pajak final|lain-lain|lainnya|others|pajak pembangunan"
+                                  r"|pajak hotel|pajak air|pajak reklame|pajak penghasilan final|income tax final|final income tax")
 FOREIGN = re.compile(r"luar negeri|foreign")
 
 
 def _tax_blocks(cache, first_note_page):
     """Two-year tables in the tax note: runs of lines ending in a Total/Jumlah line that contain
     at least one Article 25/29 (corporate income tax) line. A table may continue on the next page."""
-    pages = cache.pages_matching(r"(?i)(pasal|pph|article)\s*2[59]\b", start=first_note_page)
+    pages = sorted(set(cache.pages_matching(r"(?i)(pasal|pph|article)\s*2[59]\b", start=first_note_page))
+                   | set(cache.pages_matching(r"(?i)utang pajak|taxes payable", start=first_note_page)))
     seen, out = set(), []
     for p in pages:
         for q in (p, p + 1):
             if q in seen or q > len(cache.text):
                 continue
             seen.add(q)
-    block = []
+    block, closed = [], []                    # closed: tables of this note already ended by a total
     prev_page = None
     for q in sorted(seen):
         if prev_page is not None and q != prev_page + 1:
-            block = []
+            block, closed = [], []
         prev_page = q
+        head, prepaid = "", False
         for ln in cache.lines(q):
             own = _norm(ln.label)
             if re.match(r"^\d{1,2}\.\s", ln.label.strip()) and not re.search(r"(lanjutan|continued)", own):
-                block = []
+                block, closed = [], []
+                head = ""
                 continue
+            if not ln.amounts and own:
+                head = own                    # e.g. "Pasal 25" above "Perusahaan" / "Entitas anak" (SILO 2021)
+                if PREPAID_HEAD.search(own):
+                    prepaid = True            # a prepaid-tax table is not a payable (BIPP 2021)
+                elif re.search(r"utang pajak|taxes payable|kurang bayar|underpayment", own):
+                    prepaid = False
+                continue
+            if prepaid:
+                if not own or TAX_TOTAL.search(own):
+                    prepaid = False           # the prepaid table ends at its total
+                continue
+            ln.tax_head = head if ENTITY_ROW.match(own) else ""
+            if not ENTITY_ROW.match(own):
+                head = ""
             if "t" not in ln.amounts or "t1" not in ln.amounts:
                 continue
-            if re.match(r"^(total|jumlah)\b", own):
-                if any(CORPORATE.search(_norm(x.label)) for x in block):
-                    out.append((block, ln))
+            unlabelled_total = not own and len(block) >= 2 and all(
+                sum(x.amounts[c] for x in block if not re.match(r"^(sub-? ?total|sub jumlah|subjumlah)", _norm(x.label)))
+                == ln.amounts[c] for c in ("t", "t1"))
+            if TAX_TOTAL.search(own) or unlabelled_total:
+                if not block:
+                    grand = _grand_total(closed, ln)
+                    if grand:
+                        out.append((grand, ln))
+                    continue
+                out.append((_reconciling_suffix(block, ln), ln))   # tax_payable picks the table for the face
+                closed.append(out[-1])
                 block = []
                 continue
             block.append(ln)
     return out
+
+
+def _grand_total(closed, total):
+    """A total straight after other totals (BIPP 2021: 'Perusahaan' table, 'Entitas anak' table, then
+    'JUMLAH'): the lines of the last two or more tables of the note, when their totals add up to it in
+    both years. Otherwise None."""
+    for k in range(2, len(closed) + 1):
+        tail = closed[-k:]
+        if all(sum(abs(t.amounts[c]) for _, t in tail) == abs(total.amounts[c]) for c in ("t", "t1")):
+            return [x for b, _ in tail for x in b]
+    return None
+
+
+def _reconciling_suffix(block, total):
+    """A run of lines can carry an earlier table that was not closed by a total (FASW 2021: the prepaid-tax
+    credits sit just above the payable lines). Keep the longest run ending at the total whose lines add up to
+    it in both years; when none does, keep the whole run (tax_payable then reports the mismatch)."""
+    def adds_up(lines):
+        rows = [x for x in lines if not re.match(r"^(sub-? ?total|sub jumlah|subjumlah)", _norm(x.label))]
+        return rows and all(sum(abs(x.amounts[c]) for x in rows) == abs(total.amounts[c]) for c in ("t", "t1"))
+    if adds_up(block):
+        return block
+    for k in range(1, len(block)):
+        if adds_up(block[k:]):
+            return block[k:]
+    return block
+
+
+PREPAID_HEAD = re.compile(r"dibayar di ?muka|prepaid|lebih bayar|taksiran tagihan|klaim (restitusi|pengembalian)|"
+                          r"estimated claims|tax refund")
+ENTITY_ROW = re.compile(r"^(perusahaan|perseroan|entitas (induk|anak)|anak perusahaan|the company|subsidiar(y|ies))$")
+
+
+def _corporate(ln):
+    """Article 25/29 line: by its own label, by the heading it was wrapped from, or an entity row ('Perusahaan',
+    'Entitas anak') listed under an Article 25/29 heading."""
+    if CORPORATE.search(_norm(ln.label)):
+        return True
+    if ENTITY_ROW.match(_norm(ln.label)):
+        return bool(CORPORATE.search(getattr(ln, "tax_head", "") or ""))
+    return bool(CORPORATE.search(_norm(ln.full_label or "")))
 
 
 def tax_payable(cache, first_note_page, face_tax_line):
@@ -447,20 +517,36 @@ def tax_payable(cache, first_note_page, face_tax_line):
     contains Article 25/29 lines but does not reconcile to the face is REVIEW.
     """
     blocks = _tax_blocks(cache, first_note_page)
-    if not blocks:
-        return _missing("taxes_payable", "NOT FOUND", Msg("note.tax_none")), [], []
 
     def matches_face(total):
         return face_tax_line is not None and all(
             c in face_tax_line.amounts and abs(total.amounts[c]) == abs(face_tax_line.amounts[c]) for c in ("t", "t1"))
 
-    block, total = next(((b, t) for b, t in blocks if matches_face(t)), blocks[0])
+    corp_blocks = [(b, t) for b, t in blocks if any(_corporate(x) for x in b)]
+    if not corp_blocks:
+        # Trial 1 (NRCA, KOIN 2021): the full taxes-payable table agrees with the face and holds no Article 25/29
+        # line (e.g. construction under final tax, or an overpayment). D-03 then gives 0, from evidence. REVIEW.
+        face_block = next(((b, t) for b, t in blocks if matches_face(t) and b), None)
+        if face_block and all(WITHHOLDING_OR_OTHER.search(_norm(x.label)) or re.match(
+                r"^(sub-? ?total|sub jumlah|subjumlah)", _norm(x.label)) for x in face_block[0]):
+            b, t = face_block
+            return ([Value("taxes_payable", c, 0, "REVIEW", [t.page], [t.text], note=Msg("note.tax_zero_evidence", p=t.page))
+                     for c in ("t", "t1")],
+                    [(Msg("check.tax_face"), c, True, "") for c in ("t", "t1")], [])
+        return _missing("taxes_payable", "NOT FOUND", Msg("note.tax_none")), [], []
+
+    match = next(((b, t) for b, t in corp_blocks if matches_face(t)), None)
+    if match is None and face_tax_line is not None:
+        # rule 7: a table that does not agree with 'Utang pajak' on the face may be another table (prepaid tax,
+        # tax expense); its Article 25/29 lines are not used
+        return _missing("taxes_payable", "NOT FOUND", Msg("note.tax_no_face_match")), [], []
+    block, total = match or corp_blocks[0]
     issues, corp, excluded, unknown = [], [], [], []
     for ln in block:
         own = _norm(ln.label)
         if re.match(r"^(sub-? ?total|sub jumlah|subjumlah)", own):
             continue
-        if CORPORATE.search(own):
+        if _corporate(ln):
             corp.append(ln)
         elif FOREIGN.search(own):
             excluded.append(ln)
@@ -601,9 +687,26 @@ def sentence_pair(after, context=""):
             break
     if len(vals) < 2:
         return {}
-    years = [int(y) for y in re.findall(r"\b(20\d\d)\b", context + " " + after[:400])]
+    years = [int(y) for y in re.findall(r"\b(20\d\d)\b", context)]
     first_older = len(years) >= 2 and years[0] < years[1] and years[1] - years[0] == 1
     return {"t": vals[1], "t1": vals[0]} if first_older else {"t": vals[0], "t1": vals[1]}
+
+
+AMORT_SENTENCE = re.compile(r"amortisasi\b[^.]{0,60}(aset tak ?berwujud|perangkat lunak|piranti lunak)[^.]{0,300}?sebesar",
+                            re.I | re.S)
+
+
+def amortisation_sentence(cache, first_note_page, total_assets):
+    """Trial 1 (KOIN 2021): intangible amortisation given only in a sentence ("Beban amortisasi aset tak berwujud -
+    perangkat lunak ... masing-masing sebesar Rp X dan Rp Y"). Accepted only below 20% of total assets for each
+    year (a figure in another unit fails). Returns (values {t, t1}, page, quote) or None. REVIEW."""
+    for i in range(first_note_page, len(cache.text) + 1):
+        txt = " ".join(cache.text[i - 1].split())
+        for m in AMORT_SENTENCE.finditer(txt):
+            got = sentence_pair(txt[m.end():m.end() + 260], txt[m.start():m.end()])
+            if got and all(total_assets.get(c) and 0 < got[c] <= 0.2 * total_assets[c] for c in got):
+                return got, i, txt[m.start():m.end() + 80]
+    return None
 
 
 PPE_DEP_SENTENCE = re.compile(r"penyusutan\b(?![^.]{0,60}(properti investasi|hak guna|hak-guna|tak ?berwujud))"
@@ -621,11 +724,43 @@ def ppe_depreciation_sentence(cache, first_note_page, face_ppe):
             continue
         txt = " ".join(raw.split())
         for m in PPE_DEP_SENTENCE.finditer(txt):
-            got = sentence_pair(txt[m.end():m.end() + 260], txt[max(0, m.start() - 200):m.end()])
+            got = sentence_pair(txt[m.end():m.end() + 260], txt[m.start():m.end()])
             ok = got and all(face_ppe.get(c) and 0.0005 * face_ppe[c] <= got[c] <= face_ppe[c] for c in got)
             if ok:
                 return got, i, txt[m.start():m.end() + 80]
     return None
+
+
+CARRYING = re.compile(r"^(nilai|jumlah) (tercatat|buku)\b|^nilai buku (neto|bersih)|^carrying (amount|value)|^net book value"
+                      r"|^book value", re.I)
+
+
+def ppe_note_carrying(cache, first_note_page, face_ppe):
+    """Rule 7 cross-check (28 Oct 2026, after BIRD 2021): the fixed assets read from the face must appear as a
+    carrying amount ('Nilai tercatat' / 'Jumlah tercatat' / 'Nilai buku') in the fixed-asset note.
+
+    Returns {column: ("ok", page) | ("mismatch", [amounts seen]) | ("none", None)}. 'none' means no
+    carrying-amount line was found, so the check could not be made (the figure stays REVIEW)."""
+    seen, hit = [], {}
+    for p in cache.pages_matching(r"(?i)aset tetap|fixed assets|property,? (plant )?and equipment", start=first_note_page):
+        for ln in cache.lines(p):
+            words = [w.text.strip() for w in ln.words]
+            if not CARRYING.search(_norm(" ".join(words[:4]))):
+                continue
+            nums = {abs(v) for w in words for v in [parse_amount(w)] if v is not None and re.search(r"\d[.,]\d{3}", w)}
+            seen.extend(nums)
+            for c, v in face_ppe.items():
+                if v in nums and c not in hit:
+                    hit[c] = p
+    out = {}
+    for c in face_ppe:
+        if c in hit:
+            out[c] = ("ok", hit[c])
+        elif seen:
+            out[c] = ("mismatch", sorted(set(seen))[-6:])
+        else:
+            out[c] = ("none", None)
+    return out
 
 
 INVPROP_COST = re.compile(r"properti investasi[^.]{0,250}?(model biaya|cost model|biaya perolehan dikurangi akumulasi)", re.I | re.S)
@@ -634,10 +769,18 @@ INVPROP_COST = re.compile(r"properti investasi[^.]{0,250}?(model biaya|cost mode
 def invprop_face_line(statements):
     """Investment property on the face of the statement of financial position (any year above 0)."""
     pos = statements.get("position")
-    for ln in (pos.lines if pos else []):
-        lab = _norm(ln.full_label or ln.label)
-        if (INVPROP_FACE.search(_norm(ln.label)) or re.search(r"(?:^|\s)properti investasi\b", lab)) \
-                and ln.amounts and any(abs(v) > 0 for v in ln.amounts.values()):
+    lines = pos.lines if pos else []
+    for i, ln in enumerate(lines):
+        if "t" not in ln.amounts or "t1" not in ln.amounts or not any(abs(ln.amounts[c]) > 0 for c in ("t", "t1")):
+            continue
+        back = []
+        for prev in reversed(lines[max(0, i - 8):i]):           # the label may wrap over several lines (BIPP 2021)
+            if "t" in prev.amounts and "t1" in prev.amounts:     # a stray date ("31") is not a figure line
+                break
+            back.insert(0, prev.label)
+        lab = _norm(" ".join(back + [ln.label]))
+        if INVPROP_FACE.search(_norm(ln.label)) or re.search(r"(?:^|\s)properti investasi\b", lab):
+            ln.wrapped = lab
             return ln
     return None
 
@@ -650,7 +793,8 @@ def invprop_depreciation(cache, first_note_page, face_ln):
     A sentence amount is accepted only when it lies between 0,1% and 20% of the carrying amount on
     the face for that year: a figure written in another unit (full Rupiah against statements in
     thousands) fails this test and is not used. Returns ({column: amount}, source Msg) or ({}, "")."""
-    cost_on_face = bool(face_ln is not None and "akumulasi penyusutan" in _norm(face_ln.full_label or face_ln.label))
+    cost_on_face = bool(face_ln is not None and "akumulasi penyusutan" in (getattr(face_ln, "wrapped", "")
+                                                                         or _norm(face_ln.full_label or face_ln.label)))
     for i in range(first_note_page, len(cache.text) + 1):
         txt = " ".join(cache.text[i - 1].split())
         m = INVPROP_FAIR_VALUE.search(txt)
@@ -659,7 +803,7 @@ def invprop_depreciation(cache, first_note_page, face_ln):
     for i in range(first_note_page, len(cache.text) + 1):
         txt = " ".join(cache.text[i - 1].split())
         for m in INVPROP_SENTENCE.finditer(txt):
-            pair = sentence_pair(txt[m.end():m.end() + 260], txt[max(0, m.start() - 200):m.end()])
+            pair = sentence_pair(txt[m.end():m.end() + 260], txt[m.start():m.end()])
             got = {}
             for c, v in pair.items():
                 carrying = abs(face_ln.amounts.get(c) or 0) if face_ln else 0
@@ -841,6 +985,13 @@ def read_notes(cache, statements, face_values):
                               y=join([Amt(am["value"].get(c) or 0) for c in ("t", "t1")], " / ")))
     elif intang_t:
         values += table_values("amortization_intangibles", intang_t, "note.alloc_intang")
+        values += [Value("amort_status", c, None, "FOUND", note=Msg("note.amort_disclosed")) for c in ("t", "t1")]
+    elif (am_sent := amortisation_sentence(cache, first_note, {v.column: v.value for v in face_values
+                                                                if v.field == "total_assets" and v.value})):
+        got, pg, quote = am_sent
+        for c in ("t", "t1"):
+            values.append(Value("amortization_intangibles", c, got[c], "REVIEW", [pg], [quote],
+                                note=Msg("note.amort_sentence")))
         values += [Value("amort_status", c, None, "FOUND", note=Msg("note.amort_disclosed")) for c in ("t", "t1")]
     elif present is not None:
         q = present.quotes[0] if isinstance(present, Value) and present.quotes else getattr(present, "text", "")

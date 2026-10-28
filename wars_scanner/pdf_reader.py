@@ -91,6 +91,7 @@ class Extraction:
     financial_institution: list = field(default_factory=list)  # bank / insurer line items found on the face (page, label)
     number_format: str = "dot"                             # thousands separator of the figures: dot / comma / mixed
     currency: Optional[str] = None                         # IDR / USD from the statement headings; None = not read
+    cross_checks: dict = field(default_factory=dict)       # rule 7: face figures found again elsewhere in the report
 
 
 # ------------------------------------------------------------------------------------- parsing
@@ -145,8 +146,8 @@ def _normalise(text, fmt):
     """In an English-style report, rewrite figures to the dot form the reader parses: 1,234,567 ->
     1.234.567. A dot there is a decimal point (2.50 per share), so such a token is made unreadable as
     an amount instead of being taken for thousands. The printed text is kept in Word.raw."""
-    if fmt.endswith("+paren") and re.match(r"^-?\d{1,3}(?:[.,]\d{3})*\)$", text):
-        text = text[:-1]                              # "145.027)" -> "145.027" (format artefact)
+    if fmt.endswith("+paren") and re.match(r"^(-?\d{1,3}(?:[.,]\d{3})*|-)\)$", text):
+        text = text[:-1]                              # "145.027)" -> "145.027", "-)" -> "-" (format artefact)
     if not fmt.startswith("comma"):
         return text
     m = COMMA_AMOUNT.match(text)
@@ -246,6 +247,7 @@ def _assign_amounts(line, notes_x=None, t_first=True, amount_left=None):
         a note reference when it sits under the Notes header, and an amount otherwise.
     """
     label_words, nums, seen_number = [], [], False
+    certain = []                                        # parallel to nums: the figure has a thousands separator or is nil
     words = line.words
     for i, w in enumerate(words):
         txt = w.text.strip()
@@ -260,6 +262,12 @@ def _assign_amounts(line, notes_x=None, t_first=True, amount_left=None):
                 and parse_amount(txt) is not None:
             if not seen_number:
                 label_words.append(w)
+            continue
+        if re.match(r"^\d{1,2}$", txt) and re.match(r"(?i)^(januari|februari|maret|april|mei|juni|juli|agustus|september|"
+                                                   r"oktober|november|desember|january|february|march|may|june|july|"
+                                                   r"august|october|december)\b", nxt):
+            if not seen_number:
+                label_words.append(w)               # a date in the label ("per 31 Desember 2021"), not a figure
             continue
         ambiguous = NOTE_REF.match(txt) and not _is_certain_amount(txt)
         if ambiguous:
@@ -277,11 +285,17 @@ def _assign_amounts(line, notes_x=None, t_first=True, amount_left=None):
         if v is not None:
             seen_number = True
             nums.append(v)
+            certain.append(_is_certain_amount(txt))
             continue
         if not seen_number:
             label_words.append(w)
         elif nums:
             break                                       # the English label starts after the figures
+    # a note reference printed between the two figures ("Goodwill 91.366 12 91.366", SIDO 2020): a bare one- or
+    # two-digit number between two figures with thousands separators is not a figure (found by the section sums)
+    if len(nums) >= 3 and sum(certain) >= 2:
+        keep = [k for k in range(len(nums)) if certain[k] or not (0 < k < len(nums) - 1 and abs(nums[k]) < 100)]
+        nums = [nums[k] for k in keep]
     amounts = {}
     if len(nums) >= 2:
         amounts = {"t": nums[0], "t1": nums[1]} if t_first else {"t": nums[1], "t1": nums[0]}
@@ -401,6 +415,17 @@ def _continuation(lines, i):
     return bool(first) and first.islower() and i > 0 and not lines[i - 1].amounts and bool(lines[i - 1].label.strip())
 
 
+def _candidates(lines, pattern):
+    """Every line with both years whose label (own or wrapped) matches: used to detect ambiguity (rule 7)."""
+    rx = re.compile(pattern)
+    out = []
+    for i, ln in enumerate(lines):
+        own = rx.search(_norm(ln.label)) and not _continuation(lines, i)
+        if (own or rx.search(_norm(ln.full_label))) and "t" in ln.amounts and "t1" in ln.amounts:
+            out.append(ln)
+    return out
+
+
 def _first(lines, pattern, need_both=True):
     rx = re.compile(pattern)
     for i, ln in enumerate(lines):
@@ -411,11 +436,16 @@ def _first(lines, pattern, need_both=True):
     return None
 
 
+SIGNED_FIELDS = {"net_income", "cash_flow_from_operations"}      # a loss or a cash outflow keeps its sign
+
+
 def _value_pair(field_name, ln, status, note=""):
     out = []
     for col in ("t", "t1"):
         v = ln.amounts.get(col)
-        out.append(Value(field_name, col, abs(v) if v is not None else None,
+        if v is not None and field_name not in SIGNED_FIELDS:
+            v = abs(v)
+        out.append(Value(field_name, col, v,
                          status if v is not None else "NOT FOUND", [ln.page], [getattr(ln, "quote", "") or ln.text],
                          note=note))
     return out
@@ -529,7 +559,7 @@ def _ppe_line(lines, pattern):
             continue
         back, back_lines = [], []
         for prev in reversed(lines[max(0, i - 8):i]):
-            if prev.amounts:
+            if "t" in prev.amounts and "t1" in prev.amounts:     # a stray date ("31") is not a figure line
                 break
             back.insert(0, prev.label)
             back_lines.insert(0, prev)
@@ -623,7 +653,8 @@ def _debt(lines):
     current maturities. Short-term (working-capital) bank loans are excluded (D-02).
     """
     lt, cm, excluded, section = [], [], [], None
-    interest = re.compile(r"(utang|pinjaman) bank|pinjaman|obligasi|sukuk|liabilitas sewa|utang sewa|wesel bayar|medium term notes|mtn")
+    interest = re.compile(r"(utang|pinjaman) bank|pinjaman|obligasi|sukuk|liabilitas sewa|utang sewa|wesel bayar|medium term notes|mtn"
+                          r"|(utang|liabilitas) aset hak[ -]guna")
     figs = lambda x: "t" in x.amounts or "t1" in x.amounts                    # noqa: E731
     seen = {"current": False, "noncurrent": False}
     for i, ln in enumerate(lines):
@@ -685,6 +716,40 @@ def _nil_by_absence(values, checks, sections, text, notes_start):
             v = Value(v.field, v.column, 0, "REVIEW", [], [], note=Msg("note.debt_nil_g24"))
         out.append(v)
     return out
+
+
+SECTIONS = [("check.section_ca", r"^aset lancar$", r"^(total|jumlah) aset lancar$"),
+            ("check.section_nca", r"^aset tidak lancar$", r"^(total|jumlah) aset tidak lancar$")]
+
+
+def _section_sums(pos):
+    """Rule 7: the lines of a section of the statement of financial position must add up to its printed total.
+    Confirms that every figure in the section was read (and read at the right scale). Returns
+    (passed checks, issues); a section that does not add up is reported, never corrected."""
+    passed, issues = [], []
+    lines = pos.lines
+    for key, head_rx, total_rx in SECTIONS:
+        start = next((i for i, ln in enumerate(lines) if re.search(head_rx, _norm(ln.label))
+                      and not ("t" in ln.amounts or "t1" in ln.amounts)), None)
+        if start is None:
+            continue
+        parts, total = [], None
+        for ln in lines[start + 1:start + 60]:
+            if "t" in ln.amounts and "t1" in ln.amounts:
+                if re.search(total_rx, _norm(ln.full_label or ln.label)):
+                    total = ln
+                    break
+                parts.append(ln)
+        if total is None or not parts:
+            continue
+        for c in ("t", "t1"):
+            got = sum(x.amounts[c] for x in parts)
+            if got == total.amounts[c]:
+                passed.append((Msg(key), c, True, Msg("check.detail_vs", a=Amt(got), b=Amt(total.amounts[c]))))
+            else:
+                issues.append(Msg("issue.section_sum", sec=Msg(key), col=c, a=Amt(got), b=Amt(total.amounts[c]),
+                                  p=total.page))
+    return passed, issues
 
 
 def _checks(pos, pl, values):
@@ -867,6 +932,20 @@ def read(pdf_path) -> Extraction:
         else:
             values += [Value(field_name, c, None, "NOT FOUND" if st else "STATEMENT NOT FOUND") for c in ("t", "t1")]
 
+    # rule 7: a single-line field with several candidate lines of different amounts is ambiguous: REVIEW
+    for field_name, kind, pattern, status in FACE_RULES:
+        st = statements.get(kind)
+        if not st or field_name == "cash_flow_from_operations":
+            continue
+        cands = _candidates(st.lines, pattern)
+        amounts = {(abs(x.amounts["t"]), abs(x.amounts["t1"])) for x in cands}
+        if len(amounts) > 1:
+            issues.append(Msg("issue.ambiguous", item=Msg(f"label.{field_name}"),
+                              lines=Raw("; ".join(f"hal. {x.page}: {x.text[:50]}" for x in cands[:4]))))
+            for v in values:
+                if v.field == field_name and v.status == "FOUND":
+                    v.status = "REVIEW"
+
     pl = statements.get("profit_loss")
     if pl:
         parts = [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
@@ -914,6 +993,7 @@ def read(pdf_path) -> Extraction:
             else [Value("current_maturities_long_term_debt", c, None, "REVIEW", note=Msg("note.cm_none")) for c in ("t", "t1")]
 
     checks = []
+    cross_checks = {}
     face_rou = None
     extra_non_ppe = {}
     if pos:
@@ -921,13 +1001,26 @@ def read(pdf_path) -> Extraction:
         if face_rou:
             values += _value_pair("rou_assets_net", face_rou, "REVIEW", Msg("note.rou_face"))
         checks += _checks(pos, statements.get("profit_loss"), values)
+        sec_ok, sec_issues = _section_sums(pos)
+        checks += sec_ok
+        issues += sec_issues
+        section_fields = {"check.section_ca": ("cash_and_cash_equivalents", "accounts_receivable"),
+                          "check.section_nca": ("property_plant_equipment_net", "rou_assets_net")}
+        for i_ in sec_issues:                      # a section that does not add up: its line items are not FOUND
+            fields = section_fields.get(i_.params["sec"].key, ())
+            for v in values:
+                if v.field in fields and v.column == i_.params["col"] and v.status == "FOUND":
+                    v.status = "REVIEW"
         values = _nil_by_absence(values, checks, debt_sections, loc["text"], (chosen or {}).get("notes_start"))
 
     # ---- notes (Phase 2b); only when the notes (CALK) were located after the statements
     if pos and chosen and chosen.get("notes_start"):
-        from .notes_reader import PageCache, read_notes
+        from .notes_reader import PageCache, ppe_note_carrying, read_notes
         with pdfplumber.open(pdf_path) as pdf:
             cache = PageCache(pdf, pdf_path, fiscal_year, text=loc["text"], notes_start=chosen["notes_start"], fmt=fmt)
+            face_ppe = {v.column: v.value for v in values if v.field == "property_plant_equipment_net" and v.value is not None}
+            if face_ppe:
+                cross_checks["ppe_note"] = ppe_note_carrying(cache, chosen["notes_start"], face_ppe)
             n_values, n_checks, n_issues, _, non_ppe_ev = read_notes(cache, statements, values)
         values += n_values
         checks += n_checks
@@ -966,7 +1059,7 @@ def read(pdf_path) -> Extraction:
 
     return Extraction(Path(pdf_path).name, n, scanned, fiscal_year, unit, stype, statements, values,
                       issues, checks, extra_non_ppe, fs_location, trans, year_labels,
-                      _financial_institution(statements), fmt, currency)
+                      _financial_institution(statements), fmt, currency, cross_checks)
 
 
 # Bank / insurer / finance-company line items (labels on the face of the statements). The Beneish model

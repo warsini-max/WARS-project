@@ -19,7 +19,7 @@ import re
 from dataclasses import dataclass
 
 from .pdf_reader import _norm, parse_amount
-from .text import Money, Msg, Pct, Psak, Raw, unit_msg
+from .text import Amt, Money, Msg, Pages, Pct, Psak, Raw, join, unit_msg
 
 YOY_CHANGE_THRESHOLD = 1.0      # workbook Parameters: yoy_change_threshold (1.0 = 100%)
 YOY_FIELDS = ["revenue", "accounts_receivable", "cost_of_goods_sold", "selling_general_administrative_expenses",
@@ -71,6 +71,15 @@ def _cash_flow_closing_cash(ex):
 def check(p: dict, ex=None) -> list:
     flags = []
     cols = ("t", "t1")
+
+    # ---------------------------------------------------------------- app: rule 7 cross-check, fixed assets (ERROR)
+    ppe_x = (getattr(ex, "cross_checks", None) or {}).get("ppe_note", {}) if ex is not None else {}
+    for c in cols:
+        st = ppe_x.get(c)
+        if st and st[0] == "mismatch":
+            flags.append(Flag("a_ppe_note", "ERROR", "app",
+                              Msg("flag.ppe_note", seen=join([Amt(x) for x in st[1]], ", ")),
+                              ("property_plant_equipment_net",), c))
 
     # ---------------------------------------------------------------- workbook: e_impossible_values (ERROR)
     for c in cols:
@@ -247,7 +256,7 @@ def check(p: dict, ex=None) -> list:
     return flags
 
 
-EXTRACTION_ONLY = ("a_cash", "a_year_labels")   # checks that need the extraction; kept when the inputs are recalculated
+EXTRACTION_ONLY = ("a_cash", "a_year_labels", "a_ppe_note")   # checks that need the extraction; kept when the inputs are recalculated
 
 
 def passed_checks(p: dict, ex=None) -> list:
@@ -257,6 +266,9 @@ def passed_checks(p: dict, ex=None) -> list:
         closing, _ = _cash_flow_closing_cash(ex)
         if closing and all(closing[c] == _g(p, "cash_and_cash_equivalents", c) for c in ("t", "t1")):
             out.append(Msg("check.cash"))
+        ppe_x = (getattr(ex, "cross_checks", None) or {}).get("ppe_note", {})
+        if ppe_x and all(v[0] == "ok" for v in ppe_x.values()):
+            out.append(Msg("check.ppe_note", p=Pages(tuple(sorted({v[1] for v in ppe_x.values()})))))
         yl = getattr(ex, "year_labels", None) or {}
         if yl and all(v.get("year") is not None for v in yl.values()) and len({v["year"] for v in yl.values()}) == 1:
             out.append(Msg("check.year_labels", list=tuple(
