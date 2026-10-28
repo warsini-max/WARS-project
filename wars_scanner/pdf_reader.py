@@ -392,10 +392,20 @@ SGA_PARTS = [r"^beban penjualan( dan pemasaran)?$", r"^beban (umum dan administr
              r"^beban pemasaran$", r"^beban umum$"]
 
 
+def _continuation(lines, i):
+    """The line's own label is the tail of a wrapped label ("Uang muka pembelian" / "aset tetap 58.997"):
+    it starts in lower case right under a label-only line. Line items in IDX statements start with a
+    capital letter, so such a tail must not be matched on its own (Trial 1, BIRD 2021)."""
+    ln = lines[i]
+    first = ln.label.strip()[:1]
+    return bool(first) and first.islower() and i > 0 and not lines[i - 1].amounts and bool(lines[i - 1].label.strip())
+
+
 def _first(lines, pattern, need_both=True):
     rx = re.compile(pattern)
-    for ln in lines:
-        if (rx.search(_norm(ln.label)) or rx.search(_norm(ln.full_label))) and (
+    for i, ln in enumerate(lines):
+        own = rx.search(_norm(ln.label)) and not _continuation(lines, i)
+        if (own or rx.search(_norm(ln.full_label))) and (
                 not need_both or ("t" in ln.amounts and "t1" in ln.amounts)):
             return ln
     return None
@@ -406,7 +416,8 @@ def _value_pair(field_name, ln, status, note=""):
     for col in ("t", "t1"):
         v = ln.amounts.get(col)
         out.append(Value(field_name, col, abs(v) if v is not None else None,
-                         status if v is not None else "NOT FOUND", [ln.page], [ln.text], note=note))
+                         status if v is not None else "NOT FOUND", [ln.page], [getattr(ln, "quote", "") or ln.text],
+                         note=note))
     return out
 
 
@@ -427,6 +438,43 @@ def _revenue_line(lines, pattern):
                 return nxt
             if re.match(r"^(beban|harga) pokok|^laba", nl):
                 break
+    return None
+
+
+DIRECT_COST = re.compile(r"^(beban|biaya) langsung$|^(beban|biaya) pokok (jasa|pendapatan jasa)$")
+GROSS_PROFIT = re.compile(r"^laba (bruto|kotor)$|^laba \(rugi\) (bruto|kotor)$")
+
+
+def _direct_cost_line(lines, revenue_ln):
+    """P5 (Gail, 28 Oct 2026): 'Beban langsung' counts as cost of sales only when a gross-profit line
+    follows within two lines and revenue − direct cost = gross profit in both years."""
+    if revenue_ln is None:
+        return None
+    for i, ln in enumerate(lines):
+        if not DIRECT_COST.search(_norm(ln.full_label or ln.label)) or "t" not in ln.amounts or "t1" not in ln.amounts:
+            continue
+        gp = next((x for x in lines[i + 1:i + 3] if GROSS_PROFIT.search(_norm(x.full_label or x.label))
+                   and "t" in x.amounts and "t1" in x.amounts), None)
+        if gp and all(abs(revenue_ln.amounts[c]) - abs(ln.amounts[c]) == gp.amounts[c] for c in ("t", "t1")):
+            return ln
+    return None
+
+
+def _operating_expenses_line(lines):
+    """P5 (Gail, 28 Oct 2026): a single 'Beban usaha' line counts as selling + general and administrative
+    expenses only when it lies between the gross-profit line and the operating-profit line and no separate
+    selling or general and administrative line exists."""
+    gp = next((i for i, x in enumerate(lines) if GROSS_PROFIT.search(_norm(x.full_label or x.label)) and x.amounts), None)
+    if gp is None:
+        return None
+    for j in range(gp + 1, min(gp + 6, len(lines))):
+        ln = lines[j]
+        if not re.match(r"^beban usaha$", _norm(ln.full_label or ln.label)) or "t" not in ln.amounts or "t1" not in ln.amounts:
+            continue
+        after = lines[j + 1:j + 6]
+        if any(re.match(r"^(laba|rugi|laba \(rugi\)|\(rugi\) laba) (usaha|operasi)\b", _norm(x.full_label or x.label))
+               and x.amounts for x in after):
+            return ln
     return None
 
 
@@ -479,16 +527,18 @@ def _ppe_line(lines, pattern):
     for i, ln in enumerate(lines):
         if "t" not in ln.amounts or "t1" not in ln.amounts:
             continue
-        back = []
+        back, back_lines = [], []
         for prev in reversed(lines[max(0, i - 8):i]):
             if prev.amounts:
                 break
             back.insert(0, prev.label)
+            back_lines.insert(0, prev)
         full = _norm(" ".join(back + [ln.label]))
         m = None
         for m in PPE_WRAPPED.finditer(full):
             pass
         if m and not NOT_PPE_BEFORE.search(full[:m.start()]):
+            ln.quote = " / ".join(x.text for x in back_lines[-6:] + [ln])       # the whole wrapped label as printed
             return ln
     return None
 
@@ -518,6 +568,25 @@ def _receivables(lines):
 
 
 CONTRACT_ASSET = re.compile(r"aset kontrak|contract assets?")
+GROSS_DUE = re.compile(r"^tagihan bruto (kepada|dari) pemberi kerja|^gross amount due from customers")
+RETENTION = re.compile(r"^piutang retensi")
+
+
+def _block(lines, rx):
+    """A face item matched by label: its own line when it carries figures, else the 'Pihak ...' lines under it."""
+    for i, ln in enumerate(lines):
+        if not rx.search(_norm(ln.label)):
+            continue
+        if "t" in ln.amounts:
+            return [ln]
+        block = []
+        for nxt in lines[i + 1:i + 6]:
+            if _norm(nxt.label).startswith("pihak") and "t" in nxt.amounts:
+                block.append(nxt)
+            elif block or "t" in nxt.amounts:
+                break
+        return block
+    return []
 
 
 def _contract_assets(lines, ar_lines):
@@ -801,8 +870,18 @@ def read(pdf_path) -> Extraction:
     pl = statements.get("profit_loss")
     if pl:
         parts = [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
-        values += _sum_values("selling_general_administrative_expenses", parts, "FOUND",
-                              Msg("note.sga"))
+        opex = None if parts else _operating_expenses_line(pl.lines)
+        if opex is not None:
+            values += _sum_values("selling_general_administrative_expenses", [opex], "REVIEW", Msg("note.sga_opex"))
+        else:
+            values += _sum_values("selling_general_administrative_expenses", parts, "FOUND", Msg("note.sga"))
+        cogs = next((v for v in values if v.field == "cost_of_goods_sold" and v.column == "t"), None)
+        if cogs is not None and cogs.value is None:
+            rev_ln = _revenue_line(pl.lines, FACE_RULES[0][2])
+            direct = _direct_cost_line(pl.lines, rev_ln)
+            if direct is not None:
+                values = [v for v in values if v.field != "cost_of_goods_sold"]
+                values += _value_pair("cost_of_goods_sold", direct, "REVIEW", Msg("note.cogs_direct"))
     pos = statements.get("position")
     if pos:
         ar, _ = _receivables(pos.lines)
@@ -811,10 +890,21 @@ def read(pdf_path) -> Extraction:
             values += _sum_values("accounts_receivable", ar, "REVIEW", Msg("note.ar_combined"))
         else:
             values += _sum_values("accounts_receivable", ar, "FOUND" if not ca_sep else "REVIEW", Msg("note.ar"))
+        # P7 (Gail, 28 Oct 2026): construction contracts. 'Tagihan bruto kepada pemberi kerja' is a contract
+        # asset (G-06); 'piutang retensi' is not yet unconditional. Both stay out of trade receivables, REVIEW.
+        gross_due, retention = _block(pos.lines, GROSS_DUE), _block(pos.lines, RETENTION)
+        ca_sep = ca_sep + [x for x in gross_due if x not in ca_sep]
         if ca_sep:
-            ca_note = Msg("note.contract_assets", p=Pages(tuple(x.page for x in ca_sep)))
+            ca_note = Msg("note.contract_assets", p=Pages(tuple(sorted({x.page for x in ca_sep}))))
             values += _sum_values("contract_assets", ca_sep, "REVIEW", ca_note)
             issues.append(ca_note)
+        if retention:
+            issues.append(Msg("issue.retention", p=Pages(tuple(sorted({x.page for x in retention})))))
+        if ca_sep or retention:
+            for v in values:
+                if v.field == "accounts_receivable" and v.value is not None:
+                    v.status = "REVIEW"
+                    v.note = join([v.note, Msg("note.ar_construction")]) if retention else v.note
         lt, cm, excl, debt_sections = _debt(pos.lines)
         if excl:
             issues.append(Msg("issue.short_term_loans", lines=Raw("; ".join(e.text[:60] for e in excl))))

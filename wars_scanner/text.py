@@ -1152,6 +1152,21 @@ CATALOG: dict = {
     "unit.USD.Thousands": _e("ribuan Dolar AS", "thousands of US dollars", "Gail 28 Okt P4"),
     "unit.USD.Millions": _e("jutaan Dolar AS", "millions of US dollars", "Gail 28 Okt P4"),
     "unit.USD.Billions": _e("miliaran Dolar AS", "billions of US dollars", "Gail 28 Okt P4"),
+    "note.cogs_direct": _e("Beban langsung dipakai sebagai beban pokok penjualan: laporan laba rugi menyajikan laba bruto "
+                           "sesudahnya dan pendapatan dikurangi beban langsung sama dengan laba bruto di kedua tahun",
+                           "Direct costs used as cost of sales: the statement of profit or loss shows gross profit "
+                           "after them, and revenue less direct costs equals gross profit in both years", "Gail 28 Okt P5"),
+    "note.sga_opex": _e("Beban usaha disajikan satu baris (tanpa pemisahan beban penjualan dan beban umum); dipakai sebagai "
+                        "beban penjualan dan umum. Periksa rinciannya di catatan, karena bisa mencakup pos lain",
+                        "Operating expenses are shown on one line (no split into selling and general expenses); used as "
+                        "selling, general and administrative expenses. Check the breakdown in the notes, as it may "
+                        "include other items", "Gail 28 Okt P5"),
+    "note.ar_construction": _e("Piutang retensi tidak dihitung sebagai piutang usaha",
+                               "Retention receivables are not counted as trade receivables", "Gail 28 Okt P7"),
+    "issue.retention": _e("Piutang retensi disajikan terpisah (hal. {p}); tidak dihitung sebagai piutang usaha karena "
+                          "haknya belum tanpa syarat. Periksa catatannya",
+                          "Retention receivables are presented separately (p. {p}); not counted as trade receivables "
+                          "because the right is not yet unconditional. Check the note", "Gail 28 Okt P7"),
     "note.debt_nil_g24": _e("Nihil karena tidak ada baris utang berbunga di bagian ini, neraca seimbang di kedua tahun, "
                             "dan tidak ada catatan pinjaman jangka panjang, obligasi atau sewa; periksa di PDF",
                             "Nil because the section has no interest-bearing line, the balance sheet balances in both "

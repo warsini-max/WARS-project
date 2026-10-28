@@ -86,3 +86,49 @@ def test_unread_investment_property_depreciation_is_not_taken_as_zero():
     out = pipeline.apply_provisional(r)
     assert out.non_ppe_pending == ["t", "t1"]
     assert not [a for a in out.assumed if a[0] == "depreciation_amortization_non_ppe"]
+
+
+# ----------------------------------------------------------------------------- P5 / P7 (Gail, 28 Oct 2026)
+
+def _fl(label, t=None, t1=None):
+    ln = Line(1, 0.0, [])
+    ln.label, ln.full_label = label, label
+    ln.amounts = {k: v for k, v in (("t", t), ("t1", t1)) if v is not None}
+    return ln
+
+
+def test_direct_costs_count_as_cost_of_sales_only_when_gross_profit_reconciles():
+    from wars_scanner.pdf_reader import _direct_cost_line
+    rev = _fl("Pendapatan neto", 2220841, 2046660)
+    good = [rev, _fl("Beban langsung", 1726874, 1712149), _fl("Laba bruto", 493967, 334511)]
+    assert _direct_cost_line(good, rev) is good[1]
+    bad = [rev, _fl("Beban langsung", 1726874, 1712149), _fl("Laba bruto", 493000, 334511)]
+    assert _direct_cost_line(bad, rev) is None
+    no_gp = [rev, _fl("Beban langsung", 1726874, 1712149), _fl("Beban usaha", 1, 1)]
+    assert _direct_cost_line(no_gp, rev) is None
+
+
+def test_operating_expenses_count_as_sga_only_between_gross_and_operating_profit():
+    from wars_scanner.pdf_reader import _operating_expenses_line
+    ok = [_fl("Laba bruto", 5, 4), _fl("Beban usaha", -2, -1), _fl("Laba usaha", 3, 3)]
+    assert _operating_expenses_line(ok) is ok[1]
+    no_op = [_fl("Laba bruto", 5, 4), _fl("Beban usaha", -2, -1), _fl("Laba sebelum pajak", 3, 3)]
+    assert _operating_expenses_line(no_op) is None
+
+
+def test_tail_of_a_wrapped_label_is_not_matched_alone():
+    """BIRD 2021: 'Uang muka pembelian' / 'aset tetap 58.997 95.906' are advances, not fixed assets."""
+    from wars_scanner.pdf_reader import _first
+    lines = [_fl("Uang muka pembelian"), _fl("aset tetap", 58997, 95906), _fl("Aset tetap", 4938177, 5668030)]
+    lines[1].full_label = "Uang muka pembelian aset tetap"
+    assert _first(lines, r"^aset tetap$") is lines[2]
+
+
+def test_construction_items_stay_out_of_trade_receivables():
+    from wars_scanner.pdf_reader import GROSS_DUE, RETENTION, _block, _norm
+    lines = [_fl("Piutang Retensi - Neto"), _fl("Pihak Ketiga", 344, 422),
+             _fl("Tagihan Bruto Kepada Pemberi Kerja - Neto"), _fl("Pihak Ketiga", 643, 714),
+             _fl("Liabilitas Bruto kepada Pemberi Kerja"), _fl("Pihak Ketiga", 3, 13)]
+    assert [x.amounts["t"] for x in _block(lines, RETENTION)] == [344]
+    assert [x.amounts["t"] for x in _block(lines, GROSS_DUE)] == [643]
+    assert not GROSS_DUE.search(_norm("Liabilitas Bruto kepada Pemberi Kerja"))
