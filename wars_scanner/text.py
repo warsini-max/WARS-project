@@ -666,8 +666,8 @@ CATALOG: dict = {
     "label.total_assets": _e("Total aset", "Total assets", "r0 8"),
     "label.current_assets": _e("Aset lancar", "Current assets", "r0 8"),
     "label.cash_and_cash_equivalents": _e("Kas dan setara kas", "Cash and cash equivalents", "r0 8"),
-    "label.property_plant_equipment_net": _e("Aset tetap neto + aset hak-guna (sesuai definisi WARS)",
-                                             "Net PPE + right of use assets (under the WARS definition)", "r1 C7"),
+    "label.property_plant_equipment_net": _e("Aset tetap neto + aset hak-guna", "Net PPE + right of use assets",
+                                             "Gail 28 Okt report"),
     "label.rou_assets_net": _e("di antaranya: aset hak-guna", "of which: right of use assets", "r0 8"),
     "label.current_liabilities": _e("Liabilitas jangka pendek", "Current liabilities", "r0 8"),
     "label.total_liabilities": _e("Total liabilitas", "Total liabilities", "r0 8"),
@@ -714,10 +714,7 @@ CATALOG: dict = {
     # ---------------------------------------------------------------- value statuses (r0 §2, r1 C1)
     "status.FOUND": _e("Terbaca dan tercocokkan", "Read and reconciled", "r0 2.1"),
     "status.REVIEW": _e("Perlu diperiksa", "Needs review", "r1 2.2"),
-    "status.UNDISCLOSED": _e("Tidak diungkapkan (diperlakukan sebagai 0 sesuai aturan; bukan berarti jumlah "
-                             "sebenarnya nol)",
-                             "Not disclosed (treated as 0 under the rule; this does not mean the actual amount is "
-                             "zero)", "r1 2.3"),
+    "status.UNDISCLOSED": _e("Tidak diungkapkan (dihitung 0)", "Not disclosed (counted as 0)", "Gail 28 Okt report"),
     "status.BUILT FROM DISCLOSED COMPONENTS": _e("Dijumlahkan dari komponen yang diungkapkan",
                                                  "Sum of disclosed components", "r0 2.4"),
     "status.NOT DISCLOSED": _e("Nilai tidak tersedia (dibiarkan kosong)", "Value unavailable (left blank)", "r1 2.5"),
@@ -772,6 +769,10 @@ CATALOG: dict = {
                           "tetap, tidak ditambahkan lagi",
                           "Right of use assets presented within PPE ({psak116}); already in the PPE figure, not added "
                           "again", "Gail 28 Okt impl", "D-08"),
+    "note.rou_absent": _e("Laporan tidak menyebut aset hak-guna sama sekali; dihitung 0",
+                          "The report does not mention right of use assets at all; counted as 0", "Gail 28 Okt report"),
+    "note.ppe_no_rou": _e("Aset tetap sesuai laporan; perusahaan tidak menyajikan aset hak-guna",
+                          "PPE as presented; the company presents no right of use assets", "Gail 28 Okt report"),
     "note.rou_none": _e("Baris aset hak-guna tidak ditemukan di laporan utama maupun di CALK",
                         "No right of use line found in the primary statements or in the notes", "Gail 28 Okt impl", "D-08"),
     "note.debt": _e("Dipilih berdasarkan nama akun; periksa klasifikasinya",
@@ -1002,9 +1003,11 @@ CATALOG: dict = {
                      "keuangan (kedua tahun)",
                      "Closing cash in the statement of cash flows compared with cash and cash equivalents in the "
                      "statement of financial position (both years)", "r1 5.9"),
-    "check.detail_eq": _e("{a} vs {b} + {c}", "{a} vs {b} + {c}", "Gail 28 Okt impl"),
-    "check.detail_gp": _e("{a} − {b} vs {c}", "{a} − {b} vs {c}", "Gail 28 Okt impl"),
-    "check.detail_vs": _e("{a} vs {b}", "{a} vs {b}", "Gail 28 Okt impl"),
+    "check.detail_eq": _e("Total aset {a}; total liabilitas {b} + ekuitas {c}",
+                          "Total assets {a}; total liabilities {b} + equity {c}", "Gail 28 Okt report"),
+    "check.detail_gp": _e("Pendapatan {a} − beban pokok {b}; laba bruto tercetak {c}",
+                          "Revenue {a} − cost of sales {b}; printed gross profit {c}", "Gail 28 Okt report"),
+    "check.detail_vs": _e("Hasil penjumlahan {a}; total tercetak {b}", "Sum of the lines {a}; printed total {b}", "Gail 28 Okt report"),
     "check.detail_page": _e("hal. {p}", "p. {p}", "Gail 28 Okt impl"),
 
     # ---------------------------------------------------------------- flags (r0 §6, r1 C5)
@@ -1318,7 +1321,7 @@ CATALOG: dict = {
                                "are none.", "new"),
 
     # ---------------------------------------------------------------- PDF report and Excel (new; awaiting review)
-    "rep.title": _e("Laporan Penyaringan Red Flag", "Red Flag Screening Report", "new"),
+    "rep.title": _e("Red-flag Scanner Report", "Red-flag Scanner Report", "Gail 28 Okt report"),
     "rep.page": _e("Halaman {n} dari {m}", "Page {n} of {m}", "new"),
     "rep.generated": _e("Dibuat {d}", "Generated {d}", "new"),
     "rep.version": _e("Bahasa Indonesia", "English", "new"),
@@ -1332,8 +1335,46 @@ CATALOG: dict = {
     "rep.s3": _e("Temuan", "Findings", "r0 report"),
     "rep.s4": _e("Daftar periksa", "Checklist", "new"),
     "rep.s5": _e("Lampiran A · Angka yang dibaca", "Appendix A · Figures read", "new"),
-    "rep.s6": _e("Lampiran B · Pemeriksaan silang dan catatan pembacaan", "Appendix B · Cross-checks and reading notes",
-                 "new"),
+    "rep.s6": _e("Lampiran B · Pemeriksaan silang", "Appendix B · Cross-checks", "Gail 28 Okt report"),
+    "rep.s8": _e("Lampiran C · Catatan pembacaan", "Appendix C · Reading notes", "Gail 28 Okt report"),
+    "rep.b_intro": _e("Setiap pemeriksaan mencocokkan angka yang dibaca dengan tempat kedua di laporan. Lolos: angka "
+                      "cocok. Gagal: angka tidak cocok, sehingga angka terkait perlu dicocokkan dengan PDF. Perlu "
+                      "diperiksa: pemeriksaan tidak dapat diselesaikan secara otomatis. Alasannya tercantum di kolom "
+                      "Penjelasan.",
+                      "Each check agrees a figure read to a second place in the report. Passed: the figures agree. "
+                      "Failed: the figures do not agree, so the related figures need to be agreed to the PDF. Needs "
+                      "review: the check could not be completed automatically. The reason is given in the Explanation "
+                      "column.", "Gail 28 Okt report"),
+    "rep.b.col.no": _e("No.", "No.", "Gail 28 Okt report"),
+    "rep.b.col.check": _e("Pemeriksaan", "Check", "Gail 28 Okt report"),
+    "rep.b.col.result": _e("Hasil", "Result", "Gail 28 Okt report"),
+    "rep.b.col.expl": _e("Penjelasan", "Explanation", "Gail 28 Okt report"),
+    "rep.b.failed_why": _e("Angka tidak cocok. Kemungkinan ada baris yang terlewat, terbaca dua kali atau salah baca; "
+                           "cocokkan baris terkait dengan PDF.",
+                           "The figures do not agree. A line may have been missed, read twice or misread; agree the "
+                           "related lines to the PDF.", "Gail 28 Okt report"),
+    "rep.c_intro": _e("Hal-hal berikut ditemukan saat membaca PDF dan perlu diperhatikan saat mencocokkan angka.",
+                      "The following points were found while reading the PDF and need to be considered when agreeing "
+                      "the figures.", "Gail 28 Okt report"),
+    "rep.c.col.note": _e("Catatan", "Note", "Gail 28 Okt report"),
+    "rep.col.trace": _e("ANGKA SUMBER (HAL.)", "SOURCE FIGURES (PAGE)", "Gail 28 Okt report"),
+    "rep.trace_item": _e("{item} (hal. {p})", "{item} (p. {p})", "Gail 28 Okt report"),
+    "note.ambiguous_line": _e("Ada lebih dari satu baris dengan label serupa; pastikan baris yang dipakai benar",
+                              "More than one line has a similar label; confirm that the line used is the right one", "Gail 28 Okt report"),
+    "short.accounts_receivable": _e("Piutang usaha", "Trade receivables", "Gail 28 Okt report"),
+    "short.revenue": _e("Pendapatan", "Revenue", "Gail 28 Okt report"),
+    "short.cost_of_goods_sold": _e("Beban pokok", "Cost of sales", "Gail 28 Okt report"),
+    "short.current_assets": _e("Aset lancar", "Current assets", "Gail 28 Okt report"),
+    "short.property_plant_equipment_net": _e("Aset tetap", "PPE", "Gail 28 Okt report"),
+    "short.total_assets": _e("Total aset", "Total assets", "Gail 28 Okt report"),
+    "short.ppe_depreciation_disclosed": _e("Penyusutan", "Depreciation", "Gail 28 Okt report"),
+    "short.selling_general_administrative_expenses": _e("Beban penjualan dan umum", "SG&A expenses", "Gail 28 Okt report"),
+    "short.current_liabilities": _e("Liabilitas jangka pendek", "Current liabilities", "Gail 28 Okt report"),
+    "short.long_term_debt": _e("Utang jangka panjang", "Long-term debt", "Gail 28 Okt report"),
+    "short.cash_and_cash_equivalents": _e("Kas", "Cash", "Gail 28 Okt report"),
+    "short.current_maturities_long_term_debt": _e("Bagian lancar utang", "Current portion of debt", "Gail 28 Okt report"),
+    "short.taxes_payable": _e("Utang pajak", "Taxes payable", "Gail 28 Okt report"),
+    "short.depreciation_amortization_total": _e("Penyusutan dan amortisasi", "Depreciation and amortisation", "Gail 28 Okt report"),
     "rep.s7": _e("Metodologi dan batasan", "Methodology and limitations", "Gail 28 Okt A3"),
     "rep.f.entity": _e("ENTITAS", "ENTITY", "r0 report"),
     "rep.f.ticker": _e("KODE SAHAM", "TICKER", "r0 report"),
@@ -1348,21 +1389,19 @@ CATALOG: dict = {
     "rep.box.figures_v": _e("{a} dari {b} angka terbaca dan tercocokkan", "{a} of {b} figures read and reconciled",
                             "new"),
     "rep.box.figures_d": _e("{n} perlu dicocokkan; lihat daftar periksa.", "{n} to be checked; see the checklist.", "new"),
-    "rep.box.rules": _e("ATURAN", "RULES", "new"),
-    "rep.box.rules_v": _e("Workbook v0.6", "Workbook v0.6", "Gail 23 Okt R-15"),
-    "rep.box.rules_d": _e("Rumus dan aturan pengisian sesuai buku kerja WARS Track B v0.6.",
-                          "Formulas and entry rules as in the WARS Track B v0.6 workbook.", "new"),
     "rep.box.user": _e("KONFIRMASI PENGGUNA", "USER CONFIRMATION", "Gail 23 Okt R-15"),
     "rep.box.user_v": _e("Belum dilakukan", "Not done yet", "new"),
-    "rep.box.user_d": _e("Isi daftar periksa. Konfirmasi pengguna bukan verifikasi independen.",
-                         "Complete the checklist. User confirmation is not independent verification.", "Gail 23 Okt R-15"),
+    "rep.box.user_d": _e("Cocokkan angka melalui daftar periksa.", "Agree the figures using the checklist.", "Gail 28 Okt report"),
+    "rep.provisional_detail": _e("{n} angka perlu dicocokkan dengan PDF sumber melalui daftar periksa.",
+                                 "{n} figures need to be agreed to the source PDF using the checklist.", "Gail 28 Okt report"),
     "rep.summary": _e("Ringkasan", "Summary", "r0 report"),
     "rep.breakdown_intro": _e(
         "Setiap indeks membandingkan {t} dengan {t1}. Dorongan menunjukkan seberapa jauh suatu indeks menggeser skor "
-        "dari perusahaan netral ({n}). Jumlah delapan dorongan sama dengan selisih antara nilai netral dan skor akhir.",
+        "dari perusahaan netral ({n}). Kolom angka sumber menunjukkan pos dan halaman PDF yang dipakai untuk menghitung "
+        "indeks.",
         "Each index compares {t} with {t1}. The push shows how far an index moves the score away from a neutral "
-        "company ({n}). The eight pushes add up to the difference between the neutral value and the final score.",
-        "new"),
+        "company ({n}). The source figures column shows the line items and PDF pages used to calculate the index.",
+        "Gail 28 Okt report"),
     "rep.col.coef": _e("KOEF.", "COEF.", "r0 report"),
     "rep.sum_line": _e("Netral {n} + dorongan bersih {p} = M-score {m} · batas {thr}",
                        "Neutral {n} + net push {p} = M-score {m} · threshold {thr}", "new"),
@@ -1386,12 +1425,10 @@ CATALOG: dict = {
     "rep.d": _e("D · AREA UNTUK PEMERIKSAAN LEBIH LANJUT", "D · AREAS FOR FURTHER EXAMINATION", "r0 report"),
     "rep.why": _e("Tentang indeks ini", "About this index", "r1 7.14"),
     "rep.check_intro": _e(
-        "Buka halaman PDF yang disebut dan cocokkan tiap angka. Beri tanda pada kolom Sesuai atau Tidak sesuai. Satu "
-        "jawaban Tidak sesuai berarti M-score ini tidak dapat dipakai sampai angka tersebut diperbaiki. Konfirmasi "
-        "pengguna bukan verifikasi independen.",
-        "Open the PDF page shown and check each figure. Tick Matches or Does not match. One Does not match means this "
-        "M-score cannot be used until the figure is corrected. User confirmation is not independent verification.",
-        "new"),
+        "Cocokkan setiap angka dengan halaman PDF yang disebut, lalu centang Sesuai atau Tidak sesuai. Jika ada angka "
+        "yang tidak sesuai, M-score belum dapat digunakan.",
+        "Agree each figure to the PDF page shown, then tick Matches or Does not match. If any figure does not match, "
+        "the M-score cannot be relied on yet.", "Gail 28 Okt report"),
     "rep.check.none": _e("Tidak ada angka yang perlu dicocokkan.", "No figure needs checking.", "Gail 28 Okt impl"),
     "rep.check.col.no": _e("No", "No", "new"),
     "rep.check.col.item": _e("Pos", "Line item", "Gail 28 Okt impl"),
@@ -1431,8 +1468,8 @@ CATALOG: dict = {
         "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",
         "This report is an automated screen. It is not an audit opinion, does not replace examination procedures, and "
         "is not evidence of fraud or misstatement.", "new"),
-    "rep.method.p5": _e("Dibuat oleh Warsini · linkedin.com/in/warsiniak · versi beta",
-                        "Made by Warsini · linkedin.com/in/warsiniak · beta version", "Gail 28 Okt B3"),
+    "rep.contact": _e("Hubungi kami", "Contact us", "Gail 28 Okt report"),
+    "rep.check.line": _e("Baris di PDF: {s}", "Line in the PDF: {s}", "Gail 28 Okt report"),
 
     "xl.sheet.summary": _e("Ringkasan", "Summary", "new"),
     "xl.sheet.figures": _e("Angka", "Figures", "new"),

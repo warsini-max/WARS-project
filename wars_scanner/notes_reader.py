@@ -839,6 +839,9 @@ def non_ppe_evidence(cache, first_note_page, invprop_table, statements=None):
 
 # ------------------------------------------------------------------------------ main entry
 
+ROU_WORDS = re.compile(r"(?i)hak[ -]guna|hak untuk menggunakan aset|hak pakai|right[ -]of[ -]use")
+
+
 def _val(values, f, c):
     return next((v for v in values if v.field == f and v.column == c), None)
 
@@ -945,6 +948,10 @@ def read_notes(cache, statements, face_values):
                 break
         if found:
             values += _pair("rou_assets_net", found, "REVIEW", Msg("note.rou_notes"))
+        elif not any(ROU_WORDS.search(txt) for txt in cache.text):
+            # Gail, 28 Oct 2026: not every company has leases. When the whole report never mentions right of use
+            # assets, they are taken as nil from that evidence (as G-24 for debt), and no review item is raised.
+            values += [Value("rou_assets_net", c, 0, "FOUND", [], [], "", Msg("note.rou_absent")) for c in ("t", "t1")]
         else:
             values += _missing("rou_assets_net", "NOT FOUND", Msg("note.rou_none"))
 

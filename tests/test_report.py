@@ -111,8 +111,9 @@ def test_review_item_keys_do_not_depend_on_the_language():
     r = _result(-2.5, NEUTRAL, review=[("revenue", "t", "REVIEW", Msg("note.debt"))])
     a, b = report.review_items(r, "id"), report.review_items(r, "en")
     assert [i["key"] for i in a] == [i["key"] for i in b]
-    assert a[0]["why"] == "Perlu diperiksa. Dipilih berdasarkan nama akun; periksa klasifikasinya [D-01, D-02]"
-    assert b[0]["why"] == "Needs review. Selected by line-item label; check the classification [D-01, D-02]"
+    # rule codes are never shown to the user (Gail, 28 Oct 2026, report review)
+    assert a[0]["why"] == "Perlu diperiksa. Dipilih berdasarkan nama akun; periksa klasifikasinya"
+    assert b[0]["why"] == "Needs review. Selected by line-item label; check the classification"
 
 
 def test_financial_institution_is_not_scored_and_says_why():

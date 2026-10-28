@@ -477,7 +477,7 @@ def page_result():
         if not r.unreadable:
             st.markdown(_proc_list(r), unsafe_allow_html=True)
         for i in ex.issues:
-            st.markdown("- " + E(R(i, codes=True)))
+            st.markdown("- " + E(R(i)))
     footer()
 
 

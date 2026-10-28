@@ -61,7 +61,7 @@ def test_undisclosed_is_flagged_and_not_shown_as_an_actual_zero():
     v = next(v for v in r.extraction.values if v.field == "amortization_intangibles" and v.column == "t")
     assert v.status == "UNDISCLOSED" and "not a statement that the charge is nil" in v.note.render("en")
     row = next(x for x in report.input_rows(r) if x["field"] == "amortization_intangibles")
-    assert "bukan berarti jumlah sebenarnya nol" in row["status_t"]
+    assert row["status_t"] == "Tidak diungkapkan (dihitung 0)"          # Gail, 28 Oct 2026
 
 
 def test_each_year_is_set_separately():

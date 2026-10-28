@@ -74,7 +74,7 @@ FIXED_TERMS = ["red flag", "M-score", "WARS Scanner", "Window-dressing Accountin
                "TATA", "WARS", "Rp", "IDX", "vs", "Status", "Workbook v0.6", "Window-dressing Red-flag Scanner",
                "BENEISH M-SCORE", "Excel", "Track B", "Red Flag"]
 # R-06 (Gail 23 Oct 2026): the report footer disclaimer is English in both versions, by decision.
-ENGLISH_BY_DECISION = {"rep.footer_disclaimer"}
+ENGLISH_BY_DECISION = {"rep.footer_disclaimer", "rep.title"}     # report title: Gail, 28 Oct 2026
 ENGLISH = r"""the and of not is are was were found review check see with from for only assets asset table notes note page
 year current statement statements threshold workbook score screen flag figures read reading value values
 total liabilities equity revenue sales depreciation amortisation amortization""".split()

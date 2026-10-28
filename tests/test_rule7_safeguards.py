@@ -272,3 +272,11 @@ def test_found_figure_without_any_cross_check_becomes_review():
     values = [Value("cash_flow_from_operations", c, v, "FOUND") for c, v in (("t", 5), ("t1", 4))]
     out = pr._rule7(values, [], {}, [""], None, {}, [])
     assert {v.status for v in out} == {"REVIEW"}
+
+
+def test_right_of_use_words_any_mention_keeps_the_review():
+    """Gail 28 Oct 2026: right of use assets are taken as nil only when the report never mentions them."""
+    for txt in ("Aset hak-guna", "aset hak guna - neto", "Right-of-use assets", "right of use", "Hak untuk menggunakan aset"):
+        assert nr.ROU_WORDS.search(txt), txt
+    for txt in ("Hak atas tanah", "Aset tetap", "Utang usaha"):
+        assert not nr.ROU_WORDS.search(txt), txt

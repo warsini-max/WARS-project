@@ -453,9 +453,12 @@ def _value_pair(field_name, ln, status, note=""):
         v = ln.amounts.get(col)
         if v is not None and field_name not in SIGNED_FIELDS:
             v = abs(v)
+        quote = getattr(ln, "quote", "") or ln.text
+        head = ln.full_label[:len(ln.full_label) - len(ln.label)].strip() if ln.full_label.endswith(ln.label) else ""
+        if not getattr(ln, "quote", "") and head and not ln.label.strip()[:1].isupper():
+            quote = head + " / " + ln.text            # the tail of a wrapped label: quote the head printed above it
         out.append(Value(field_name, col, v,
-                         status if v is not None else "NOT FOUND", [ln.page], [getattr(ln, "quote", "") or ln.text],
-                         note=note))
+                         status if v is not None else "NOT FOUND", [ln.page], [quote], note=note))
     return out
 
 
@@ -1168,10 +1171,12 @@ def read(pdf_path) -> Extraction:
         amounts = {(abs(x.amounts["t"]), abs(x.amounts["t1"])) for x in cands}
         if len(amounts) > 1:
             issues.append(Msg("issue.ambiguous", item=Msg(f"label.{field_name}"),
-                              lines=Raw("; ".join(f"hal. {x.page}: {x.text[:50]}" for x in cands[:4]))))
+                              lines=join([Msg("rep.trace_item", item=Raw(x.text[:50].strip()), p=x.page) for x in cands[:4]],
+                                         "; ")))
             for v in values:
                 if v.field == field_name and v.status == "FOUND":
                     v.status = "REVIEW"
+                    v.note = join([v.note, Msg("note.ambiguous_line")]) if v.note else Msg("note.ambiguous_line")
 
     pl = statements.get("profit_loss")
     if pl:
@@ -1260,7 +1265,12 @@ def read(pdf_path) -> Extraction:
                 continue
             r = rou_vals.get(v.column)
             where = "face" if face_rou else "notes"
-            if r is not None and r.value is not None:
+            if r is not None and r.value == 0 and r.status == "FOUND":
+                # no right of use assets anywhere in the report: PPE alone; FOUND when the PPE note agrees (rule 7)
+                v.note = Msg("note.ppe_no_rou")
+                ok = (cross_checks.get("ppe_note") or {}).get(v.column, ("none",))[0] == "ok"
+                v.status = "FOUND" if ok else "REVIEW"
+            elif r is not None and r.value is not None:
                 v.components = Msg("comp.ppe_rou", a=Amt(v.value), b=Amt(r.value), where=Msg(f"where.{where}"))
                 v.value += r.value
                 v.pages += r.pages

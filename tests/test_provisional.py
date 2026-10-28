@@ -75,12 +75,15 @@ def test_issuer_identification_needs_a_unique_match():
     assert who is None
 
 
-def test_source_label_follows_the_language_and_keeps_unsplittable_lines():
+def test_source_label_follows_the_language_and_drops_figures():
     q = "PENJUALAN 4.020.980 22,31 3.335.411 SALES"
     assert report.source_label(q, "id") == "PENJUALAN"
     assert report.source_label(q, "en") == "SALES"
-    q = "Beban penjualan 3.769.234.915.945 4.027.986.833.485"            # Indonesian-only line
-    assert report.source_label(q, "en") == q
+    q = "Beban penjualan 3.769.234.915.945 4.027.986.833.485"            # Indonesian-only line: its label
+    assert report.source_label(q, "en") == "Beban penjualan"
+    assert report.source_label("Pajak Penghasilan Pasal 25 9.768 3.946 Income Tax Article 25", "id") == \
+        "Pajak Penghasilan Pasal 25"                                       # a number that is part of the label stays
+    assert report.source_label("Pihak berelasi 6,23 2.115.494.369 1.126.732.689 Related parties", "id") == "Pihak berelasi"
     assert report.source_label("", "en") == ""
 
 
@@ -93,7 +96,7 @@ def test_downloads_build_in_both_languages(runs):
             pdf = report_pdf.build(prov, lang, name, "0" * 64)
             assert pdf[:5] == b"%PDF-" and len(pdf) > 20000
             wb = openpyxl.load_workbook(io.BytesIO(report_xlsx.build(prov, lang, name, "0" * 64, "x")))
-            assert len(wb.sheetnames) == 5
+            assert len(wb.sheetnames) == (6 if r.extraction.issues else 5)     # + reading notes
             figures = wb.worksheets[1]
             for row in figures.iter_rows(min_row=2, values_only=True):
                 assert row[1] is None or isinstance(row[1], (int, float))

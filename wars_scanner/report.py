@@ -77,7 +77,7 @@ def status_label(status, lang="id"):
 def input_rows(r: Result, lang="id"):
     """One row per field: value t, value t-1, colour per column, status text, pages, source line, remarks.
 
-    Remarks are a detail view, so they carry the rule codes (A2)."""
+    Rule codes are not shown to the user (Gail 28 Oct 2026, report review)."""
     by = {(v.field, v.column): v for v in r.extraction.values}
     rows = []
     for f in FIELD_ORDER:
@@ -95,7 +95,7 @@ def input_rows(r: Result, lang="id"):
         row["pages"] = ", ".join(str(p) for p in sorted({p for v in cells.values() if v for p in v.pages}))
         row["source"] = (vt.quotes[0] if vt and vt.quotes else "")
         row["components_t"] = render(cells["t"].components, lang) if cells["t"] else ""
-        notes = list(dict.fromkeys(render(v.note, lang, codes=True) for v in cells.values() if v and v.note))
+        notes = list(dict.fromkeys(render(v.note, lang) for v in cells.values() if v and v.note))
         row["note"] = " | ".join(notes)
         rows.append(row)
     return rows
@@ -127,6 +127,29 @@ def drivers(r: Result, n=3, lang="id"):
     rows = [x for x in index_rows(r, lang) if x["index"] in SIGNIFICANT and x["push_vs_neutral"] is not None
             and x["push_vs_neutral"] > DRIVER_MIN_PUSH]
     return sorted(rows, key=lambda x: -x["push_vs_neutral"])[:n]
+
+
+INDEX_FIELDS = {
+    "DSRI": ("accounts_receivable", "revenue"),
+    "GMI": ("revenue", "cost_of_goods_sold"),
+    "AQI": ("current_assets", "property_plant_equipment_net", "total_assets"),
+    "SGI": ("revenue",),
+    "DEPI": ("ppe_depreciation_disclosed", "property_plant_equipment_net"),
+    "SGAI": ("selling_general_administrative_expenses", "revenue"),
+    "LVGI": ("current_liabilities", "long_term_debt", "total_assets"),
+    "TATA": ("current_assets", "cash_and_cash_equivalents", "current_liabilities", "current_maturities_long_term_debt",
+             "taxes_payable", "depreciation_amortization_total", "total_assets"),
+}
+
+
+def index_sources(r: Result, k: str, lang="id"):
+    """The line items behind an index with their PDF pages, so the user can trace it (Gail 28 Oct 2026)."""
+    out = []
+    for f in INDEX_FIELDS.get(k, ()):
+        pages = sorted({p for v in r.extraction.values if v.field == f for p in v.pages})
+        item = t(f"short.{f}", lang)
+        out.append(t("rep.trace_item", lang, item=item, p=", ".join(str(p) for p in pages)) if pages else item)
+    return "; ".join(out)
 
 
 FINDING_FIELDS = {
@@ -261,7 +284,7 @@ def review_items(r: Result, lang="id"):
         if key in seen:
             continue
         seen.add(key)
-        st_txt, note_txt = status_label(s, lang), render(note, lang, codes=True)
+        st_txt, note_txt = status_label(s, lang), render(note, lang)
         # the status and the note may say the same thing (e.g. "Sum of disclosed components"): say it once
         why = note_txt if note_txt.startswith(st_txt) else (
             t("confirm.why", lang, status=Raw(st_txt), note=Raw(note_txt)) if note_txt else st_txt)
@@ -277,7 +300,7 @@ def review_items(r: Result, lang="id"):
             continue
         seen.add(key)
         name = ", ".join(title(x, lang) for x in fl.fields) or fl.code
-        items.append({"key": key, "title": name, "column": fl.column, "why": render(fl.message, lang, codes=True)})
+        items.append({"key": key, "title": name, "column": fl.column, "why": render(fl.message, lang)})
     return items
 
 
@@ -382,6 +405,17 @@ def issuer_line(r: Result, lang="id"):
 AMOUNT = r"\(?-?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?\)?"
 
 
+def _drop_note_refs(label: str) -> str:
+    """'PENJUALAN NETO 20' → 'PENJUALAN NETO'; 'Pihak berelasi 6,23' → 'Pihak berelasi'. A number that belongs to
+    the label ('Pasal 25', 'Article 4(2)') stays."""
+    import re
+    words = label.split()
+    while len(words) > 1 and re.fullmatch(r"\d{1,2}[a-z]?(?:[.,&]\d{1,2}[a-z]?)*[,&]?", words[-1]) \
+            and not re.fullmatch(r"(?i)pasal|article|ayat|pph|no\.?|nomor", words[-2]):
+        words.pop()
+    return " ".join(words)
+
+
 def source_label(quote: str, lang="id"):
     """The label part of a source line in the chosen language (Gail 28 Oct, item 4).
 
@@ -390,14 +424,17 @@ def source_label(quote: str, lang="id"):
     without an English part (Indonesian-only report) is returned in full. The full line is always
     kept next to it in the downloads, so nothing of the quote is lost."""
     import re
-    q = (quote or "").strip()
+    q = re.sub(r"\([^()]*\b[Rr]p\s?[\d.,]+[^()]*\)", " ", (quote or "").strip())     # "(2020 : Rp2.995.582.842)"
+    q = re.sub(r"\b[Rr]p\s?\d[\d.,]*", " ", q)                                      # an allowance quoted in the label
+    q = re.sub(r"\s+", " ", q).strip()
     hits = list(re.finditer(AMOUNT, q))
     if not hits:
         return q
-    left = q[:hits[0].start()].strip()           # a note number printed before the amounts stays in
+    left = _drop_note_refs(q[:hits[0].start()].strip())
     right = re.sub(r"^(-\s+)+", "", q[hits[-1].end():].strip()).strip()
+    left = left.strip(" /")
     if lang == "en":
-        return right or q
+        return right or left or q
     return left or q
 
 

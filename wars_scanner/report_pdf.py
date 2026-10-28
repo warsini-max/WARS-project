@@ -6,7 +6,8 @@ both versions (R-06, R-07, R-11). Sections:
 
   1 Overview · 2 Score breakdown · 3 Findings (B r1 §4: A, C, D) · 4 Checklist (the user's
   confirmation, moved here from the app on 28 Oct 2026) · Appendix A figures read ·
-  Appendix B cross-checks and reading notes · Methodology and limitations.
+  Appendix B cross-checks (failed and review first, each with its explanation) · Appendix C reading notes
+  (numbered, own page) · Methodology and limitations. Rule codes are never shown (Gail, 28 Oct 2026).
 """
 from __future__ import annotations
 
@@ -61,7 +62,8 @@ def _styles():
     s["small"] = ParagraphStyle("small", parent=s["body"], fontSize=8, leading=11, textColor=SOFT)
     s["muted"] = ParagraphStyle("muted", parent=s["small"], textColor=MUTED)
     s["cell"] = ParagraphStyle("cell", parent=s["body"], fontSize=8, leading=10.5)
-    s["cellm"] = ParagraphStyle("cellm", parent=s["cell"], fontName="PlexMono", alignment=TA_RIGHT)
+    s["cellm"] = ParagraphStyle("cellm", parent=s["cell"], fontName="PlexMono", fontSize=7.6, alignment=TA_RIGHT)
+    s["tiny"] = ParagraphStyle("tiny", parent=s["cell"], fontSize=7, leading=9, textColor=SOFT)
     s["head"] = ParagraphStyle("head", parent=s["cell"], fontName="Plex-Semi", fontSize=7.2, textColor=SOFT)
     s["h1"] = ParagraphStyle("h1", fontName="Plex-Semi", fontSize=17, leading=21, textColor=INK)
     s["h2"] = ParagraphStyle("h2", fontName="Plex-Semi", fontSize=11.5, leading=15, textColor=INK, spaceBefore=4)
@@ -133,13 +135,55 @@ def _decorate(c, page, pages, info):
     c.setFillColor(SOFT)
     c.drawString(18 * mm, 14.8 * mm, "Window-dressing Red-flag Scanner · Beta")
     c.setFillColor(MUTED)
-    c.drawString(18 * mm, 11.6 * mm, t("rep.page", lang, n=page, m=pages) + " · " + info["date"] + " · Workbook v0.6")
+    c.drawString(18 * mm, 11.6 * mm, t("rep.page", lang, n=page, m=pages) + " · " + info["date"])
+    c._annotationCount = info.setdefault("annots", 0)      # the two-pass canvas restores the page state; keep
+    _contact(c, 18 * mm, 6.6 * mm, lang)                  # link names unique across pages
+    info["annots"] = c._annotationCount
     p = Paragraph(_x(t("rep.footer_disclaimer", lang)),
                   ParagraphStyle("f", fontName="Plex-It", fontSize=6.6, leading=8.6, textColor=colors.HexColor("#6B6B6B"),
                                  alignment=TA_RIGHT))
     pw, ph = p.wrap(98 * mm, 20 * mm)
     p.drawOn(c, w - 18 * mm - pw, 19.2 * mm - ph)
     c.restoreState()
+
+
+LINKEDIN_URL = "https://www.linkedin.com/in/warsiniak"
+CONTACT_EMAIL = "warsiniak@gmail.com"
+
+
+def _contact(c, x, y, lang):
+    """'Contact us' with two clickable items: a profile icon + LinkedIn, and an envelope icon (mailto link).
+    Generic icons are drawn (not LinkedIn's logo)."""
+    c.setFont("Plex-Semi", 6.8)
+    c.setFillColor(SOFT)
+    label = t("rep.contact", lang)
+    c.drawString(x, y, label)
+    x += c.stringWidth(label, "Plex-Semi", 6.8) + 3 * mm
+    s = 2.6 * mm
+    # profile icon: rounded square with head and shoulders
+    c.setFillColor(GREEN)
+    c.roundRect(x, y - 0.5 * mm, s, s, 0.5 * mm, stroke=0, fill=1)
+    c.setFillColor(colors.white)
+    c.circle(x + s / 2, y - 0.5 * mm + s * 0.66, s * 0.17, stroke=0, fill=1)
+    c.wedge(x + s * 0.18, y - 0.5 * mm - s * 0.25, x + s * 0.82, y - 0.5 * mm + s * 0.55, 0, 180, stroke=0, fill=1)
+    c.setFont("Plex", 6.8)
+    c.setFillColor(GREEN)
+    c.drawString(x + s + 1.2 * mm, y, "LinkedIn")
+    w1 = s + 1.2 * mm + c.stringWidth("LinkedIn", "Plex", 6.8)
+    c.linkURL(LINKEDIN_URL, (x, y - 1 * mm, x + w1, y + 2.6 * mm), relative=0)
+    x += w1 + 4 * mm
+    # envelope icon
+    c.setStrokeColor(GREEN)
+    c.setFillColor(GREEN)
+    c.setLineWidth(0.6)
+    c.rect(x, y - 0.3 * mm, s * 1.25, s * 0.85, stroke=1, fill=0)
+    p = c.beginPath()
+    p.moveTo(x, y - 0.3 * mm + s * 0.85)
+    p.lineTo(x + s * 0.625, y - 0.3 * mm + s * 0.35)
+    p.lineTo(x + s * 1.25, y - 0.3 * mm + s * 0.85)
+    c.drawPath(p, stroke=1, fill=0)
+    c.linkURL("mailto:" + CONTACT_EMAIL, (x - 0.5 * mm, y - 1 * mm, x + s * 1.25 + 0.5 * mm, y + 2.6 * mm),
+              relative=0)                                 # icon only; the address is not printed (Gail, 28 Oct 2026)
 
 
 class _Scale(Flowable):
@@ -262,7 +306,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         box = [P(t("rep.score_label", lang), "field"), Paragraph(_x(head), S["h2"]), P(detail)]
     if items and m is not None:
         box += [Spacer(1, 3 * mm), Table([[Paragraph(
-            f"<b>{_x(t('ui.res.provisional', lang))}</b> {_x(t('ui.res.provisional_detail', lang, n=len(items)))}",
+            f"<b>{_x(t('ui.res.provisional', lang))}</b> {_x(t('rep.provisional_detail', lang, n=len(items)))}",
             ParagraphStyle("pv", parent=S["small"], textColor=colors.HexColor("#5C3D00")))]], colWidths=[W - 16 * mm],
             style=[("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FBF6EA")),
                    ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#EAD9B0")), ("LEFTPADDING", (0, 0), (-1, -1), 6),
@@ -282,17 +326,15 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     n_found = sum(1 for v in used if v.status in ("FOUND", "USER SET"))
     boxes = [[[P(t("rep.box.figures", lang), "field"), P(t("rep.box.figures_v", lang, a=n_found, b=len(used)), "fieldv"),
                P(t("rep.box.figures_d", lang, n=len(items)), "small")],
-              [P(t("rep.box.rules", lang), "field"), P(t("rep.box.rules_v", lang), "fieldv"),
-               P(t("rep.box.rules_d", lang), "small")],
               [P(t("rep.box.user", lang), "field"),
                Table([[P(t("rep.box.user_v", lang), "small")]],
                      style=[("BACKGROUND", (0, 0), (-1, -1), AMBER_BG), ("BOX", (0, 0), (-1, -1), 0.5, AMBER_INK),
                             ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
                             ("LEFTPADDING", (0, 0), (-1, -1), 4), ("RIGHTPADDING", (0, 0), (-1, -1), 4)], hAlign="LEFT"),
                P(t("rep.box.user_d", lang), "small")]]]
-    story.append(Table(boxes, colWidths=[W / 3 - 2 * mm] * 3, hAlign="LEFT",
+    story.append(Table(boxes, colWidths=[W / 2 - 2 * mm] * 2, hAlign="LEFT",
                        style=[("BOX", (0, 0), (0, 0), 0.6, LINE), ("BOX", (1, 0), (1, 0), 0.6, LINE),
-                              ("BOX", (2, 0), (2, 0), 0.6, LINE), ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                              ("VALIGN", (0, 0), (-1, -1), "TOP"),
                               ("LEFTPADDING", (0, 0), (-1, -1), 6), ("TOPPADDING", (0, 0), (-1, -1), 5),
                               ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
 
@@ -304,7 +346,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         story.append(Spacer(1, 3 * mm))
         rows = [[P(t("ui.idx.col.index", lang), "head"), P(t("ui.idx.col.name", lang), "head"),
                  P(t("ui.idx.col.value", lang), "head"), P(t("rep.col.coef", lang), "head"),
-                 P(t("ui.idx.col.push", lang), "head"), ""]]
+                 P(t("ui.idx.col.push", lang), "head"), "", P(t("rep.col.trace", lang), "head")]]
         extra, total = [], 0.0
         idx = report.index_rows(r, lang)
         top_push = max([abs(x["push_vs_neutral"]) for x in idx if x["push_vs_neutral"] is not None] or [1])
@@ -312,23 +354,20 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         for i, x in enumerate(idx, 1):
             pu = x["push_vs_neutral"]
             total += pu or 0
-            bar = _Bar(pu, top_push, 34 * mm)
+            bar = _Bar(pu, top_push, 22 * mm)
             rows.append([Paragraph(f"<b>{x['index']}</b>", S["cell"]), P(x["name"], "cell"),
                          Paragraph(dec(x["value"], 3, lang), S["cellm"]),
                          Paragraph(dec(x["coefficient"], 3, lang), S["cellm"]),
-                         Paragraph(dec(pu, 3, lang) if pu is None else report.fmt_push(pu, lang), S["cellm"]), bar])
+                         Paragraph(dec(pu, 3, lang) if pu is None else report.fmt_push(pu, lang), S["cellm"]), bar,
+                         P(report.index_sources(r, x["index"], lang), "tiny")])
             if x["index"] in drv:
                 extra.append(("BACKGROUND", (0, i), (-1, i), RED_BG))
-        story.append(_table(rows, [14 * mm, W - 14 * mm - 18 * mm - 18 * mm - 18 * mm - 38 * mm, 18 * mm, 18 * mm,
-                                   18 * mm, 38 * mm], S, extra=extra + [("VALIGN", (5, 1), (5, -1), "MIDDLE")]))
+        story.append(_table(rows, [12 * mm, 36 * mm, 14 * mm, 14 * mm, 16 * mm, 25 * mm, W - 117 * mm], S,
+                            extra=extra + [("VALIGN", (5, 1), (5, -1), "MIDDLE")]))
         story.append(Spacer(1, 3 * mm))
         story.append(Paragraph(_x(t("rep.sum_line", lang, n=Num(NEUTRAL_M, 3), p=Num(m - NEUTRAL_M, 3, True), m=Num(m, 3),
                                     thr=Num(THRESHOLD, 2))),
                                ParagraphStyle("sum", parent=S["body"], fontName="Plex-Semi", alignment=TA_RIGHT)))
-        story.append(Spacer(1, 4 * mm))
-        story.append(P(t("rep.formula", lang, const=Num(report.M_CONSTANT, 2)), "small"))
-        story.append(Spacer(1, 1.5 * mm))
-        story.append(P(t("ui.idx.minor", lang), "small"))
 
     # ------------------------------------------------------------------------------ 3 Findings
     story.append(PageBreak())
@@ -372,14 +411,15 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         rows = [[P(t(f"rep.check.col.{k}", lang), "head") for k in ("no", "item", "year", "value", "page", "why", "ok", "bad")]]
         extra = []
         for i, x in enumerate(items, 1):
-            why = x["why"] + (f" — {x['source']}" if x["source"] else "")
+            why = _x(x["why"]) + (f'<br/><font color="#5A6069">{_x(t("rep.check.line", lang, s=x["source"]))}</font>'
+                                   if x["source"] else "")
             rows.append([P(x["no"], "cell"), P(x["item"], "cell"), P(x["year"], "cell"), Paragraph(_x(x["value"]), S["cellm"]),
-                         P(x["pages"], "cell"), P(why, "cell"),
+                         P(x["pages"], "cell"), Paragraph(why, S["cell"]),
                          _Box(), _Box()])
             if x["assumed"]:
                 extra.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#FDF4DC")))
-        story.append(_table(rows, [7 * mm, 33 * mm, 12 * mm, 25 * mm, 12 * mm, W - 7 * mm - 33 * mm - 12 * mm - 25 * mm - 12 * mm - 28 * mm,
-                                   14 * mm, 14 * mm], S, extra=extra))
+        story.append(_table(rows, [8 * mm, 32 * mm, 11 * mm, 31 * mm, 10 * mm, W - 8 * mm - 32 * mm - 11 * mm - 31 * mm - 10 * mm - 26 * mm,
+                                   13 * mm, 13 * mm], S, extra=extra))
         assumed = [x for x in items if x["assumed"]]
         if assumed:
             story.append(Spacer(1, 3 * mm))
@@ -396,40 +436,53 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     story.append(P(t("rep.inputs_intro", lang, unit=unit), "small"))
     story.append(Spacer(1, 3 * mm))
     rows = [[P(t("inputs.col.item", lang), "head"), P(yt, "head"), P(yt1, "head"),
-             P(t("inputs.col.status", lang, y=yt), "head"), P(t("inputs.col.status", lang, y=yt1), "head"),
-             P(t("inputs.col.pages", lang), "head"), P(t("xl.col.source_label", lang), "head")]]
+             P(t("xl.k.status", lang), "head"), P(t("rep.check.col.page", lang), "head"),
+             P(t("xl.col.source_label", lang), "head")]]
     extra = []
     for i, x in enumerate(report.input_rows(r, lang), 1):
+        status = x["status_t"] if x["status_t"] == x["status_t1"] else f'{yt}: {x["status_t"]}; {yt1}: {x["status_t1"]}'
         rows.append([P(x["label"].strip(), "cell"), Paragraph(_x(x["value_t"]), S["cellm"]),
-                     Paragraph(_x(x["value_t1"]), S["cellm"]), P(x["status_t"], "cell"), P(x["status_t1"], "cell"),
+                     Paragraph(_x(x["value_t1"]), S["cellm"]), P(status, "cell"),
                      P(x["pages"], "cell"), P(report.source_label(x["source"], lang), "cell")])
         extra += [("BACKGROUND", (1, i), (1, i), CELL[x["colour_t"]]), ("BACKGROUND", (2, i), (2, i), CELL[x["colour_t1"]])]
-    story.append(_table(rows, [42 * mm, 22 * mm, 22 * mm, 25 * mm, 25 * mm, 13 * mm, W - 149 * mm], S, extra=extra))
+    story.append(_table(rows, [40 * mm, 31 * mm, 31 * mm, 30 * mm, 11 * mm, W - 143 * mm], S, extra=extra))
 
     # ------------------------------------------------------------------------------ Appendix B cross-checks
-    story.append(CondPageBreak(60 * mm))
-    story.append(Spacer(1, 6 * mm))
+    story.append(PageBreak())
     _section(story, t("rep.s6", lang), S)
+    story.append(P(t("rep.b_intro", lang), "small"))
+    story.append(Spacer(1, 3 * mm))
     col_name = lambda c: {"t": yt, "t1": yt1}.get(c) or t("col.both", lang, a=yt, b=yt1)   # noqa: E731
-    rows = [[P(t("xl.col.check", lang), "head"), P(t("xl.col.result", lang), "head")]]
-    extra = []
+    failed, review, passed = [], [], []
     for name_, col, ok, det in ex.checks:
-        rows.append([P(t("checks.passed_line", lang, name=name_, col=col_name(col), detail=det), "cell"),
-                     P(t("rep.checks.passed" if ok else "rep.checks.failed", lang), "cell")])
-        if not ok:
-            extra.append(("TEXTCOLOR", (1, len(rows) - 1), (1, len(rows) - 1), RED))
+        row = (f"{render(name_, lang)} ({col_name(col)})", render(det, lang))
+        (passed if ok else failed).append(row if ok else (row[0], t("rep.b.failed_why", lang) +
+                                                          (" " + row[1] + "." if row[1] else "")))
     for p_ in r.passed:
-        rows.append([P(render(p_, lang), "cell"), P(t("rep.checks.passed", lang), "cell")])
+        passed.append((render(p_, lang), ""))
     for fl in r.flags:
         fields = ", ".join(report.title(x, lang) for x in fl.fields) or "—"
-        rows.append([P(render(fl.message, lang, codes=True) + f" ({fields}; {col_name(fl.column)})", "cell"),
-                     P(t("rep.checks.failed" if fl.severity == "ERROR" else "rep.checks.review", lang), "cell")])
-    story.append(_table(rows, [W - 30 * mm, 30 * mm], S, extra=extra))
+        (failed if fl.severity == "ERROR" else review).append((f"{fields} ({col_name(fl.column)})", render(fl.message, lang)))
+    rows = [[P(t("rep.b.col.no", lang), "head"), P(t("rep.b.col.check", lang), "head"),
+             P(t("rep.b.col.result", lang), "head"), P(t("rep.b.col.expl", lang), "head")]]
+    extra = []
+    for res_key, colour, group in (("rep.checks.failed", RED, failed), ("rep.checks.review", AMBER_INK, review),
+                                   ("rep.checks.passed", GREEN, passed)):
+        for chk, expl in group:
+            rows.append([P(str(len(rows)), "cell"), P(chk, "cell"), P(t(res_key, lang), "cell"), P(expl, "cell")])
+            extra.append(("TEXTCOLOR", (2, len(rows) - 1), (2, len(rows) - 1), colour))
+    story.append(_table(rows, [9 * mm, 72 * mm, 22 * mm, W - 103 * mm], S, extra=extra))
+
+    # ------------------------------------------------------------------------------ Appendix C reading notes
     if ex.issues:
-        story.append(Spacer(1, 4 * mm))
-        story.append(P(t("issues.expander", lang, n=len(ex.issues)), "h2"))
-        for i_ in ex.issues:
-            story.append(P("• " + render(i_, lang, codes=True), "small"))
+        story.append(PageBreak())
+        _section(story, t("rep.s8", lang), S)
+        story.append(P(t("rep.c_intro", lang), "small"))
+        story.append(Spacer(1, 3 * mm))
+        rows = [[P(t("rep.b.col.no", lang), "head"), P(t("rep.c.col.note", lang), "head")]]
+        for n_, i_ in enumerate(ex.issues, 1):
+            rows.append([P(str(n_), "cell"), P(render(i_, lang), "cell")])
+        story.append(_table(rows, [9 * mm, W - 9 * mm], S))
 
     # ------------------------------------------------------------------------------ Methodology
     story.append(PageBreak())
@@ -437,7 +490,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     for k in ("rep.method.p1", "rep.method.p2", "rep.method.p3", "rep.method.p4"):
         story += [P(t(k, lang)), Spacer(1, 3 * mm)]
     story += [P(t("rep.formula", lang, const=Num(report.M_CONSTANT, 2)), "small"), Spacer(1, 3 * mm),
-              P(t("app.disclaimer", lang)), Spacer(1, 6 * mm), P(t("rep.method.p5", lang), "muted")]
+              P(t("app.disclaimer", lang))]
 
     doc.build(story, canvasmaker=lambda *a, **kw: _Numbered(*a, info=info, **kw))
     return buf.getvalue()

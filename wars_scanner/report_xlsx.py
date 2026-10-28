@@ -118,22 +118,30 @@ def build(r, lang="id", file_name="", sha="", generated="") -> bytes:
     ws.append([])
     ws.append(["", t("confirm.reviewer", lang)])
 
-    # ---------------------------------------------------------------- cross-checks
+    # ---------------------------------------------------------------- cross-checks (failed and review first)
     col_name = lambda c: {"t": yt, "t1": yt1}.get(c) or t("col.both", lang, a=yt, b=yt1)   # noqa: E731
-    ws = _sheet(wb, t("xl.sheet.checks", lang), [t("xl.col.check", lang), t("xl.col.result", lang),
-                                                  t("xl.col.detail", lang)], [70, 18, 50])
+    ws = _sheet(wb, t("xl.sheet.checks", lang), [t("rep.b.col.no", lang), t("rep.b.col.check", lang),
+                                                  t("rep.b.col.result", lang), t("rep.b.col.expl", lang)], [6, 60, 16, 70])
+    failed, review, passed = [], [], []
     for name_, col, ok, det in ex.checks:
-        ws.append([t("checks.passed_line", lang, name=name_, col=col_name(col), detail=det),
-                   t("rep.checks.passed" if ok else "rep.checks.failed", lang), ""])
+        chk, d = f"{render(name_, lang)} ({col_name(col)})", render(det, lang)
+        (passed if ok else failed).append((chk, d if ok else t("rep.b.failed_why", lang) + (" " + d + "." if d else "")))
     for p_ in r.passed:
-        ws.append([render(p_, lang), t("rep.checks.passed", lang), ""])
+        passed.append((render(p_, lang), ""))
     for fl in r.flags:
         fields = ", ".join(report.title(x, lang) for x in fl.fields) or "—"
-        ws.append([render(fl.message, lang, codes=True), t("rep.checks.failed" if fl.severity == "ERROR" else
-                                                           "rep.checks.review", lang), f"{fields}; {col_name(fl.column)}"])
-    for i_ in ex.issues:
-        ws.append([render(i_, lang, codes=True), "", ""])
+        (failed if fl.severity == "ERROR" else review).append((f"{fields} ({col_name(fl.column)})", render(fl.message, lang)))
+    n = 0
+    for key, group in (("rep.checks.failed", failed), ("rep.checks.review", review), ("rep.checks.passed", passed)):
+        for chk, expl in group:
+            n += 1
+            ws.append([n, chk, t(key, lang), expl])
     _finish(ws)
+    if ex.issues:
+        ws = _sheet(wb, t("rep.s8", lang).split("·")[-1].strip(), [t("rep.b.col.no", lang), t("rep.c.col.note", lang)], [6, 120])
+        for k, i_ in enumerate(ex.issues, 1):
+            ws.append([k, render(i_, lang)])
+        _finish(ws)
 
     for ws in wb.worksheets:              # PDF text layers can carry control characters (NRCA 2021)
         for row in ws.iter_rows():
