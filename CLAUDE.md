@@ -18,6 +18,11 @@ numbers). Claude builds and tests.
    WR-2 M2 of the project register. Use the non-case test documents in `data/test_documents.csv`.
 5. **No source PDFs or case data in git.** PDFs are identified by SHA-256 only.
 6. Report test results as they are, including failures and limits.
+7. **Wrong line picked = worst failure** (Gail, 28 Oct 2026, after BIRD 2021: the tail of a wrapped label
+   "Uang muka pembelian / aset tetap" was read as fixed assets and no check caught it). Every matching rule
+   needs a negative test (what it must NOT match), and every field the score uses needs an independent
+   cross-check (a second place in the report where the same figure must appear) before it can be FOUND.
+   A figure that cannot be cross-checked stays REVIEW. Prefer withholding the score over a plausible wrong number.
 
 ## Layout
 - `wars_scanner/` – package (`engine.py` = Track B calculation, `parameters.py` = coefficients/thresholds)
