@@ -8,7 +8,7 @@ references in the tables below) is kept in a private archive repository.
 
 | Phase | Criterion (plan §4) | Status | Evidence |
 |---|---|---|---|
-| 0 Golden data | Golden dataset for the test reports | **Partly.** SIDO 2021 only: 42 rows AI-CHECKED-2, 18 DRAFT. Human verification by Gail **still open** (three AI readings agreeing is not VERIFIED) | `data/golden/SIDO_2021.csv` |
+| 0 Golden data | Golden dataset for the test reports | **SIDO 2021: 44 of 60 rows VERIFIED by Gail (29 Oct 2026)**, incl. all 28 core score figures; the rest are comparison-only, text or not-disclosed fields (6 AI-CHECKED-2, 10 DRAFT). Other reports have no golden yet | `data/golden/SIDO_2021.csv` |
 | 1 Engine | Engine = workbook v0.6 | **Done** | 95 synthetic pairs × 53 columns, `tests/test_engine_vs_workbook.py` |
 | 2 / 2b Reader | Zero unflagged wrong numbers vs golden; find rate reported | **Done for SIDO 2021** (40/40 fields match, 0 silent). Other reports have no golden yet | `tests/test_pdf_reader.py`, `tests/test_notes_reader.py`, `docs/pdf_reader.md` |
 | 3 Cross-checks + confirmation | Every injected error (unit, swapped columns, missing value) caught as yellow or red | **Technical criterion met.** Formally open: four reading-quality controls are PROPOSED (below) and need Gail's decision | `tests/test_validation.py`, `docs/validation.md` |
