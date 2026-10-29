@@ -610,6 +610,9 @@ CATALOG: dict = {
     "np.found": _e("{label}: ditemukan {n} kali", "{label}: found {n} time(s)", "Gail 28 Okt impl"),
     "np.not_found": _e("{label}: tidak ditemukan oleh pencarian mesin.", "{label}: not found by the machine search.", "Gail 28 Okt impl"),
     "np.amounts": _e("Jumlah yang terbaca: {list} ({source})", "Amounts read: {list} ({source})", "Gail 28 Okt impl"),
+    "np.source_cross": _e("hal. {p}: {text}; angka tahun berjalan tercetak lagi di catatan properti investasi hal. {q}",
+                          "p. {p}: {text}; the current-year figure is printed again in the investment property note, "
+                          "p. {q}", "new"),
     "np.source": _e("hal. {p}: {text}", "p. {p}: {text}", "Gail 28 Okt impl"),
     "np.err_notes": _e("Belum diterapkan: pilih catatan yang Anda periksa untuk 'Tidak ada'.",
                        "Not applied: select the notes you examined for 'None'.", "Gail 28 Okt impl"),
@@ -1242,6 +1245,27 @@ CATALOG: dict = {
                               "di halaman tersebut",
                               "Intangible amortisation taken from a sentence in the notes (no table); check the figures on "
                               "that page", "new"),
+    "note.rou_dep_roll_ok": _e("Penyusutan aset hak-guna diambil dari tabel mutasi aset hak-guna (saldo awal ditambah "
+                               "mutasi sama dengan saldo akhir untuk kedua tahun); angka yang sama tercetak lagi di "
+                               "hlm. {p}",
+                               "Right of use depreciation taken from the movement schedule of the right of use assets "
+                               "(opening balance plus movements equals the closing balance for both years); the same "
+                               "figures are printed again on p. {p}", "new"),
+    "note.rou_dep_roll": _e("Penyusutan aset hak-guna diambil dari tabel mutasi aset hak-guna (saldo awal ditambah mutasi "
+                            "sama dengan saldo akhir untuk kedua tahun); angka ini tidak ditemukan di tempat lain, "
+                            "periksa angkanya di halaman tersebut",
+                            "Right of use depreciation taken from the movement schedule of the right of use assets "
+                            "(opening balance plus movements equals the closing balance for both years); the figures "
+                            "were not found elsewhere, check them on that page", "new"),
+    "note.rou_dep_sentence_ok": _e("Penyusutan aset hak-guna diambil dari kalimat di catatan aset hak-guna; angka kedua "
+                                   "tahun tercetak lagi di tabel mutasi akumulasi penyusutan",
+                                   "Right of use depreciation taken from a sentence in the right of use note; the figures "
+                                   "for both years are printed again in the accumulated depreciation movement schedule",
+                                   "new"),
+    "note.rou_dep_sentence": _e("Penyusutan aset hak-guna diambil dari kalimat di catatan aset hak-guna; angkanya tidak "
+                                "ditemukan di tabel mutasi, periksa angkanya di halaman tersebut",
+                                "Right of use depreciation taken from a sentence in the right of use note; the figures "
+                                "were not found in the movement schedule, check them on that page", "new"),
     "note.ppe_dep_sentence": _e("Penyusutan aset tetap milik diambil dari kalimat di catatan aset tetap (tidak ada tabel "
                                 "alokasi); periksa angkanya di halaman tersebut",
                                 "Owned-PPE depreciation taken from a sentence in the fixed-asset note (no allocation "

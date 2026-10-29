@@ -15,7 +15,8 @@ import re
 
 import pypdfium2 as pdfium
 
-from .pdf_reader import AMOUNT_DOTTED, NIL, Value, _is_certain_amount, _lines, _norm, _split_label_only, parse_amount
+from .pdf_reader import (AMOUNT_DOTTED, NIL, Value, _is_certain_amount, _lines, _norm, _split_label_only, pair_in_text,
+                         parse_amount)
 from .text import Amt, Msg, Pages, Psak, Raw, join
 
 NOTE_HEADING = re.compile(r"(?m)^\s*(\d{1,2})\.\s+([A-Z][A-Z0-9 ,.'’()/&\-]{3,})")
@@ -209,7 +210,9 @@ class PageCache:
 
     def heading_before(self, p, idx):
         """The most recent numbered note heading ("16. ASET HAK GUNA, NETO (lanjutan)") above line idx of page p."""
-        rx = re.compile(r"^(\d{1,2})\.\s+([A-Z][A-Za-z0-9 ,.'’()/&\-]{3,60})$")
+        # Trial 3 (SOSS 2021): "11.ASET TETAP (lanjutan)" is printed without a space after the number; that form is
+        # accepted only when the first word is upper case (a list item "1.Penjualan ..." is not a heading)
+        rx = re.compile(r"^(\d{1,2})\.(?:\s+|(?=[A-Z]{3,}\b))([A-Z][A-Za-z0-9 ,.'’()/&\-]{3,60})$")
         for q in range(p, max(0, p - 15), -1):
             lines = self.lines(q)
             stop = idx if q == p else len(lines)
@@ -243,6 +246,12 @@ def _sum_lines(field, lines, status, note):
 
 
 # ------------------------------------------------------------------------------ allocation tables
+
+# A new numbered note ("13. PERPAJAKAN", "13.PERPAJAKAN") or a lettered sub-note ("a. Pajak Dibayar di Muka",
+# "a.Pajak Dibayar di Muka") ends a table (Trial 3, SOSS 2021: the prepaid-tax table was taken as an allocation table).
+NOTE_START = re.compile(r"^(\d{1,2}\.(\s|(?=[A-Z]{3,}\b))|[a-z]\.\s?[A-Z][a-z])")
+
+NOT_EXPENSE_ROW = re.compile(r"\bpajak pertambahan nilai\b|^pasal \d|\bpph\b|\bppn\b|value added tax")
 
 ALLOC_TITLE = re.compile(r"^(beban |pembebanan )?(penyusutan|amortisasi|depresiasi)( dan (penyusutan|amortisasi))?\b.*"
                          r"(dibebankan|dialokasikan|untuk tahun|adalah sebagai berikut|sebagai berikut)"
@@ -289,7 +298,7 @@ def allocation_tables(cache, first_note_page):
                     started = True
                     continue
                 if not started:
-                    if k > 8 or re.match(r"^\d{1,2}\.\s", nxt.label.strip()):
+                    if k > 8 or NOTE_START.match(nxt.label.strip()):
                         break                       # a new note starts before any table (KOIN 2021: a sentence)
                     continue
                 if _complete(nxt):
@@ -303,13 +312,15 @@ def allocation_tables(cache, first_note_page):
                     comps.append(nxt)
                 elif nxt.label and not nxt.amounts and ALLOC_TITLE.search(nl):
                     break
-                elif comps and re.match(r"^\d{1,2}\.\s", nxt.label):
+                elif NOTE_START.match(nxt.label.strip()):
                     break
             single = total is None and len(comps) == 1
             if single:
                 total, comps = comps[0], []
             if total is None:
                 continue
+            if any(NOT_EXPENSE_ROW.search(_norm(x.label)) for x in comps + [total]):
+                continue                    # tax lines are never a depreciation allocation (SOSS 2021, rule 7)
             heading = cache.heading_before(p, i)
             kind = _kind(title) or _kind(heading) or "OTHER"
             sums = {}
@@ -399,6 +410,87 @@ def combine_ppe_depreciation(own, rdep, rou_inside_ppe, fiscal_year=None):
                 Msg("note.dep_owned_rou"), st, True)
     st = "REVIEW" if own.status == "REVIEW" or (rdep is not None and rdep.status == "REVIEW") else own.status
     return (own.value, Msg("comp.owned", a=Amt(own.value)), Msg("note.dep_owned_only"), st, False)
+
+
+# Trial 3 (SOSS 2021): no ROU allocation table; the ROU note says "beban penyusutan yang dibebankan pada beban umum dan
+# administrasi masing-masing sebesar Rp5.628.680.799 dan Rp5.422.812.656". Taken only inside a ROU note heading, and
+# FOUND only when each year's figure is printed again in a row of the accumulated-depreciation movement schedule.
+def rou_depreciation_sentence(cache, first_note_page):
+    """Returns (values {t, t1}, page, quote, reconciled) or None."""
+    for i in range(first_note_page, len(cache.text) + 1):
+        raw = cache.text[i - 1]
+        if not ROU_WORDS.search(raw):
+            continue
+        txt = " ".join(raw.split())
+        for m in ROU_DEP_SENTENCE.finditer(txt):
+            lines = cache.lines(i)
+            head = re.sub(r"\s+", "", m.group(0)[:24]).lower()
+            at = next((k for k, ln in enumerate(lines) if head[:12] in re.sub(r"\s+", "", ln.text).lower()), len(lines))
+            head_txt = cache.heading_before(i, at) or ""
+            # LINK 2021: "ASET TETAP DAN ASET HAK GUNA" is one note; its sentence is the fixed-asset depreciation and
+            # must not be counted again as ROU depreciation
+            if not ROU_WORDS.search(head_txt) or re.search(r"ASET TETAP|FIXED ASSETS|PROPERTY AND EQUIPMENT", head_txt, re.I):
+                continue
+            got = sentence_pair(txt[m.end():m.end() + 260], txt[m.start():m.end()])
+            if not got:
+                continue
+            def in_rou_schedule(v):
+                ln = _movement_additions(cache, {"page": i}, v)
+                if ln is None:
+                    return False
+                h = cache.heading_before(ln.page, cache.lines(ln.page).index(ln)) or ""
+                return bool(ROU_WORDS.search(h)) and not re.search(r"ASET TETAP|FIXED ASSETS", h, re.I)
+            rec = all(in_rou_schedule(got[c]) for c in ("t", "t1"))
+            return got, i, txt[m.start():m.end() + 80], rec
+    return None
+
+
+ROU_DEP_SENTENCE = re.compile(r"penyusutan\b(?![^.]{0,60}(properti investasi|aset tetap|tak ?berwujud))"
+                              r"[^.]{0,250}?(?:dibebankan|dialokasikan|dicatat)[^.]{0,300}?sebesar", re.I | re.S)
+
+
+# Trial 3 (ERAA 2021): no ROU allocation table, but a two-year movement schedule of the ROU assets
+# ("Saldo awal / Penambahan / Pengurangan / Beban penyusutan / ... / Total"). The depreciation row is taken only when
+# the schedule proves itself: every row has both years, opening + movements = closing for each year, the opening of
+# the current year equals the closing of the prior year, and the closing equals the ROU assets read elsewhere.
+# FOUND only when the same pair is printed again on another page (the P&L lease table); otherwise REVIEW.
+ROU_DEP_ROW = re.compile(r"^(beban )?(penyusutan|depresiasi)( tahun berjalan| periode berjalan| aset hak[ -]guna)?$")
+ROLL_OPEN = re.compile(r"^saldo awal\b|^saldo (pada )?(tanggal )?1 januari")
+ROLL_CLOSE = re.compile(r"^(total|jumlah|saldo akhir\b|saldo(,| pada)? (tanggal )?31\b|nilai tercatat\b)")
+
+
+def rou_depreciation_rollforward(cache, first_note_page, rou_net):
+    """Returns (values {t, t1}, page, quote, page_found_again or None) or None."""
+    if not rou_net or None in (rou_net.get("t"), rou_net.get("t1")):
+        return None
+    for p in cache.pages_matching(ROU_WORDS.pattern, start=first_note_page):
+        lines = cache.lines(p)
+        for i, ln in enumerate(lines):
+            if not (ROU_DEP_ROW.match(_norm(ln.label)) and _complete(ln) and "t" in ln.amounts and "t1" in ln.amounts):
+                continue
+            if not ROU_WORDS.search(cache.heading_before(p, i) or ""):
+                continue
+            o = next((k for k in range(i - 1, max(-1, i - 12), -1) if ROLL_OPEN.match(_norm(lines[k].label))), None)
+            e = next((k for k in range(i + 1, min(len(lines), i + 8)) if ROLL_CLOSE.match(_norm(lines[k].label))), None)
+            if o is None or e is None:
+                continue
+            block, close = lines[o:e], lines[e]
+            if not all(_complete(x) and set(x.amounts) == {"t", "t1"} for x in block + [close]):
+                continue
+            if not all(sum(x.amounts[c] for x in block) == close.amounts[c] for c in ("t", "t1")):
+                continue
+            if lines[o].amounts["t"] != close.amounts["t1"]:
+                continue
+            if any(abs(close.amounts[c]) != abs(rou_net[c]) for c in ("t", "t1")):
+                continue
+            dep = {c: abs(ln.amounts[c]) for c in ("t", "t1")}
+            again = None
+            for q in range(first_note_page, len(cache.text) + 1):
+                if q != p and pair_in_text(cache.text, q, dep["t"], dep["t1"]) == q:
+                    again = q
+                    break
+            return dep, p, ln.text, again
+    return None
 
 
 # ------------------------------------------------------------------------------ tax payable (D-03)
@@ -664,7 +756,9 @@ INVPROP_FAIR_VALUE = re.compile(r"properti investasi[^.]{0,250}?(model nilai waj
                                 r"nilai wajar)", re.I | re.S)
 
 
-MONEY_TOKEN = re.compile(r"(?<![\d.,])\(?\d{1,3}(?:[.,]\d{3})+\)?(?![\d,]|\.\d)")
+# Trial 3 (ERAA 2021): "Rp126.917.735 dan Rp132.757.304, dan dicatat ...": a comma that ends the clause is punctuation.
+# Only a separator followed by a digit (a longer figure or a decimal part) stops the match.
+MONEY_TOKEN = re.compile(r"(?<![\d.,])\(?\d{1,3}(?:[.,]\d{3})+\)?(?!\d|[.,]\d)")
 
 
 def sentence_pair(after, context=""):
@@ -828,6 +922,32 @@ def invprop_depreciation(cache, first_note_page, face_ln):
                     got[c] = v
             if got:
                 return got, Msg("np.source", p=i, text=Raw(txt[m.start():m.end() + 80][:110]))
+    # Trial 3 (TALF 2021): the note sentence gives one figure ("masing-masing adalah sebesar Rp 216.309.544") and the
+    # expense note prints the line for both years ("Penyusutan properti investasi / (Catatan 11) 216.309.544
+    # 216.309.544"). The expense line is taken only when its current-year figure is printed again in the
+    # investment-property note, and each figure is at least 0,1% and at most 100% of the carrying amount of the
+    # prior year (a figure in another unit fails).
+    if face_ln is not None:
+        for p in cache.pages_matching(r"(?i)penyusutan\s+properti\s+investasi", start=first_note_page):
+            lines = cache.lines(p)
+            for k, ln in enumerate(lines):
+                own = _norm(ln.label)
+                if re.match(r"^\(?(catatan|note)\b", own) and k:
+                    own = _norm(lines[k - 1].label) + " " + own
+                if not re.match(r"^(beban )?penyusutan properti investasi\b", own) or not {"t", "t1"} <= set(ln.amounts):
+                    continue
+                got = {c: abs(ln.amounts[c]) for c in ("t", "t1")}
+                base = abs(face_ln.amounts.get("t1") or 0)
+                if not base or not all(0.001 * base <= got[c] <= base for c in got):
+                    continue
+                again = None
+                for q in cache.pages_matching(r"(?i)properti\s+investasi", start=first_note_page):
+                    if q != p and "PROPERTI INVESTASI" in (cache.heading_before(q, len(cache.lines(q))) or "") \
+                            and pair_in_text(cache.text, q, got["t"], None) == q:
+                        again = q
+                        break
+                if again:
+                    return got, Msg("np.source_cross", p=p, text=Raw(ln.text[:80]), q=again)
     return {}, ""
 
 
@@ -971,6 +1091,27 @@ def read_notes(cache, statements, face_values):
             values += [Value("rou_assets_net", c, 0, "FOUND", [], [], "", Msg("note.rou_absent")) for c in ("t", "t1")]
         else:
             values += _missing("rou_assets_net", "NOT FOUND", Msg("note.rou_none"))
+
+    # --- ROU depreciation from the ROU movement schedule or a ROU-note sentence, when there is no allocation table
+    # (Trial 3, ERAA and SOSS 2021)
+    if not rou:
+        rnet = {v.column: v.value for v in face_rou + [x for x in values if x.field == "rou_assets_net"]
+                if v.value is not None}
+        roll = rou_depreciation_rollforward(cache, first_note, rnet)
+        if roll:
+            got, pg, quote, again = roll
+            values = [x for x in values if x.field != "rou_depreciation"]
+            st = "FOUND" if again else "REVIEW"
+            note = Msg("note.rou_dep_roll_ok", p=again) if again else Msg("note.rou_dep_roll")
+            for c in ("t", "t1"):
+                values.append(Value("rou_depreciation", c, got[c], st, [pg] + ([again] if again else []), [quote],
+                                    note=note))
+        elif (rs := rou_depreciation_sentence(cache, first_note)):
+            got, pg, quote, rec = rs
+            values = [x for x in values if x.field != "rou_depreciation"]
+            for c in ("t", "t1"):
+                values.append(Value("rou_depreciation", c, got[c], "FOUND" if rec else "REVIEW", [pg], [quote],
+                                    note=Msg("note.rou_dep_sentence_ok" if rec else "note.rou_dep_sentence")))
 
     # --- intangible amortisation (G-22, DP-01/02)
     am = intangible_amortisation(cache, first_note)

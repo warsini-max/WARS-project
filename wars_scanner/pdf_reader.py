@@ -241,8 +241,11 @@ def _merge_split_numbers(words):
 def _notes_column_x(lines):
     """x-centre of the "Catatan/Notes" header, if present (used to tell note references from small amounts)."""
     for ln in lines[:40]:
-        for w in ln.words:
-            if re.match(r"^(catatan|notes)/?$", w.text.strip(), re.I):
+        for k, w in enumerate(ln.words):
+            nxt = ln.words[k + 1].text.strip() if k + 1 < len(ln.words) else ""
+            # Trial 3 (SAME 2021): "Disajikan kembali - Catatan 4/" in a column header names a note, it is not the
+            # Notes column
+            if re.match(r"^(catatan|notes?)/?$", w.text.strip(), re.I) and not re.match(r"^\d{1,2}[a-z]?\)?/?$", nxt):
                 return (w.x0 + w.x1) / 2
     return None
 
@@ -432,18 +435,67 @@ def _unit_scale(text):
 
 # ------------------------------------------------------------------------------------- fields
 
+# Trial 3 (ERAA 2021): some words of a line are glued in the text layer ("LABATAHUN BERJALAN", "PROFITFOR THE YEAR")
+# while the rest of the page is spaced normally, so the page-level re-read does not apply. A purely alphabetic token
+# is split only when it is not itself a label word and consists entirely of two or more label words.
+LABEL_WORDS = frozenset("""laba rugi tahun periode berjalan beban pokok penjualan pendapatan total jumlah aset lancar
+    tidak liabilitas jangka pendek panjang kas dan setara bank sebelum pajak penghasilan bruto kotor usaha umum
+    administrasi pemasaran distribusi neto bersih ekuitas piutang utang tetap lain lainnya pihak ketiga berelasi
+    operasi aktivitas arus dari untuk pembiayaan konsumen sewa pinjaman obligasi persediaan""".split())
+
+
+# Trial 3 (TEBE 2021): the opposite fault, words split inside ("P ajak", "Jum lah", "P ertam bahan N ilai - B ersih").
+# Two or three adjacent alphabetic pieces are joined only when the joined form is a known label word and not every
+# piece is itself a known word.
+SPLIT_VOCAB = LABEL_WORDS | frozenset("""pajak pasal jumlah nilai pertambahan entitas anak perusahaan catatan badan
+    penghasilan pemilik induk nonpengendali kepentingan modal saham saldo""".split())
+
+
+def _join_split(tokens):
+    out, i = [], 0
+    while i < len(tokens):
+        for k in (3, 2):
+            parts = tokens[i:i + k]
+            if len(parts) == k and all(x.isalpha() for x in parts):
+                joined = "".join(parts)
+                if joined in SPLIT_VOCAB and not all(x in SPLIT_VOCAB for x in parts):
+                    out.append(joined)
+                    i += k
+                    break
+        else:
+            out.append(tokens[i])
+            i += 1
+    return out
+
+
+def _split_glued(tok):
+    if tok in LABEL_WORDS or len(tok) < 7 or not tok.isalpha():
+        return tok
+    best = {0: []}
+    for i in range(len(tok)):
+        if i not in best:
+            continue
+        for j in range(i + 3, len(tok) + 1):
+            if tok[i:j] in LABEL_WORDS and j not in best:
+                best[j] = best[i] + [tok[i:j]]
+    parts = best.get(len(tok))
+    return " ".join(parts) if parts and len(parts) >= 2 else tok
+
+
 def _norm(s):
     s = s.strip()
     if not re.match(r"^(Di|Ke) ", s):                          # a text-layer split first letter: "N ilai", "Pe mbebanan"
         s = re.sub(r"^([A-Z][a-z]?) ([a-z]{3,})", r"\1\2", s)
     s = s.lower().replace("–", "-").replace(",", " ")
     s = re.sub(r"\s+", " ", s).strip(" :")
+    s = " ".join(_split_glued(t) for t in _join_split(s.split(" ")))
     return re.sub(r"^-\s+", "", s)                  # "- Pihak Ketiga - Bersih" (list dash)
 
 
 FACE_RULES = [
     # field, statement, label regex (Indonesian label, normalised), status
-    ("revenue", "profit_loss", r"^(penjualan|pendapatan)( neto| bersih| usaha| dari kontrak dengan pelanggan)?$", "FOUND"),
+    ("revenue", "profit_loss", r"^(penjualan|pendapatan)( jasa)?( -)?( neto| bersih| usaha| dari kontrak dengan pelanggan)?$",
+     "FOUND"),                                                      # "PENDAPATAN JASA - NETO" (SAME 2021)
     ("cost_of_goods_sold", "profit_loss", r"^(beban|harga) pokok (penjualan|pendapatan)( neto| bersih)?$", "FOUND"),
     ("net_income", "profit_loss", r"^(laba|rugi|laba \(rugi\)|laba/rugi) (neto |bersih )?(tahun|periode) berjalan$", "FOUND"),
     ("total_assets", "position", r"^(total|jumlah) aset$", "FOUND"),
@@ -461,6 +513,33 @@ SGA_PARTS = [r"^beban penjualan( dan pemasaran)?$", r"^beban (umum dan administr
              r"^beban penjualan,? umum,? dan administrasi$",           # one combined line (ABMM 2021)
              r"^beban (penjualan|pemasaran),? (dan )?distribusi$", r"^beban distribusi$"]   # ERAA 2021
 SGA_LIKE = re.compile(r"^beban (penjualan|pemasaran|distribusi|umum|administrasi|promosi|iklan)\b")
+
+
+SGA_ITEM_UNDER_HEADING = re.compile(r"^(penjualan|pemasaran|distribusi|umum|administrasi|penjualan dan (pemasaran|distribusi)"
+                                    r"|umum dan administrasi|administrasi dan umum)$")
+
+
+def _sga_parts(lines):
+    """The selling and G&A lines of the profit or loss statement. Trial 3 (TEBE 2021): the items can sit under a
+    "BEBAN USAHA" heading without the word "Beban" ("Umum dan administrasi"); they are taken only directly under
+    that heading, and only while each line names a selling or G&A item."""
+    parts = [ln for pat in SGA_PARTS for ln in [_first(lines, pat)] if ln]
+    if parts:
+        return parts
+    for i, ln in enumerate(lines):
+        if ln.amounts or not re.match(r"^beban (usaha|operasi(onal)?)$", _norm(ln.label)):
+            continue
+        out = []
+        for nxt in lines[i + 1:i + 8]:
+            if not ("t" in nxt.amounts and "t1" in nxt.amounts):
+                if out:
+                    break
+                continue
+            if not SGA_ITEM_UNDER_HEADING.match(_norm(nxt.label)):
+                break
+            out.append(nxt)
+        return out
+    return []
 
 
 def _continuation(lines, i):
@@ -608,6 +687,11 @@ def _cfo_line(lines):
     # labels split over two lines: "Kas Neto Diperoleh dari" / "Aktivitas Operasi 1.199.317"
     for ln in lines:
         if re.search(r"^aktivitas operasi$", _norm(ln.label)) and "t" in ln.amounts:
+            full = _norm(ln.full_label or "")
+            # ERAA 2021: "Kas yang dihasilkan dari / aktivitas operasi" is the cash generated before interest and
+            # tax; the net figure comes further down ("Kas Neto yang Diperoleh dari / Aktivitas Operasi")
+            if re.search(r"dihasilkan dari (aktivitas )?operasi$", full) and not re.search(r"\b(neto|bersih)\b", full):
+                continue
             return ln
     # Trial 1: "Kas neto dari aktivitas" / "operasi 171.116": the label wrapped anywhere
     for ln in lines:
@@ -696,6 +780,8 @@ def _receivables(lines):
                 continue
             if open_at is not None and k - open_at <= 8:
                 continue                       # wrapped label of the open item
+            if re.match(r"^(rp|us\$|\(?20\d\d\b)", nl) and not block and open_at is None:
+                continue                       # Trial 3 (TEBE 2021): the allowance amount wraps onto its own line
             if block or open_at is not None or nxt.label.strip()[:1].isupper():
                 break                          # the next item of the statement
         if block:
@@ -759,7 +845,9 @@ def _debt(lines):
     current maturities. Short-term (working-capital) bank loans are excluded (D-02).
     """
     lt, cm, excluded, section = [], [], [], None
+    # "utang pembiayaan" (financing payables, incl. consumer financing): interest-bearing borrowings (D-02), Trial 3 SOSS/ERAA
     interest = re.compile(r"(utang|pinjaman) bank|pinjaman|obligasi|sukuk|liabilitas sewa|utang sewa|wesel bayar|medium term notes|mtn"
+                          r"|utang pembiayaan"
                           r"|(utang|liabilitas) aset hak[ -]guna")
     figs = lambda x: "t" in x.amounts or "t1" in x.amounts                    # noqa: E731
     seen = {"current": False, "noncurrent": False}
@@ -783,6 +871,16 @@ def _debt(lines):
                 section = "noncurrent"
                 seen["noncurrent"] = True
             continue
+        # Trial 3 (ERAA 2021): a sub-heading of current liabilities that opens the current maturities,
+        # "Utang jangka panjang yang / akan jatuh tempo dalam / waktu satu tahun:", followed by the lease, bank-loan
+        # and other lines without their own "current portion" wording
+        if section == "current" and not figs(ln) and re.search(r"^(utang|pinjaman) jangka panjang\b|^bagian (lancar|jangka pendek)"
+                                                                r" (dari )?(utang|pinjaman|liabilitas) jangka panjang", own):
+            head = " ".join([own] + [_norm(x.label) for x in lines[i + 1:i + 3] if not figs(x)])
+            if re.search(r"jatuh tempo dalam (waktu )?(satu|1) tahun|bagian (lancar|jangka pendek)", head) \
+                    and "setelah dikurangi" not in head:
+                section = "current_maturities"
+                continue
         if re.search(r"^(total|jumlah) liabilitas", _norm(ln.full_label or ln.label)) and figs(ln) \
                 or re.search(r"^ekuitas", _norm(ln.label)):
             section = None
@@ -1035,7 +1133,7 @@ def _rule7(values, checks, statements, text, notes_start, cross_checks, issues):
         new += [(Msg("check.cash_cf"), c, True, "") for c in ("t", "t1")]
     # SGA against the printed total of operating expenses
     if pl:
-        parts = [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
+        parts = _sga_parts(pl.lines)
         missed = _sga_missed(pl, parts)
         if missed:                     # ERAA 2021: 'Beban penjualan dan distribusi' left out while G&A was read
             cross_checks["sga_total"] = {c: ("mismatch", sum(abs(p.amounts.get(c, 0)) for p in parts)) for c in ("t", "t1")}
@@ -1082,7 +1180,7 @@ def _parts(statements, f):
         return _receivables(statements["position"].lines)[0]
     if f == "selling_general_administrative_expenses" and statements.get("profit_loss"):
         pl = statements["profit_loss"]
-        return [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
+        return _sga_parts(pl.lines)
     return []
 
 
@@ -1291,7 +1389,7 @@ def read(pdf_path) -> Extraction:
 
     pl = statements.get("profit_loss")
     if pl:
-        parts = [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
+        parts = _sga_parts(pl.lines)
         opex = None if parts else _operating_expenses_line(pl.lines)
         if opex is not None:
             values += _sum_values("selling_general_administrative_expenses", [opex], "REVIEW", Msg("note.sga_opex"))
