@@ -383,8 +383,20 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
                            colWidths=[W - 40 * mm, 40 * mm],
                            style=[("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("BACKGROUND", (1, 0), (1, 0), RED),
                                   ("LEFTPADDING", (0, 0), (0, 0), 0), ("LINEBELOW", (0, 0), (-1, 0), 1.2, ACCENT)]),
-                     Spacer(1, 2 * mm),
-                     P(t("rep.a", lang), "label"), Spacer(1, 1 * mm), P(f["a"]), Spacer(1, 2.5 * mm)]
+                     Spacer(1, 2 * mm)]
+            chart = report.finding_chart(r, d["index"], lang)
+            left = [P(t("rep.a", lang), "label"), Spacer(1, 1 * mm), P(f["a"])]
+            if chart:
+                right = [_Chart(chart, lang, W * 0.38)]
+                if chart["unconfirmed"]:
+                    right += [Spacer(1, 1 * mm), Paragraph(_x(t("chart.unconfirmed", lang)), ParagraphStyle(
+                        "cu", parent=S["small"], fontSize=6.8, leading=8.8, textColor=AMBER_INK))]
+                block.append(Table([[left, right]], colWidths=[W * 0.58, W * 0.42],
+                                   style=[("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                          ("RIGHTPADDING", (0, 0), (0, 0), 6 * mm), ("RIGHTPADDING", (1, 0), (1, 0), 0)]))
+            else:
+                block += left
+            block.append(Spacer(1, 2.5 * mm))
             for cv in f["caveats"]:
                 block += [P(cv, "small"), Spacer(1, 1.5 * mm)]
             block += [Table([[[P(t("rep.c", lang), "head"), Spacer(1, 1 * mm), P(f["c"], "small")],
@@ -512,6 +524,66 @@ class _Bar(Flowable):
             c.rect(mid, 0.4 * mm, w, 2.2 * mm, stroke=0, fill=1)
         else:
             c.rect(mid - w, 0.4 * mm, w, 2.2 * mm, stroke=0, fill=1)
+
+
+class _Chart(Flowable):
+    """Small bar chart of a finding (Gail, 29 Oct 2026): the figure behind the index, previous year then current
+    year, value printed on each bar. Two series (TATA) are drawn side by side per year with a legend."""
+
+    def __init__(self, data, lang, width, height=36 * mm):
+        super().__init__()
+        self.d, self.lang, self.width, self.height = data, lang, width, height
+
+    def _fmt(self, v):
+        if self.d["kind"] == "pct":
+            return dec(v * 100, 1, self.lang) + "%"
+        return report.compact_money(v, self.d["unit"], self.d["currency"], self.lang)
+
+    def draw(self):
+        c, d, w, h = self.canv, self.d, self.width, self.height
+        series, cols = d["series"], ("t1", "t")
+        two = len(series) > 1
+        c.setFont("Plex-Semi", 7.2)
+        c.setFillColor(INK)
+        c.drawString(0, h - 3 * mm, d["title"])
+        vals = [v[col] for _, v in series for col in cols]
+        hi, lo = max(vals + [0]), min(vals + [0])
+        year_y = (4 * mm if two else 0.8 * mm)                 # year labels above the legend
+        top, base_y = h - 9 * mm, year_y + 4.5 * mm + (4 * mm if lo < 0 else 0)
+        span = (hi - lo) or 1
+        zero = base_y + (0 - lo) / span * (top - base_y)
+        y_of = lambda v: base_y + (v - lo) / span * (top - base_y)      # noqa: E731
+        group_w = w / 2
+        bar_w = min(14 * mm, group_w * (0.30 if two else 0.42))
+        gap = 3 * mm if two else 0
+        fills = [colors.HexColor("#9AA0A8"), GREEN] if not two else [GREEN, ACCENT]
+        for gi, col in enumerate(cols):
+            gx = gi * group_w + group_w / 2
+            n = len(series)
+            for si, (name, v) in enumerate(series):
+                x = gx - n * bar_w / 2 - (n - 1) * gap / 2 + si * (bar_w + gap)
+                y = y_of(v[col])
+                c.setFillColor(fills[si] if two else fills[gi])
+                c.rect(x, min(zero, y), bar_w, abs(y - zero), stroke=0, fill=1)
+                c.setFont("PlexMono", 6.4)
+                c.setFillColor(INK)
+                ly = (y + 1 * mm) if v[col] >= 0 else (y - 3 * mm)
+                c.drawCentredString(x + bar_w / 2, ly, self._fmt(v[col]))
+            c.setFont("Plex", 7)
+            c.setFillColor(MUTED)
+            c.drawCentredString(gx, year_y, d["years"][col])
+        c.setStrokeColor(LINE)
+        c.setLineWidth(0.6)
+        c.line(0, zero, w, zero)
+        if two:
+            x = 0
+            for si, (name, _) in enumerate(series):
+                c.setFillColor(fills[si])
+                c.rect(x, 0.4 * mm, 2.2 * mm, 2.2 * mm, stroke=0, fill=1)
+                c.setFont("Plex", 6.6)
+                c.setFillColor(SOFT)
+                c.drawString(x + 3 * mm, 0.8 * mm, name)
+                x += 3 * mm + c.stringWidth(name, "Plex", 6.6) + 4 * mm
 
 
 class _Box(Flowable):

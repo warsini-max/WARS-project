@@ -1468,6 +1468,18 @@ CATALOG: dict = {
         "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",
         "This report is an automated screen. It is not an audit opinion, does not replace examination procedures, and "
         "is not evidence of fraud or misstatement.", "new"),
+    "chart.title.DSRI": _e("Piutang usaha dibanding penjualan", "Trade receivables relative to sales", "Gail 29 Okt grafik"),
+    "chart.title.GMI": _e("Margin laba kotor", "Gross margin", "Gail 29 Okt grafik"),
+    "chart.title.AQI": _e("Porsi aset tidak lancar selain aset tetap", "Share of non-current assets other than PPE", "Gail 29 Okt grafik"),
+    "chart.title.SGI": _e("Penjualan", "Sales", "Gail 29 Okt grafik"),
+    "chart.title.TATA": _e("Laba tahun berjalan dan arus kas operasi", "Profit for the year and operating cash flow", "Gail 29 Okt grafik"),
+    "chart.DSRI": _e("Piutang ÷ penjualan", "Receivables ÷ sales", "Gail 29 Okt grafik"),
+    "chart.GMI": _e("Margin laba kotor", "Gross margin", "Gail 29 Okt grafik"),
+    "chart.AQI": _e("Porsi dari total aset", "Share of total assets", "Gail 29 Okt grafik"),
+    "chart.SGI": _e("Penjualan", "Sales", "Gail 29 Okt grafik"),
+    "chart.TATA_ni": _e("Laba tahun berjalan", "Profit for the year", "Gail 29 Okt grafik"),
+    "chart.TATA_cfo": _e("Arus kas operasi", "Operating cash flow", "Gail 29 Okt grafik"),
+    "chart.unconfirmed": _e("Angka grafik belum dicocokkan; lihat daftar periksa", "Chart figures not yet agreed; see the checklist", "Gail 29 Okt grafik"),
     "rep.contact": _e("Hubungi kami", "Contact us", "Gail 28 Okt report"),
     "rep.check.line": _e("Baris di PDF: {s}", "Line in the PDF: {s}", "Gail 28 Okt report"),
 

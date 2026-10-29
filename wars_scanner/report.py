@@ -254,6 +254,67 @@ def finding(r: Result, k: str, confirm=None, lang="id"):
             "caveats": list(dict.fromkeys(caveats))}
 
 
+SCALE = {"Units": 1, "Thousands": 1e3, "Millions": 1e6, "Billions": 1e9}
+
+
+def compact_money(v, unit, currency="IDR", lang="id"):
+    """Short amount for chart labels: Rp252,4 M / Rp252.4bn (unit of the report applied)."""
+    if v is None:
+        return "—"
+    x = v * SCALE.get(unit or "Units", 1)
+    steps = {"id": ((1e12, " T"), (1e9, " M"), (1e6, " jt"), (1e3, " rb")),
+             "en": ((1e12, "tn"), (1e9, "bn"), (1e6, "m"), (1e3, "k"))}[lang]
+    div, suf = next(((d, s_) for d, s_ in steps if abs(x) >= d), (1, ""))
+    n = fmt_number(x / div, lang, 1 if div > 1 else 0)
+    pre = "USD " if currency == "USD" else "Rp"
+    return f"{'−' if x < 0 else ''}{pre}{n.lstrip('−-')}{suf}"
+
+
+def finding_chart(r: Result, k: str, lang="id"):
+    """Data for the small chart of a finding (Gail, 29 Oct 2026): the figure behind the index in both years.
+
+    Returns dict(title, kind 'pct' or 'money', series [(name, {t: v, t1: v})], years {t, t1}, unconfirmed) or None
+    when a value is missing (no chart is drawn from an incomplete pair)."""
+    g = lambda f, c="t": _val(r, f, c)                                   # noqa: E731
+    fy = getattr(r.extraction, "fiscal_year", None)
+    years = {"t": str(fy) if fy else "t", "t1": str(fy - 1) if fy else "t−1"}
+
+    def ratio(fn):
+        out = {}
+        for c in ("t", "t1"):
+            try:
+                out[c] = fn(c)
+            except (TypeError, ZeroDivisionError):
+                return None
+        return out
+    if k == "DSRI":
+        series = [(t("chart.DSRI", lang), ratio(lambda c: g("accounts_receivable", c) / g("revenue", c)))]
+        kind = "pct"
+    elif k == "GMI":
+        series = [(t("chart.GMI", lang), ratio(lambda c: (g("revenue", c) - g("cost_of_goods_sold", c)) / g("revenue", c)))]
+        kind = "pct"
+    elif k == "AQI":
+        series = [(t("chart.AQI", lang), ratio(lambda c: 1 - (g("current_assets", c) + g("property_plant_equipment_net", c))
+                                               / g("total_assets", c)))]
+        kind = "pct"
+    elif k == "SGI":
+        series = [(t("chart.SGI", lang), ratio(lambda c: g("revenue", c) + 0))]
+        kind = "money"
+    elif k == "TATA":
+        series = [(t("chart.TATA_ni", lang), ratio(lambda c: g("net_income", c) + 0)),
+                  (t("chart.TATA_cfo", lang), ratio(lambda c: g("cash_flow_from_operations", c) + 0))]
+        kind = "money"
+    else:
+        return None
+    if any(v is None for _, v in series):
+        return None
+    unconfirmed = any(_status(r, f, c) in ("REVIEW", "UNDISCLOSED", "BUILT FROM DISCLOSED COMPONENTS", "ASSUMED")
+                      for f in FINDING_FIELDS.get(k, ()) for c in ("t", "t1"))
+    return {"title": t(f"chart.title.{k}", lang), "kind": kind, "series": series, "years": years,
+            "unit": getattr(r.extraction, "unit_scale", None), "currency": getattr(r.extraction, "currency", None) or "IDR",
+            "unconfirmed": unconfirmed}
+
+
 # ----------------------------------------------------------------------------------- confirmation
 
 def confirmation_summary(items, answers):

@@ -121,3 +121,16 @@ def test_financial_institution_is_not_scored_and_says_why():
     r.unreadable = Msg("issue.financial_institution", items=("Kredit yang diberikan (hal. 5)",))
     head, detail, lv = report.verdict(r, lang="en")
     assert head == "M-score not calculated" and "does not apply to financial institutions" in detail and lv == "none"
+
+
+def test_finding_chart_uses_the_figures_behind_the_index():
+    """Gail, 29 Oct 2026: one small chart per finding, both years; no chart from an incomplete pair."""
+    from wars_scanner.report import compact_money, finding_chart
+    r = _result(-2.5, NEUTRAL)
+    r.inputs.update({"accounts_receivable_t": 30.0, "accounts_receivable_t1": 10.0, "revenue_t": 100.0, "revenue_t1": 80.0})
+    ch = finding_chart(r, "DSRI", "en")
+    assert ch["kind"] == "pct" and ch["series"][0][1] == {"t": 0.3, "t1": 0.125}
+    r.inputs["revenue_t1"] = None
+    assert finding_chart(r, "DSRI", "en") is None
+    assert compact_money(252448924906, "Units", "IDR", "id") == "Rp252,4 M"
+    assert compact_money(-140738938560, "Units", "IDR", "en") == "−Rp140.7bn"
