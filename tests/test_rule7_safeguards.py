@@ -280,3 +280,85 @@ def test_right_of_use_words_any_mention_keeps_the_review():
         assert nr.ROU_WORDS.search(txt), txt
     for txt in ("Hak atas tanah", "Aset tetap", "Utang usaha"):
         assert not nr.ROU_WORDS.search(txt), txt
+
+
+# ----------------------------------------------------------------------------- Trial 2 follow-up fixes (29 Oct 2026)
+
+def _w(text, x0, top=100.0):
+    return {"text": text, "x0": x0, "x1": x0 + 6 * len(text), "top": top}
+
+
+def test_opening_bracket_printed_apart_is_joined_to_its_figure():
+    """PYFA 2021: '( 385.949.260.966)'."""
+    out = pr._open_brackets([_w("(", 200), dict(_w("385.949.260.966)", 213))])
+    assert [w["text"] for w in out] == ["(385.949.260.966)"]
+    far = pr._open_brackets([_w("(", 200), _w("385.949)", 240)])          # too far apart: left alone
+    assert [w["text"] for w in far] == ["(", "385.949)"]
+    word = pr._open_brackets([_w("(", 200), _w("Catatan", 207)])           # a bracket before text: left alone
+    assert [w["text"] for w in word] == ["(", "Catatan"]
+
+
+def test_glued_and_letter_spaced_text_layers_are_detected():
+    glued = [_w(t, i * 50) for i, t in enumerate(["LAPORANPOSISIKEUANGAN", "STATEMENTOFFINANCIALPOSITION",
+                                                  "Tanggal31Desember2021", "(DisajikandalamRupiah,", "Kas", "dan", "bank",
+                                                  "Bebanpenyusutanasettetapyangdialokasikanpada", "kecualidinyatakanlain)",
+                                                  "unlessotherwisestated)"])]
+    assert pr._glued(glued)
+    normal = [_w(t, i * 50) for i, t in enumerate(["Laporan", "posisi", "keuangan", "Kas", "dan", "setara", "kas",
+                                                   "pertanggungjawabannya", "Pihak", "ketiga"])]
+    assert not pr._glued(normal)
+    spaced = [_w(c, i * 7) for i, c in enumerate("Beban Pokok".replace(" ", ""))]
+    assert pr._spaced_lines(spaced) == {100}
+    assert pr._spaced_lines(normal) == set()
+
+
+def test_note_references_with_letters_and_dots():
+    for ref in ("3m.", "3l.", "3b.3f.4", "2u,28,33&34"):
+        assert pr.NOTE_REF.match(ref), ref
+    for amount in ("1.234", "54.902.595.928"):
+        assert not pr.NOTE_REF.match(amount), amount
+
+
+def test_selling_general_and_administrative_on_one_wrapped_line():
+    """ABMM 2021: 'Beban penjualan, umum dan' / 'administrasi (60.085.720)'."""
+    lines = [_ln("Beban penjualan, umum dan"), _ln("administrasi", -60085720, -54081458)]
+    assert any(pr._first(lines, pat) is lines[1] for pat in pr.SGA_PARTS)
+
+
+def test_upper_case_wrapped_revenue_label():
+    """ABMM 2021: 'PENDAPATAN DARI KONTRAK' / 'DENGAN PELANGGAN 1.021.865.474'."""
+    lines = [_ln("PENDAPATAN DARI KONTRAK"), _ln("DENGAN PELANGGAN", 1021865474, 606407376, full_label="2021 PENDAPATAN DARI KONTRAK DENGAN PELANGGAN")]
+    assert pr._first(lines, pr.FACE_RULES[0][2]) is lines[1]
+    other = [_ln("BEBAN POKOK"), _ln("DENGAN PELANGGAN", 5, 4, full_label="x")]      # another head: no match
+    assert pr._first(other, pr.FACE_RULES[0][2]) is None
+
+
+def test_operating_cash_flow_label_printed_around_the_figures():
+    """MTPS 2021: 'Jumlah Kas Bersih yang Diperoleh dari' / '(246.072.015.025) 89.153.940.475' / '(Digunakan untuk) Aktivitas Operasi'."""
+    lines = [_ln("Jumlah Kas Bersih yang Diperoleh dari"), _ln("", -246072015025, 89153940475),
+             _ln("(Digunakan untuk) Aktivitas Operasi"), _ln("Arus Kas dari Aktivitas Investasi")]
+    assert pr._cfo_line(lines) is lines[1]
+    sub = [_ln("Kas yang diperoleh dari"), _ln("", -240803307012, 89694261636), _ln("(digunakan untuk) operasi")]
+    assert pr._cfo_line(sub) is None                       # cash generated from operations is not the total
+
+
+def test_hyphen_ending_a_wrapped_english_label_is_not_nil():
+    """TFAS 2021: 'bagian yang jatuh tempo 2,19b, Lease liabilities -'."""
+    ln = _assign_amounts(_line_words("bagian", "yang", "jatuh", "tempo", "2,19b,", "Lease", "liabilities", "-"))
+    assert ln.amounts == {}
+    nil = _assign_amounts(_line_words("Uang", "muka", "pelanggan", "-", "2", "3.700.000", "Advances"))
+    assert nil.amounts == {"t": 0, "t1": 3700000}
+
+
+def test_split_first_letter_is_joined_in_labels():
+    assert pr._norm("N ilai tercatat neto") == "nilai tercatat neto"
+    assert pr._norm("U tang Pajak") == "utang pajak"
+    assert pr._norm("A Bank") == "a bank"
+
+
+def test_depreciation_sentence_with_amounts_before_the_verb():
+    ok = ("Beban penyusutan untuk tahun-tahun yang berakhir pada tanggal 31 Desember 2021 dan 2020 masing-masing "
+          "sebesar Rp 717.040.615 dan Rp 486.918.049 dialokasikan ke beban umum dan administrasi")
+    assert nr.PPE_DEP_SENTENCE_B.search(ok)
+    rou = ok.replace("Beban penyusutan", "Beban penyusutan aset hak guna")
+    assert not nr.PPE_DEP_SENTENCE_B.search(rou)

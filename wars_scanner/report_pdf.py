@@ -268,7 +268,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
 
     # ------------------------------------------------------------------------------ 1 Overview
     _section(story, t("rep.s1", lang), S)
-    stype = t(f"ui.res.stype.{ex.statement_type}" if ex.statement_type == "Consolidated" else "ui.res.stype.unknown", lang)
+    stype = t(f"ui.res.stype.{ex.statement_type}" if ex.statement_type in ("Consolidated", "Parent-only") else "ui.res.stype.unknown", lang)
     grid = [[P(t("rep.f.entity", lang), "field"), P(t("rep.f.ticker", lang), "field"), P(t("rep.f.period", lang), "field")],
             [P(name, "fieldv"), P(ticker or "—", "fieldv"), P(t("rep.period", lang, t=yt, t1=yt1), "fieldv")],
             [P(t("rep.f.basis", lang), "field"), P(t("rep.f.unit", lang), "field"), P(t("rep.f.source", lang), "field")],

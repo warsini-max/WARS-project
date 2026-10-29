@@ -723,12 +723,26 @@ def ppe_depreciation_sentence(cache, first_note_page, face_ppe):
         if not re.search(r"(?i)aset tetap", raw):
             continue
         txt = " ".join(raw.split())
-        for m in PPE_DEP_SENTENCE.finditer(txt):
-            got = sentence_pair(txt[m.end():m.end() + 260], txt[m.start():m.end()])
-            ok = got and all(face_ppe.get(c) and 0.0005 * face_ppe[c] <= got[c] <= face_ppe[c] for c in got)
-            if ok:
-                return got, i, txt[m.start():m.end() + 80]
+        for rx, needs_ppe_note in ((PPE_DEP_SENTENCE, False), (PPE_DEP_SENTENCE_B, True)):
+            for m in rx.finditer(txt):
+                if needs_ppe_note:            # the sentence must sit in the fixed-asset note (not the lease note)
+                    lines = cache.lines(i)
+                    at = next((k for k, ln in enumerate(lines) if re.search(r"(?i)beban penyusutan", ln.text)), len(lines))
+                    if not PPE_NOTE_HEAD.search(cache.heading_before(i, at) or ""):
+                        continue
+                got = sentence_pair(txt[m.end():m.end() + 260], txt[m.start():m.end()])
+                ok = got and all(face_ppe.get(c) and 0.0005 * face_ppe[c] <= got[c] <= face_ppe[c] for c in got)
+                if ok:
+                    return got, i, txt[m.start():m.end() + 80]
     return None
+
+
+# Trial 2 (TFAS 2021): "Beban penyusutan untuk tahun-tahun ... masing-masing sebesar Rp X dan Rp Y dialokasikan ke beban
+# umum dan administrasi": the amounts come before the verb. Accepted only inside the fixed-asset note.
+PPE_DEP_SENTENCE_B = re.compile(r"beban penyusutan\b(?![^.]{0,80}(properti investasi|hak guna|hak-guna|tak ?berwujud|"
+                                r"right[- ]of[- ]use))[^.]{0,200}?sebesar(?=.{0,200}?(dibebankan|dialokasikan))",
+                                re.I | re.S)
+PPE_NOTE_HEAD = re.compile(r"ASET TETAP|PROPERTY|FIXED ASSETS|PROPERTI, PABRIK", re.I)
 
 
 CARRYING = re.compile(r"^(nilai|jumlah) (tercatat|buku)\b|^nilai buku (neto|bersih)|^carrying (amount|value)|^net book value"

@@ -27,7 +27,7 @@ NIL = {"-", "–", "—", "--"}
 SCANNED_MIN_CHARS = 20          # a page with fewer non-space characters has no usable text layer
 STATEMENT_WINDOW = 15           # the three primary statements lie within this many pages of each other
 NOTES_WITHIN = 10               # the notes (CALK) start within this many pages after the last statement
-NOTE_REF = re.compile(r"^\d{1,2}(?:\.?[a-z])?(?:\s?[,&]\s?\d{1,2}(?:\.?[a-z])?)*,?$", re.I)
+NOTE_REF = re.compile(r"^\d{1,2}(?:\.?[a-z])?(?:\s?[,&.]\s?\d{1,2}(?:\.?[a-z])?)*[,.]?$", re.I)   # "3m.", "3b.3f.4" (MTPS 2021)
 
 
 @dataclass
@@ -137,7 +137,7 @@ BALANCED = re.compile(r"\(\d{1,3}(?:[.,]\d{3})+\)")
 def paren_artifact(texts):
     """Some PDFs print a closing bracket after every positive figure ("145.027)") because of the
     accounting number format; their text layer then shows unbalanced brackets. Detected per document."""
-    joined = "\n".join(texts)
+    joined = re.sub(r"\(\s+(?=\d)", "(", "\n".join(texts))     # "( 385.949)" is a normal negative figure
     un, bal = len(UNBALANCED_CLOSE.findall(joined)), len(BALANCED.findall(joined))
     return un >= 10 and un >= bal
 
@@ -158,9 +158,52 @@ def _normalise(text, fmt):
     return text
 
 
+def _open_brackets(raw):
+    """Trial 2 (PYFA 2021): a negative figure printed as "( 385.949.260.966)" has its opening bracket as a
+    separate word. The bracket is joined to the figure that follows on the same line."""
+    out = []
+    for w in raw:
+        if out and out[-1]["text"] == "(" and re.match(r"^\d[\d.,]*\)?$", w["text"]) and abs(w["top"] - out[-1]["top"]) <= 3 \
+                and 0 <= w["x0"] - out[-1]["x1"] < 16:
+            prev = out.pop()
+            w = dict(w, text="(" + w["text"], x0=prev["x0"])
+        out.append(w)
+    return out
+
+
+def _glued(raw):
+    """Trial 2 (PZZA 2021): a text layer without spaces between words ("LAPORANPOSISIKEUANGAN",
+    "Bebanpenyusutanasettetapyangdialokasikanpada"). Detected by runs of letters longer than Indonesian or
+    English words; the page is then read again with a tighter gap between words."""
+    alpha = [w["text"] for w in raw if re.fullmatch(r"[A-Za-z(),.:/-]+", w["text"])]
+    return len(alpha) >= 8 and (sum(len(a) >= 16 for a in alpha) >= 0.3 * len(alpha)
+                                or sum(len(re.sub(r"[^A-Za-z]", "", a)) >= 24 for a in alpha) >= 3)
+
+
+def _spaced_lines(raw):
+    """Trial 2 (WSBP 2021): table lines printed letter by letter ("B e b a n P o k o k"): the tops of the lines
+    where most words are single characters."""
+    by = {}
+    for w in raw:
+        by.setdefault(round(w["top"]), []).append(w["text"])
+    return {top for top, ws in by.items() if len(ws) >= 8 and sum(len(x) == 1 for x in ws) >= 0.6 * len(ws)}
+
+
+def page_words(page):
+    raw = page.extract_words(keep_blank_chars=False)
+    if _glued(raw):
+        return page.extract_words(keep_blank_chars=False, x_tolerance=1.5)
+    spaced = _spaced_lines(raw)
+    if spaced:
+        wide = page.extract_words(keep_blank_chars=False, x_tolerance=5)
+        near = lambda w: any(abs(round(w["top"]) - t) <= 1 for t in spaced)       # noqa: E731
+        raw = [w for w in raw if not near(w)] + [w for w in wide if near(w)]
+    return raw
+
+
 def _lines(page, page_no, fmt="dot"):
     words = [Word(_normalise(w["text"], fmt), w["x0"], w["x1"], w["top"], w["text"])
-             for w in page.extract_words(keep_blank_chars=False)]
+             for w in _open_brackets(sorted(page_words(page), key=lambda w: (round(w["top"]), w["x0"])))]
     words.sort(key=lambda w: (round(w.top), w.x0))
     out, cur = [], []
     for w in words:
@@ -256,6 +299,8 @@ def _assign_amounts(line, notes_x=None, t_first=True, amount_left=None):
         if txt in NIL and not seen_number and re.match(r"^[A-Za-z(]", nxt):
             label_words.append(w)
             continue
+        if txt in NIL and not nxt and re.search(r"[A-Za-z]$", prev) and not nums:
+            continue          # a hyphen ending a wrapped English label ("Lease liabilities -", TFAS 2021), not nil
         in_paren = prev.count("(") > prev.count(")") or (txt.endswith(")") and not txt.startswith("(")
                                                          and any("(" in x.text and ")" not in x.text for x in words[max(0, i - 3):i]))
         if (re.search(r"(^|[(:])(rp\.?|usd|us\$)$", prev) or (in_paren and re.search(r"\d{4}|rp|usd", prev))) \
@@ -382,6 +427,7 @@ def _unit_scale(text):
 # ------------------------------------------------------------------------------------- fields
 
 def _norm(s):
+    s = re.sub(r"^([A-Z]) ([a-z]{2,})", r"\1\2", s.strip())   # a text-layer split first letter: "N ilai", "U tang"
     s = s.lower().replace("–", "-").replace(",", " ")
     s = re.sub(r"\s+", " ", s).strip(" :")
     return re.sub(r"^-\s+", "", s)                  # "- Pihak Ketiga - Bersih" (list dash)
@@ -403,7 +449,8 @@ FACE_RULES = [
 ]
 
 SGA_PARTS = [r"^beban penjualan( dan pemasaran)?$", r"^beban (umum dan administrasi|administrasi dan umum)$",
-             r"^beban pemasaran$", r"^beban umum$"]
+             r"^beban pemasaran$", r"^beban umum$",
+             r"^beban penjualan,? umum,? dan administrasi$"]           # one combined line (ABMM 2021)
 
 
 def _continuation(lines, i):
@@ -421,7 +468,13 @@ def _own_match(rx, lines, i):
     ("Uang muka pembelian" / "aset tetap", BIRD 2021)."""
     ln = lines[i]
     if not _continuation(lines, i):
-        return bool(rx.search(_norm(ln.label)))
+        if rx.search(_norm(ln.label)):
+            return True
+        # an upper-case tail ("PENDAPATAN DARI KONTRAK" / "DENGAN PELANGGAN 1.021.865.474", ABMM 2021) matches only
+        # together with its head
+        prev = lines[i - 1] if i else None
+        return bool(prev is not None and not prev.amounts and prev.label.strip() and ln.label.strip().isupper()
+                    and prev.label.strip().isupper() and rx.search(_norm(prev.label + " " + ln.label)))
     return bool(rx.search(_norm(lines[i - 1].label + " " + ln.label)))
 
 
@@ -483,7 +536,7 @@ def _revenue_line(lines, pattern):
 
 
 DIRECT_COST = re.compile(r"^(beban|biaya) langsung$|^(beban|biaya) pokok (jasa|pendapatan jasa)$")
-GROSS_PROFIT = re.compile(r"^laba (bruto|kotor)$|^laba \(rugi\) (bruto|kotor)$")
+GROSS_PROFIT = re.compile(r"^laba (bruto|kotor)$|^laba \(rugi\) (bruto|kotor)$|^rugi (bruto|kotor)$")
 
 
 def _direct_cost_line(lines, revenue_ln):
@@ -510,7 +563,8 @@ def _operating_expenses_line(lines):
         return None
     for j in range(gp + 1, min(gp + 6, len(lines))):
         ln = lines[j]
-        if not re.match(r"^beban usaha$", _norm(ln.full_label or ln.label)) or "t" not in ln.amounts or "t1" not in ln.amounts:
+        if not (re.match(r"^beban usaha$", _norm(ln.label)) or re.match(r"^beban usaha$", _norm(ln.full_label or ""))) \
+                or "t" not in ln.amounts or "t1" not in ln.amounts:
             continue
         after = lines[j + 1:j + 6]
         if any(re.match(r"^(laba|rugi|laba \(rugi\)|\(rugi\) laba) (usaha|operasi)\b", _norm(x.full_label or x.label))
@@ -550,6 +604,15 @@ def _cfo_line(lines):
         full = _norm(ln.full_label)
         if "t" in ln.amounts and re.search(r"(kas|arus kas) (neto|bersih)\b[^.]{0,40}aktivitas operasi$", full):
             return ln
+    # Trial 2 (MTPS 2021): the label is printed around the figures: "Jumlah Kas Bersih yang Diperoleh dari" /
+    # "(246.072.015.025) 89.153.940.475" / "(Digunakan untuk) Aktivitas Operasi"
+    for i, ln in enumerate(lines[1:-1], start=1):
+        prev, nxt = lines[i - 1], lines[i + 1]
+        if "t" in ln.amounts and "t1" in ln.amounts and not ln.label.strip() and not prev.amounts and not nxt.amounts:
+            joined = _norm(prev.label + " " + nxt.label)
+            if re.search(r"(kas|arus kas) (neto|bersih)\b[^.]{0,60}aktivitas operasi$", joined):
+                ln.quote = " / ".join(x.text for x in (prev, ln, nxt))
+                return ln
     return None
 
 
@@ -607,7 +670,7 @@ def _receivables(lines):
         # Trial 2 (APII 2021): an item label can wrap over several lines with the allowance quoted in it
         # ("Pihak ketiga - setelah / dikurangi cadangan / ... / (2020 : Rp2.995.582.842) 52.638.402.581 ...").
         # A label-only 'Pihak ...' line opens an item; its figures are on the next line that has them.
-        block, open_at = [], None
+        block, open_at = [], (i if "pihak" in lab else None)    # 'Piutang usaha - pihak ketiga' wrapped (MTPS 2021)
         for k, nxt in enumerate(lines[i + 1:i + 20], start=i + 1):
             nl = _norm(nxt.label)
             if "t" in nxt.amounts:
@@ -1136,6 +1199,13 @@ def read(pdf_path) -> Extraction:
         currency = currency or _currency(head)
         if stype is None and re.search(r"KONSOLIDASIAN|CONSOLIDATED", head.upper()):
             stype = "Consolidated"
+
+    # Trial 2 (MTPS, WSBP 2021): a company without subsidiaries presents statements that are not consolidated. When
+    # all three statement titles were read and none says consolidated, the basis is the workbook's 'Parent-only'.
+    if stype is None and all(k in statements for k in ("position", "profit_loss", "cash_flow")) and all(
+            any(re.search(p, " ".join(ln.text for ln in statements[k].lines[:12]).upper()) for p in TITLES[k])
+            for k in ("position", "profit_loss", "cash_flow")):
+        stype = "Parent-only"
 
     for k in ("position", "profit_loss", "cash_flow"):
         if wanted and k not in statements:

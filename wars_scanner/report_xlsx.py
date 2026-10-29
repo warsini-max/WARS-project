@@ -58,7 +58,7 @@ def build(r, lang="id", file_name="", sha="", generated="") -> bytes:
     ws = _sheet(wb, t("xl.sheet.summary", lang), ["", ""], [34, 90])
     head, detail, _ = report.verdict(r, None, lang, provisional_note=False)
     unit = unit_msg(ex.unit_scale, getattr(ex, "currency", None))
-    stype = t("ui.res.stype.Consolidated" if ex.statement_type == "Consolidated" else "ui.res.stype.unknown", lang)
+    stype = t(f"ui.res.stype.{ex.statement_type}" if ex.statement_type in ("Consolidated", "Parent-only") else "ui.res.stype.unknown", lang)
     rows = [(t("rep.f.entity", lang), name), (t("rep.f.ticker", lang), ticker or "—"),
             (t("rep.f.period", lang), t("rep.period", lang, t=yt, t1=yt1)), (t("rep.f.basis", lang), stype),
             (t("rep.f.unit", lang), render(unit, lang)), (t("xl.k.file", lang), file_name), ("SHA-256", sha),

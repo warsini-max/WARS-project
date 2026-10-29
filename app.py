@@ -24,6 +24,14 @@ from wars_scanner.text import Msg, Num, Raw, fmt_number, render, t, unit_msg
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 LINKEDIN = "https://www.linkedin.com/in/warsiniak"
+CONTACT_EMAIL = "warsiniak@gmail.com"
+# Footer contact (Gail, 29 Oct 2026): two same-size icons, as in the PDF report. Generic icons, not LinkedIn's logo.
+ICON_PROFILE = ('<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect width="24" height="24" rx="4" '
+                'fill="#006B53"/><circle cx="12" cy="9" r="3.6" fill="#fff"/><path d="M5 20c0-4 3.2-6.4 7-6.4s7 2.4 7 6.4z" '
+                'fill="#fff"/></svg>')
+ICON_MAIL = ('<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect width="24" height="24" rx="4" '
+             'fill="#006B53"/><rect x="5" y="7" width="14" height="10" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>'
+             '<path d="M5 7.5l7 5.5 7-5.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>')
 
 st.set_page_config(page_title="WARS · Window-dressing Accounting Red-Flag Scanner",
                    page_icon=os.path.join(ROOT, "assets", "wars_icon.png"), layout="wide",
@@ -139,7 +147,8 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 .w-tbl tr.drv{background:#FBF1F1} .w-tbl tr.drv .p{font-weight:600;color:var(--red)}
 .w-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;padding:16px 0 4px;border-top:1px solid var(--line);margin-top:40px}
 .w-foot .dis{margin:0;max-width:720px;font-size:12px;font-style:italic;color:#6B6B6B;line-height:1.5}
-.w-foot .by{margin:0;font-size:12px;color:var(--soft)} .w-foot a{color:var(--green)}
+.w-foot .by{margin:0;font-size:12px;font-weight:600;color:var(--soft);display:flex;align-items:center;gap:8px}
+.w-foot .by a{display:inline-flex;line-height:0}
 /* streamlit widgets */
 .stButton button[kind="primary"],.stDownloadButton button[kind="primary"]{background:var(--green);border-color:var(--green);border-radius:10px;min-height:50px;font-weight:600;font-size:16px}
 .stButton button[kind="primary"]:hover,.stDownloadButton button[kind="primary"]:hover{background:#00563F;border-color:#00563F}
@@ -191,7 +200,9 @@ def header(signed_in: bool):
 
 def footer():
     st.markdown(f'<div class="w-foot"><p class="dis">{E(T("app.disclaimer"))}</p>'
-                f'<p class="by">{E(T("app.author"))} · <a href="{LINKEDIN}" target="_blank">LinkedIn</a></p></div>',
+                f'<p class="by"><span>{E(T("rep.contact"))}</span>'
+                f'<a href="{LINKEDIN}" target="_blank" title="LinkedIn" aria-label="LinkedIn">{ICON_PROFILE}</a>'
+                f'<a href="mailto:{CONTACT_EMAIL}" title="Email" aria-label="Email">{ICON_MAIL}</a></p></div>',
                 unsafe_allow_html=True)
 
 
@@ -248,7 +259,7 @@ def page_gate():
         with st.container(key="gatecard"):
             st.markdown(f'<div style="text-align:center"><img src="{WORDMARK}" alt="WARS" style="width:200px;height:auto">'
                         f'<h1 style="margin:22px 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em;padding:0">'
-                        f'{E(T("app.title"))}</h1><p style="margin:0 0 20px;color:#5A6069;font-size:14px">'
+                        f'{E(T("app.title")).replace("Red-Flag", "Red\u2011Flag")}</h1><p style="margin:0 0 20px;color:#5A6069;font-size:14px">'
                         f'{E(T("ui.tagline"))}</p></div>', unsafe_allow_html=True)
             if st.button("👤  " + T("ui.guest"), type="primary", use_container_width=True, key="guest"):
                 ss.page = "upload"
@@ -374,7 +385,7 @@ def page_result():
     yt, yt1 = (str(fy), str(fy - 1)) if fy else ("t", "t−1")
     ticker, name = report.issuer_line(r, L)
     unit = unit_msg(ex.unit_scale, getattr(ex, "currency", None))
-    stype = Msg("ui.res.stype.Consolidated") if ex.statement_type == "Consolidated" else Msg("ui.res.stype.unknown")
+    stype = Msg(f"ui.res.stype.{ex.statement_type}") if ex.statement_type in ("Consolidated", "Parent-only") else Msg("ui.res.stype.unknown")
 
     steps(3)
     a, b = st.columns([3, 1], vertical_alignment="bottom")
