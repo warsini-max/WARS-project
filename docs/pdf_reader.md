@@ -64,19 +64,19 @@ table; otherwise REVIEW.
 
 ## Results on the non-case test documents (22 Oct 2026)
 
-| Document | Face checks | Tax note reconciles (note and face) | PPE depreciation = movement table | M-score (PROVISIONAL) |
+| Document | Face checks | Tax note reconciles (note and face) | PPE depreciation = movement table | M-score (PROVISIONAL; values kept in the private project notes) |
 |---|---|---|---|---|
-| SIDO 2021 | 8/8 | yes | yes | −2.3162 = golden, identical engine inputs |
-| SIDO 2020 | 8/8 | yes | yes (figures read in order) | −2.4569 |
-| KLBF 2020 | 8/8 | yes | yes | −2.8835 (ROU depreciation 2019 not presented: first PSAK 73 year) |
-| KLBF 2021 | 8/8 | yes | yes | −2.1914 |
-| KLBF 2023 | 8/8 | yes | yes | −2.2232 |
-| MYOR 2020 | 8/8 | yes | yes | −2.8994 (ROU depreciation single line, not reconciled: REVIEW) |
+| SIDO 2021 | 8/8 | yes | yes | computed; equals the golden-dataset result |
+| SIDO 2020 | 8/8 | yes | yes (figures read in order) | computed |
+| KLBF 2020 | 8/8 | yes | yes | computed (ROU depreciation 2019 not presented: first PSAK 73 year) |
+| KLBF 2021 | 8/8 | yes | yes | computed |
+| KLBF 2023 | 8/8 | yes | yes | computed |
+| MYOR 2020 | 8/8 | yes | yes | computed (ROU depreciation single line, not reconciled: REVIEW) |
 | MYOR 2021 | — | — | — | NOT CALCULATED: statements are scanned images (correct refusal) |
 
-All scores are below −1.78 and −1.49. They are PROVISIONAL: inputs marked REVIEW (debt
+All scores are below the −1.78 threshold. They are PROVISIONAL: inputs marked REVIEW (debt
 classification, right-of-use, non-PPE status, amortisation) still need a person's check. Only
-SIDO 2021 has a golden dataset (AI-checked, not yet VERIFIED by Gail).
+SIDO 2021 has a golden dataset (core figures VERIFIED by Gail, 29 Oct 2026).
 
 **Against the SIDO 2021 golden dataset: 40 of 40 numeric fields match, 0 silent errors.**
 Independent check: the t−1 figures of the 2021 reports equal the t figures of the 2020

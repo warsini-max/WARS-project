@@ -1266,6 +1266,15 @@ CATALOG: dict = {
                                 "ditemukan di tabel mutasi, periksa angkanya di halaman tersebut",
                                 "Right of use depreciation taken from a sentence in the right of use note; the figures "
                                 "were not found in the movement schedule, check them on that page", "new"),
+    "note.rou_dep_lines_ok": _e("Penyusutan aset hak-guna dijumlahkan dari baris beban di bawah judul 'Beban penyusutan "
+                                "aset hak-guna'; jumlahnya tercetak lagi di tabel mutasi",
+                                "Right of use depreciation added up from the expense lines under the heading 'Depreciation "
+                                "of right of use assets'; the sum is printed again in the movement schedule", "new"),
+    "note.rou_dep_lines": _e("Penyusutan aset hak-guna dijumlahkan dari baris beban di bawah judul 'Beban penyusutan aset "
+                             "hak-guna' (total tabel itu memuat beban lain, jadi tidak dipakai); periksa angkanya",
+                             "Right of use depreciation added up from the expense lines under the heading 'Depreciation of "
+                             "right of use assets' (that table's total holds other expenses and is not used); check the "
+                             "figures", "new"),
     "note.ppe_dep_sentence": _e("Penyusutan aset tetap milik diambil dari kalimat di catatan aset tetap (tidak ada tabel "
                                 "alokasi); periksa angkanya di halaman tersebut",
                                 "Owned-PPE depreciation taken from a sentence in the fixed-asset note (no allocation "

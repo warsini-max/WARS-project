@@ -494,9 +494,10 @@ def _norm(s):
 
 FACE_RULES = [
     # field, statement, label regex (Indonesian label, normalised), status
-    ("revenue", "profit_loss", r"^(penjualan|pendapatan)( jasa)?( -)?( neto| bersih| usaha| dari kontrak dengan pelanggan)?$",
+    ("revenue", "profit_loss", r"^(penjualan|pendapatan|penjualan dan pendapatan)( jasa)?( -)?( neto| bersih| usaha| dari kontrak dengan pelanggan)?$",
      "FOUND"),                                                      # "PENDAPATAN JASA - NETO" (SAME 2021)
-    ("cost_of_goods_sold", "profit_loss", r"^(beban|harga) pokok (penjualan|pendapatan)( neto| bersih)?$", "FOUND"),
+    ("cost_of_goods_sold", "profit_loss", r"^(beban|harga) pokok (penjualan|pendapatan)( dan beban langsung)?( neto| bersih)?$",
+     "FOUND"),                                     # "Beban Pokok Penjualan dan / Beban Langsung" (PUDP 2021)
     ("net_income", "profit_loss", r"^(laba|rugi|laba \(rugi\)|laba/rugi) (neto |bersih )?(tahun|periode) berjalan$", "FOUND"),
     ("total_assets", "position", r"^(total|jumlah) aset$", "FOUND"),
     ("current_assets", "position", r"^(total|jumlah) aset lancar$", "FOUND"),
@@ -710,7 +711,7 @@ def _cfo_line(lines):
     return None
 
 
-PPE_WRAPPED = re.compile(r"(?:^|\s)aset tetap\s*-?\s*(setelah dikurangi|neto|bersih)")
+PPE_WRAPPED = re.compile(r"(?:^|\s)aset tetap\s*[-(]?\s*(setelah dikurangi|neto|bersih)")   # "Aset Tetap (Setelah dikurangi" (PUDP)
 NOT_PPE_BEFORE = re.compile(r"(uang muka|pembelian|untuk dijual|pengampunan|tersedia untuk|dalam penyelesaian)\s*$")
 
 
@@ -847,7 +848,7 @@ def _debt(lines):
     lt, cm, excluded, section = [], [], [], None
     # "utang pembiayaan" (financing payables, incl. consumer financing): interest-bearing borrowings (D-02), Trial 3 SOSS/ERAA
     interest = re.compile(r"(utang|pinjaman) bank|pinjaman|obligasi|sukuk|liabilitas sewa|utang sewa|wesel bayar|medium term notes|mtn"
-                          r"|utang pembiayaan"
+                          r"|utang pembiayaan|^sewa( pembiayaan)?$|^bank( loans?)?$"     # "Sewa" under a long-term-liabilities heading (TOBA 2021)
                           r"|(utang|liabilitas) aset hak[ -]guna")
     figs = lambda x: "t" in x.amounts or "t1" in x.amounts                    # noqa: E731
     seen = {"current": False, "noncurrent": False}
@@ -864,7 +865,7 @@ def _debt(lines):
         if re.search(r"^liabilitas jangka panjang\b", own) and not figs(ln):
             nxt = " ".join(_norm(x.label) for x in lines[i + 1:i + 3] if not figs(x))
             heading = _norm(ln.label) + " " + nxt
-            if section == "current" and re.search(r"jatuh tempo dalam (waktu )?(satu|1) tahun|bagian (lancar|jangka pendek)", heading) \
+            if section == "current" and re.search(r"jatuh tempo dalam (waktu )?(satu|1|1 \(satu\)) tahun|bagian (lancar|jangka pendek)", heading) \
                     and "setelah dikurangi" not in heading:
                 section = "current_maturities"        # sub-heading of current liabilities
             else:
@@ -877,7 +878,8 @@ def _debt(lines):
         if section == "current" and not figs(ln) and re.search(r"^(utang|pinjaman) jangka panjang\b|^bagian (lancar|jangka pendek)"
                                                                 r" (dari )?(utang|pinjaman|liabilitas) jangka panjang", own):
             head = " ".join([own] + [_norm(x.label) for x in lines[i + 1:i + 3] if not figs(x)])
-            if re.search(r"jatuh tempo dalam (waktu )?(satu|1) tahun|bagian (lancar|jangka pendek)", head) \
+            if (re.search(r"jatuh tempo dalam (waktu )?(satu|1|1 \(satu\)) tahun|bagian (lancar|jangka pendek)", head)
+                    or re.match(r"^(utang|pinjaman) jangka panjang yang (akan )?jatuh( tempo)?$", own)) \
                     and "setelah dikurangi" not in head:
                 section = "current_maturities"
                 continue
@@ -891,7 +893,7 @@ def _debt(lines):
             lt.append(ln)
         elif section == "current_maturities":
             cm.append(ln)
-        elif re.search(r"bagian (lancar|yang jatuh tempo|jangka pendek)|jatuh tempo dalam (waktu )?(satu|1) tahun|sewa", lab):
+        elif re.search(r"bagian (lancar|yang jatuh tempo|jangka pendek)|jatuh tempo dalam (waktu )?(satu|1|1 \(satu\)) tahun|sewa", lab):
             cm.append(ln)
         else:
             excluded.append(ln)
@@ -1211,8 +1213,11 @@ def _checks(pos, pl, values):
 HEAD_EXCLUDE = EXCLUDE_TITLES + [r"IKHTISAR", r"HIGHLIGHTS", r"ANALISIS DAN PEMBAHASAN", r"MANAGEMENT DISCUSSION",
                                   r"TINJAUAN KEUANGAN", r"FINANCIAL REVIEW", r"KINERJA KEUANGAN"]
 NOTES_HEAD = re.compile(r"CATATAN ATAS LAPORAN\s+KEUANGAN|NOTES TO THE\s+(CONSOLIDATED\s+)?FINANCIAL STATEMENTS")
-NOTES_COLUMN = re.compile(r"(?im)^\s*(catatan|notes?)\s*/?\s*$|\bcatatan\s*/")
-INTEGRAL_FOOTER = re.compile(r"(?i)merupakan bagian (yang )?integral|form(s)? an integral part|accompanying notes")
+# Trial 4 (LMSH, MARI 2021): the Notes header shares its line with the year columns ("Catatan 2021 2020",
+# "Catatan 31 Desember 2021 31 Desember 2020*"), and the footer reads "... bagian yang tidak terpisahkan ..."
+NOTES_COLUMN = re.compile(r"(?im)^\s*(catatan|notes?)\s*/?\s*$|\bcatatan\s*/|^\s*(catatan|notes?)\s*/?\s+(20\d\d|31)\b")
+INTEGRAL_FOOTER = re.compile(r"(?i)merupakan bagian (yang )?integral|form(s)? an integral part|accompanying notes"
+                             r"|bagian (yang )?tidak terpisahkan")
 
 
 def locate_financial_statements(pdf_path) -> dict:

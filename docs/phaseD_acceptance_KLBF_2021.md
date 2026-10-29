@@ -26,7 +26,7 @@
   - p333–p432 (13 pages): notes pages that mention a statement title: rejected ("Catatan atas").
 - **Embedded LK:** 162 of the 163 LK pages have identical text at a constant offset of 292 pages. The one
   difference (LK p132 / AR p424, notes) is word order in the text layer only, same words; not a source page.
-- **M-score** after the same simulated non-PPE decision (NONE_PRESENT both years): AR −2.1914 = LK −2.1914.
+- **M-score** after the same simulated non-PPE decision (NONE_PRESENT both years): identical for the annual report and the stand-alone financial statements.
 - **Resources:** 470 pages, 10.2 MB; full pipeline 6.9 s; peak memory 368 MB (this test process).
 - **Regression:** 215 passed, 1 skipped (SIDO 2021 amortisation is 0: digit-slip test not applicable).
 
