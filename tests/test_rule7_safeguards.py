@@ -362,3 +362,30 @@ def test_depreciation_sentence_with_amounts_before_the_verb():
     assert nr.PPE_DEP_SENTENCE_B.search(ok)
     rou = ok.replace("Beban penyusutan", "Beban penyusutan aset hak guna")
     assert not nr.PPE_DEP_SENTENCE_B.search(rou)
+
+
+def test_note_reference_inside_a_label_bracket_is_not_a_figure():
+    """PURA 2021: 'AKHIR TAHUN (Catatan 4) 5.095.557.635 27.409.758.127 (Note 4)'."""
+    ln = _assign_amounts(_line_words("AKHIR", "TAHUN", "(Catatan", "4)", "5.095.557.635", "27.409.758.127", "(Note", "4)"))
+    assert ln.amounts == {"t": 5095557635, "t1": 27409758127}
+
+
+def test_other_operating_income_netted_in_the_total_is_not_a_missed_line():
+    """GLVA 2021: G&A + selling − other operating income = total operating expenses."""
+    gp = _ln("LABA BRUTO", 194677, 210363)
+    ga, sell = _ln("Beban umum dan administrasi", -92304, -85508), _ln("Beban penjualan", -51934, -67202)
+    oth = _ln("Pendapatan operasi lainnya - neto", 11424, 24789)
+    pl = _st("profit_loss", [gp, ga, sell, oth, _ln("Total Beban Operasi", -132814, -127921)])
+    st, others = pr._sga_total(pl, [ga, sell])
+    assert st == {"t": "other", "t1": "other"} and others == [oth]
+
+
+def test_selling_and_distribution_counts_as_selling_and_a_missed_line_is_caught():
+    """ERAA 2021: 'Beban penjualan dan distribusi' was left out while G&A was read (no printed total)."""
+    gp, op = _ln("LABA BRUTO", 4805, 3410), _ln("LABA USAHA", 1659, 1103)
+    sd, ga = _ln("Beban penjualan dan distribusi", -2156, -1473), _ln("Beban umum dan administrasi", -1162, -1078)
+    lines = [gp, sd, ga, _ln("Pendapatan lainnya", 225, 292), op]
+    assert any(pr._first(lines, pat) is sd for pat in pr.SGA_PARTS)
+    pl = _st("profit_loss", lines)
+    assert pr._sga_missed(pl, [ga]) == [sd]          # if it had been missed, the check finds it
+    assert pr._sga_missed(pl, [sd, ga]) == []         # other income is not selling or general expenses

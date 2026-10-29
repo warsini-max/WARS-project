@@ -299,6 +299,10 @@ def _assign_amounts(line, notes_x=None, t_first=True, amount_left=None):
         if txt in NIL and not seen_number and re.match(r"^[A-Za-z(]", nxt):
             label_words.append(w)
             continue
+        if re.match(r"^\(?(catatan|note|notes)$", prev) and NOTE_REF.match(txt.strip("()")):
+            if not seen_number:
+                label_words.append(w)  # "AKHIR TAHUN (Catatan 4) 5.095.557.635 …" (PURA 2021): a note reference
+            continue
         if txt in NIL and not nxt and re.search(r"[A-Za-z]$", prev) and not nums:
             continue          # a hyphen ending a wrapped English label ("Lease liabilities -", TFAS 2021), not nil
         in_paren = prev.count("(") > prev.count(")") or (txt.endswith(")") and not txt.startswith("(")
@@ -364,10 +368,12 @@ EXCLUDE_TITLES = [r"PERUBAHAN EKUITAS", r"CHANGES IN EQUITY", r"CATATAN ATAS", r
 
 def _classify(page_lines, height):
     head = " ".join(ln.text for ln in page_lines if ln.top < height * 0.30).upper()
-    if any(re.search(p, head) for p in EXCLUDE_TITLES):
+    tight = re.sub(r"\s+", "", head)          # titles with glued words ("LAPORANPOSISIKEUANGAN", ERAA 2021)
+    found = lambda pats: any(re.search(p, head) or re.search(re.sub(r"\s+", "", p), tight) for p in pats)   # noqa: E731
+    if found(EXCLUDE_TITLES):
         return None
     for kind in ("cash_flow", "profit_loss", "position"):   # order matters: cash-flow titles mention neither
-        if any(re.search(p, head) for p in TITLES[kind]):
+        if found(TITLES[kind]):
             return kind
     return None
 
@@ -427,7 +433,9 @@ def _unit_scale(text):
 # ------------------------------------------------------------------------------------- fields
 
 def _norm(s):
-    s = re.sub(r"^([A-Z]) ([a-z]{2,})", r"\1\2", s.strip())   # a text-layer split first letter: "N ilai", "U tang"
+    s = s.strip()
+    if not re.match(r"^(Di|Ke) ", s):                          # a text-layer split first letter: "N ilai", "Pe mbebanan"
+        s = re.sub(r"^([A-Z][a-z]?) ([a-z]{3,})", r"\1\2", s)
     s = s.lower().replace("–", "-").replace(",", " ")
     s = re.sub(r"\s+", " ", s).strip(" :")
     return re.sub(r"^-\s+", "", s)                  # "- Pihak Ketiga - Bersih" (list dash)
@@ -437,7 +445,7 @@ FACE_RULES = [
     # field, statement, label regex (Indonesian label, normalised), status
     ("revenue", "profit_loss", r"^(penjualan|pendapatan)( neto| bersih| usaha| dari kontrak dengan pelanggan)?$", "FOUND"),
     ("cost_of_goods_sold", "profit_loss", r"^(beban|harga) pokok (penjualan|pendapatan)( neto| bersih)?$", "FOUND"),
-    ("net_income", "profit_loss", r"^(laba|rugi|laba \(rugi\)|laba/rugi) (neto |bersih )?tahun berjalan$", "FOUND"),
+    ("net_income", "profit_loss", r"^(laba|rugi|laba \(rugi\)|laba/rugi) (neto |bersih )?(tahun|periode) berjalan$", "FOUND"),
     ("total_assets", "position", r"^(total|jumlah) aset$", "FOUND"),
     ("current_assets", "position", r"^(total|jumlah) aset lancar$", "FOUND"),
     ("cash_and_cash_equivalents", "position", r"^kas dan (setara kas|bank)$|^kas$", "FOUND"),
@@ -450,7 +458,9 @@ FACE_RULES = [
 
 SGA_PARTS = [r"^beban penjualan( dan pemasaran)?$", r"^beban (umum dan administrasi|administrasi dan umum)$",
              r"^beban pemasaran$", r"^beban umum$",
-             r"^beban penjualan,? umum,? dan administrasi$"]           # one combined line (ABMM 2021)
+             r"^beban penjualan,? umum,? dan administrasi$",           # one combined line (ABMM 2021)
+             r"^beban (penjualan|pemasaran),? (dan )?distribusi$", r"^beban distribusi$"]   # ERAA 2021
+SGA_LIKE = re.compile(r"^beban (penjualan|pemasaran|distribusi|umum|administrasi|promosi|iklan)\b")
 
 
 def _continuation(lines, i):
@@ -941,17 +951,44 @@ def _sga_total(pl, parts):
     if end_i < first:
         return {}, []
     others = [x for x in pl.lines[start_i + 1:end_i] if x.amounts and x not in parts]
+    # an unread line whose label (with its head) is itself selling or general expenses is never 'other' (TFAS 2021)
+    sga_like = any(_own_match(re.compile(pat), pl.lines, pl.lines.index(x)) for x in others for pat in SGA_PARTS)
     out = {}
     for c in ("t", "t1"):
         got = sum(abs(p.amounts.get(c, 0)) for p in parts)
+        signed = sum(p.amounts.get(c, 0) for p in parts)
         if got == abs(total.amounts[c]):
             out[c] = "ok"
-        elif others and all(x.label.strip()[:1].isupper() and c in x.amounts for x in others) and \
-                got + sum(abs(x.amounts[c]) for x in others) == abs(total.amounts[c]):
-            out[c] = "other"
+        elif others and not sga_like and all(c in x.amounts for x in others) and (
+                got + sum(abs(x.amounts[c]) for x in others) == abs(total.amounts[c])
+                or abs(signed + sum(x.amounts[c] for x in others)) == abs(total.amounts[c])):
+            out[c] = "other"           # e.g. other operating income netted in the total (GLVA 2021), with its sign
         else:
             out[c] = "mismatch"
     return out, others
+
+
+def _sga_missed(pl, parts):
+    """Lines between gross profit and operating profit that look like selling or general expenses but were not
+    read as such (rule 7: completeness of SGA). Empty when there are no parts or no such block."""
+    if not parts:
+        return []
+    lines = pl.lines
+    gp = next((i for i, x in enumerate(lines) if GROSS_PROFIT.search(_norm(x.label)) and x.amounts), None)
+    op = next((i for i, x in enumerate(lines) if (gp is None or i > gp) and x.amounts and re.match(
+        r"^(laba|rugi|laba \(rugi\)|\(rugi\) laba) (usaha|operasi)\b", _norm(x.full_label or x.label))), None)
+    if gp is None or op is None:
+        return []
+    out = []
+    for i in range(gp + 1, op):
+        x = lines[i]
+        if x in parts or not x.amounts:
+            continue
+        own = _norm(x.label)
+        joined = _norm(lines[i - 1].label + " " + x.label) if _continuation(lines, i) else own
+        if SGA_LIKE.search(own) or SGA_LIKE.search(joined):
+            out.append(x)
+    return out
 
 
 def _rule7(values, checks, statements, text, notes_start, cross_checks, issues):
@@ -999,6 +1036,10 @@ def _rule7(values, checks, statements, text, notes_start, cross_checks, issues):
     # SGA against the printed total of operating expenses
     if pl:
         parts = [ln for pat in SGA_PARTS for ln in [_first(pl.lines, pat)] if ln]
+        missed = _sga_missed(pl, parts)
+        if missed:                     # ERAA 2021: 'Beban penjualan dan distribusi' left out while G&A was read
+            cross_checks["sga_total"] = {c: ("mismatch", sum(abs(p.amounts.get(c, 0)) for p in parts)) for c in ("t", "t1")}
+            issues.append(Msg("issue.sga_missed", lines=Raw("; ".join(x.text[:60] for x in missed))))
         st, others = _sga_total(pl, parts)
         if st:
             bad = [c for c, x in st.items() if x == "mismatch"]

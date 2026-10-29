@@ -723,11 +723,14 @@ def ppe_depreciation_sentence(cache, first_note_page, face_ppe):
         if not re.search(r"(?i)aset tetap", raw):
             continue
         txt = " ".join(raw.split())
-        for rx, needs_ppe_note in ((PPE_DEP_SENTENCE, False), (PPE_DEP_SENTENCE_B, True)):
+        for rx, needs_ppe_note in ((PPE_DEP_SENTENCE, True), (PPE_DEP_SENTENCE_B, True)):   # ERAA 2021: same wording in the
+                                                                                         # investment-property note
             for m in rx.finditer(txt):
                 if needs_ppe_note:            # the sentence must sit in the fixed-asset note (not the lease note)
                     lines = cache.lines(i)
-                    at = next((k for k, ln in enumerate(lines) if re.search(r"(?i)beban penyusutan", ln.text)), len(lines))
+                    head = re.sub(r"\s+", "", m.group(0)[:24]).lower()      # the line where this sentence starts
+                    at = next((k for k, ln in enumerate(lines)
+                               if head[:12] in re.sub(r"\s+", "", ln.text).lower()), len(lines))
                     if not PPE_NOTE_HEAD.search(cache.heading_before(i, at) or ""):
                         continue
                 got = sentence_pair(txt[m.end():m.end() + 260], txt[m.start():m.end()])

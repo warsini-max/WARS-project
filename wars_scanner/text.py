@@ -1175,6 +1175,10 @@ CATALOG: dict = {
                          "{item}: the same figures were found again in the notes (p. {p})", "new"),
     "note.no_crosscheck": _e("Angka ini belum bisa dicocokkan dengan tempat kedua di laporan; periksa di PDF",
                              "This figure could not be matched to a second place in the report; check in the PDF", "new"),
+    "issue.sga_missed": _e("Baris yang tampak sebagai beban penjualan atau beban umum tidak terbaca sebagai bagiannya: "
+                           "{lines}. Skor ditahan sampai barisnya diperiksa",
+                           "A line that looks like selling or general expenses was not read as part of them: {lines}. "
+                           "The score is withheld until the line is checked", "new"),
     "issue.sga_other": _e("Total beban usaha juga memuat pos lain yang tidak dihitung sebagai beban penjualan dan umum: "
                           "{lines}. Periksa di PDF",
                           "Total operating expenses also holds other items not counted as selling and general expenses: "
