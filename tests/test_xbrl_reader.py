@@ -1,0 +1,201 @@
+"""XBRL reader (rules approved 30 Oct 2026): synthetic instances only; no issuer data in git (rule 5).
+Each rule has a positive and a negative case (rule 7)."""
+import io
+import zipfile
+
+import pytest
+
+from wars_scanner import xbrl_reader as X
+
+HEAD = """<?xml version="1.0" encoding="UTF-8"?>
+<xbrl xmlns="http://www.xbrl.org/2003/instance" xmlns:idx-cor="http://www.idx.co.id/xbrl/taxonomy/2020-01-01/cor"
+ xmlns:idx-dei="http://www.idx.co.id/xbrl/taxonomy/2020-01-01/dei" xmlns:xbrldi="http://xbrl.org/2006/xbrldi">
+"""
+CTX = """<context id="{id}"><entity><identifier scheme="x">TEST</identifier></entity><period>{p}</period>{s}</context>"""
+
+
+def ctx_xml():
+    out = [CTX.format(id="CurrentYearInstant", p="<instant>2022-12-31</instant>", s=""),
+           CTX.format(id="PriorEndYearInstant", p="<instant>2021-12-31</instant>", s=""),
+           CTX.format(id="CurrentYearDuration", p="<startDate>2022-01-01</startDate><endDate>2022-12-31</endDate>", s=""),
+           CTX.format(id="PriorYearDuration", p="<startDate>2021-01-01</startDate><endDate>2021-12-31</endDate>", s="")]
+    for y in ("2022", "2021"):
+        for m, cls in (("DirectlyOwnedMember", True), ("TOTAL", False)):
+            dims = '<xbrldi:explicitMember dimension="idx-cor:CarryingAmountPropertyPlantEquipmentAxis">' \
+                   'idx-cor:CarryingAmountAccumulatedDepreciationMember</xbrldi:explicitMember>'
+            if cls:
+                dims += f'<xbrldi:explicitMember dimension="idx-cor:ClassesPropertyPlantEquipmentAxis">idx-cor:{m}</xbrldi:explicitMember>'
+            out.append(CTX.format(id=f"Dep{y}{m}", p=f"<instant>{y}-12-31</instant>", s=f"<scenario>{dims}</scenario>"))
+    return "".join(out)
+
+
+DEI = {"EntityCode": "TEST", "PeriodOfFinancialStatementsSubmissions": "Tahunan / Annual",
+       "TypeOfReportOnFinancialStatements": "Diaudit / Audited", "CurrentPeriodEndDate": "2022-12-31",
+       "PriorYearEndDate": "2021-12-31", "LevelOfRoundingUsedInFinancialStatements": "Jutaan / In Million"}
+
+BASE = {  # concept: (t, t-1) in millions
+    "Assets": (1000, 900), "CurrentAssets": (400, 350), "NonCurrentAssets": (600, 550), "LiabilitiesAndEquity": (1000, 900),
+    "Liabilities": (500, 450), "CurrentLiabilities": (300, 250), "NonCurrentLiabilities": (200, 200),
+    "LongTermBankLoans": (150, 160), "CurrentMaturitiesOfBankLoans": (30, 20),
+    "PropertyPlantAndEquipment": (500, 480), "CashAndCashEquivalents": (120, 110),
+    "TradeReceivablesThirdParties": (90, 80), "TaxesPayable": (15, 12),
+}
+DUR = {"SalesAndRevenue": (2000, 1800), "CostOfSalesAndRevenue": (1500, 1350), "SellingExpenses": (100, 90),
+       "GeneralAndAdministrativeExpenses": (150, 140), "ProfitLoss": (120, 100),
+       "NetCashFlowsReceivedFromUsedInOperatingActivities": (130, 110)}
+
+
+def instance(base=None, dur=None, dei=None, dep=(55, 50, 60, 54)):
+    base = dict(BASE, **(base or {}))
+    dur = dict(DUR, **(dur or {}))
+    d = dict(DEI, **(dei or {}))
+    x = [HEAD, ctx_xml()]
+    for k, v in d.items():
+        x.append(f'<idx-dei:{k} contextRef="CurrentYearDuration">{v}</idx-dei:{k}>')
+    for k, (a, b) in base.items():
+        if a is not None:
+            x.append(f'<idx-cor:{k} contextRef="CurrentYearInstant" unitRef="IDR" decimals="-6">{a * 10**6}</idx-cor:{k}>')
+        if b is not None:
+            x.append(f'<idx-cor:{k} contextRef="PriorEndYearInstant" unitRef="IDR" decimals="-6">{b * 10**6}</idx-cor:{k}>')
+    for k, (a, b) in dur.items():
+        x.append(f'<idx-cor:{k} contextRef="CurrentYearDuration" unitRef="IDR" decimals="-6">{a * 10**6}</idx-cor:{k}>')
+        x.append(f'<idx-cor:{k} contextRef="PriorYearDuration" unitRef="IDR" decimals="-6">{b * 10**6}</idx-cor:{k}>')
+    own_t, own_t1, tot_t, tot_t1 = dep
+    for y, own, tot in (("2022", own_t, tot_t), ("2021", own_t1, tot_t1)):
+        x.append(f'<idx-cor:AdditionInPropertyPlantAndEquipment contextRef="Dep{y}DirectlyOwnedMember" unitRef="IDR" decimals="-6">{own * 10**6}</idx-cor:AdditionInPropertyPlantAndEquipment>')
+        x.append(f'<idx-cor:AdditionInPropertyPlantAndEquipment contextRef="Dep{y}TOTAL" unitRef="IDR" decimals="-6">{tot * 10**6}</idx-cor:AdditionInPropertyPlantAndEquipment>')
+    x.append("</xbrl>")
+    return "".join(x).encode()
+
+
+BS = """LAPORAN POSISI KEUANGAN
+Kas dan setara kas 120 110 Cash
+Piutang usaha - pihak ketiga 90 80 Trade receivables
+Jumlah aset lancar 400 350 Total current assets
+Aset tetap 500 480 Fixed assets
+JUMLAH ASET 1.000 900 TOTAL ASSETS
+Utang pajak 15 12 Taxes payable
+Pinjaman bank jangka panjang 30 20 Current portion of bank loans
+Jumlah liabilitas jangka pendek 300 250 Total current liabilities
+Pinjaman bank jangka panjang 150 160 Long-term bank loans
+JUMLAH LIABILITAS 500 450 TOTAL LIABILITIES"""
+PL = """LAPORAN LABA RUGI
+Pendapatan 2.000 1.800 Revenue
+Beban pokok pendapatan (1.500) (1.350) Cost of revenue
+Beban penjualan (100) (90) Selling expenses
+Beban umum dan administrasi (150) (140) General and administrative
+Laba tahun berjalan 120 100 Profit for the year
+Kas neto dari aktivitas operasi 130 110 Net cash from operating activities"""
+NOTE = """Akumulasi penyusutan
+Jumlah penyusutan pemilikan langsung 55 tahun 2022
+Jumlah penyusutan pemilikan langsung 50 tahun 2021"""
+
+
+def run(xml, pages=None):
+    return X.read(xml, pages or [BS, PL, NOTE], "TEST")
+
+
+def test_clean_instance_all_found():
+    r = run(instance())
+    assert r["gate"] == []
+    for name in ("revenue", "total_assets", "long_term_debt", "current_maturities_long_term_debt",
+                 "selling_general_administrative_expenses", "accounts_receivable", "ppe_depreciation_owned"):
+        assert r["fields"]["t"][name].status == "FOUND", name
+    assert r["fields"]["t"]["selling_general_administrative_expenses"].value == 250
+    assert r["face_findings"] == [] and r["bank_rule"] == []
+
+
+def test_zip_input_and_scale():
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("instance.xbrl", instance())
+        z.writestr("Taxonomy.xsd", "<schema/>")
+    r = X.read(buf.getvalue(), [BS, PL, NOTE], "TEST")
+    assert r["scale"] == 10**6 and r["fields"]["t1"]["revenue"].value == 1800
+
+
+def test_gate_rejects_interim_unaudited_and_wrong_ticker():
+    r = run(instance(dei={"PeriodOfFinancialStatementsSubmissions": "Kuartal III / Third Quarter",
+                          "TypeOfReportOnFinancialStatements": "Tidak Diaudit / Unaudited"}))
+    assert "not an annual report" in r["gate"] and "not audited" in r["gate"]
+    assert X.read(instance(), [BS, PL], "OTHER")["gate"] == ["entity code TEST is not OTHER"]
+
+
+def test_value_not_printed_in_pdf_is_review():
+    # CPRO lesson: XBRL depreciation includes impairment; the PDF prints another figure
+    r = run(instance(dep=(57, 50, 57, 50)))
+    assert r["fields"]["t"]["ppe_depreciation_owned"].status == "REVIEW"
+    # negative: the printed figures are FOUND
+    assert run(instance())["fields"]["t"]["ppe_depreciation_owned"].status == "FOUND"
+
+
+def test_rule2_face_line_tagged_elsewhere_is_review():
+    # KBAG/TMAS lesson: consumer financing payables tagged as non-financial liabilities
+    bs = BS.replace("JUMLAH LIABILITAS", "Utang pembiayaan konsumen 170 160 Consumer financing payables\nJUMLAH LIABILITAS")
+    r = run(instance(base={"OtherNonCurrentNonFinancialLiabilities": (170, 160)}), [bs, PL, NOTE])
+    assert any(f["family"] == "debt" for f in r["face_findings"])
+    assert r["fields"]["t"]["long_term_debt"].status == "REVIEW"
+    # negative: tagged as a borrowing -> no finding
+    r = run(instance(base={"LongTermConsumerFinancingPayables": (170, 160)}), [bs, PL, NOTE])
+    assert not r["face_findings"]
+
+
+def test_rule2_rou_tagged_as_advance():
+    # IPTV lesson
+    bs = BS.replace("Aset tetap 500 480", "Aset tetap 500 480\nAset hak guna 290 865 Right of use assets")
+    r = run(instance(base={"OtherNonCurrentAdvances": (290, 865)}), [bs, PL, NOTE])
+    assert any(f["family"] == "rou" for f in r["face_findings"])
+    # negative: a land-rights sentence (HGB) is not a right-of-use line
+    bs2 = BS.replace("Aset tetap 500 480", "Aset tetap 500 480\nSertifikat Hak Guna Bangunan 290 865")
+    assert not run(instance(), [bs2, PL, NOTE])["face_findings"]
+
+
+def test_rule2_combined_debt_line_and_pl_lines_not_flagged():
+    # ASII lesson: one face line = bank loans + other loans; CPRO lesson: FX loss on long-term loan on the P&L
+    bs = BS.replace("Pinjaman bank jangka panjang 150 160 Long-term bank loans",
+                    "Pinjaman bank dan pinjaman lain 155 162 Bank loans and other loans")
+    pl = PL + "\nRugi selisih kurs atas pinjaman jangka panjang (8) (3) loss on long-term loan"
+    r = run(instance(base={"LongTermOtherBorrowings": (5, 2)}), [bs, pl, NOTE])
+    assert not r["face_findings"]
+
+
+def test_rule1_bank_loan_current_portion_tagged_short_term():
+    # MKPI/KBAG lesson
+    r = run(instance(base={"CurrentMaturitiesOfBankLoans": (None, None), "ShortTermBankLoans": (30, 20)}))
+    assert {b["column"] for b in r["bank_rule"]} == {"t", "t1"}
+    assert r["fields"]["t"]["current_maturities_long_term_debt"].status == "REVIEW"
+    # negative: short-term loans with tagged current maturities -> no flag
+    r = run(instance(base={"ShortTermBankLoans": (30, 20)}))
+    assert r["bank_rule"] == []
+    # negative: short-term loans, no long-term loans at all -> no flag
+    r = run(instance(base={"LongTermBankLoans": (None, None), "CurrentMaturitiesOfBankLoans": (None, None),
+                           "ShortTermBankLoans": (30, 20)}))
+    assert r["bank_rule"] == []
+
+
+def test_rule3_untagged_debt_zero_only_when_proven():
+    base = {"LongTermBankLoans": (None, None), "CurrentMaturitiesOfBankLoans": (None, None)}
+    bs = "\n".join(l for l in BS.split("\n") if "Pinjaman" not in l)
+    r = run(instance(base=base), [bs, PL, NOTE])
+    assert r["fields"]["t"]["long_term_debt"].value == 0 and r["fields"]["t"]["long_term_debt"].status == "FOUND"
+    # negative: a borrowing line is printed on the face but not tagged -> not zero
+    bs2 = bs.replace("JUMLAH LIABILITAS", "Utang bank 150 160 Bank loans\nJUMLAH LIABILITAS")
+    r = run(instance(base=base), [bs2, PL, NOTE])
+    assert r["fields"]["t"]["long_term_debt"].value is None
+    # negative: subtotals do not add up -> not zero
+    r = run(instance(base=dict(base, NonCurrentAssets=(590, 550))), [bs, PL, NOTE])
+    assert r["fields"]["t"]["long_term_debt"].value is None
+
+
+def test_owned_depreciation_not_table_total():
+    # IPTV/IRRA/UNTR lesson: the table total includes ROU depreciation
+    r = run(instance(dep=(55, 50, 60, 54)))
+    assert r["fields"]["t"]["ppe_depreciation_owned"].value == 55
+    assert r["fields"]["t"]["ppe_table_depreciation_total"].value == 60
+
+
+def test_no_entities_or_network():
+    evil = instance().replace(b'<?xml version="1.0" encoding="UTF-8"?>',
+                              b'<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]>')
+    inst = X.read_instance(evil)
+    assert not any("root:" in f.value for f in inst.facts)
