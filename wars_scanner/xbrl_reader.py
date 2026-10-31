@@ -413,6 +413,14 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
     if fi:
         gate.append("financial institution: " + "; ".join(f"{k} p{p} {lab}" for k, p, lab in fi))
     tax = corporate_tax_payable(inst, lines, pages)
+    tax["proxy"] = False
+    if tax["status"] == "NOT FOUND" and fields["t"]["taxes_payable_total"].value is not None \
+            and fields["t1"]["taxes_payable_total"].value is not None:
+        # D-03g (Gail, 31 Oct 2026 09.28): PPh 25/29 not found -> total taxes payable on the face, marked
+        # PENDEKATAN and REVIEW. The scoring layer must warn when M is within 0.15 of -1.78.
+        tax.update(t=fields["t"]["taxes_payable_total"].value, t1=fields["t1"]["taxes_payable_total"].value,
+                   status="REVIEW", proxy=True)
+        tax["notes"].append("PENDEKATAN (D-03g): total taxes payable used because PPh 25/29 was not found")
     return {"gate": gate, "tax": tax, "dei": inst.dei, "scale": inst.scale, "fields": fields, "face_pages": pages,
             "face_findings": findings, "bank_rule": bank, "internal_checks": internal_checks(inst)}
 

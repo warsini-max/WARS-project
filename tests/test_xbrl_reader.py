@@ -219,7 +219,8 @@ def test_tax_pph25_29_from_table_that_adds_up_to_face():
 
 def test_tax_table_not_adding_up_is_not_found():
     bad = TAXNOTE.replace("Pasal 21 3 2", "Pasal 21 4 2")
-    assert run(instance(), [BS, PL, NOTE, bad])["tax"]["status"] == "NOT FOUND"
+    t = run(instance(), [BS, PL, NOTE, bad])["tax"]
+    assert t["proxy"] is True and t["status"] == "REVIEW"   # PPh 25/29 not taken from a table that does not add up
 
 
 def test_tax_prepaid_table_with_same_total_is_not_used():
@@ -257,3 +258,12 @@ def test_financial_institution_gate_needs_two_markers():
     bs2 = bs1.replace("Jumlah aset lancar", "Piutang sewa pembiayaan 50 40 Finance lease receivables\nJumlah aset lancar")
     bs2 = bs2.replace("Utang pajak 15 12", "Simpanan nasabah 70 60 Deposits from customers\nUtang pajak 15 12")
     assert any("financial institution" in g for g in run(instance(), [bs2, PL, NOTE])["gate"])
+
+
+def test_d03g_proxy_when_pph_not_found():
+    # Gail, 31 Oct 2026: total taxes payable as PENDEKATAN + REVIEW when PPh 25/29 is not found
+    r = run(instance(), [BS, PL, NOTE])
+    assert r["tax"]["proxy"] is True and r["tax"]["status"] == "REVIEW" and (r["tax"]["t"], r["tax"]["t1"]) == (15, 12)
+    # negative: PPh 25/29 found -> no proxy
+    r = run(instance(), [BS, PL, NOTE, TAXNOTE])
+    assert r["tax"]["proxy"] is False and r["tax"]["status"] == "FOUND"
