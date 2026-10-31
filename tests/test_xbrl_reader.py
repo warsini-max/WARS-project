@@ -199,3 +199,61 @@ def test_no_entities_or_network():
                               b'<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]>')
     inst = X.read_instance(evil)
     assert not any("root:" in f.value for f in inst.facts)
+
+
+# ---------------------------------------------------------------- after XBRL stage 3 (development, 31 Oct 2026)
+TAXNOTE = """CATATAN 20. PERPAJAKAN
+b. Utang pajak b. Taxes payable
+31 Desember 2022 31 Desember 2021
+Pasal 21 3 2 Article 21
+Pasal 25 4 3 Article 25
+Pasal 29 6 5 Article 29
+Pajak Pertambahan Nilai 2 2 Value-Added Tax
+Jumlah 15 12 Total"""
+
+
+def test_tax_pph25_29_from_table_that_adds_up_to_face():
+    r = run(instance(), [BS, PL, NOTE, TAXNOTE])
+    assert r["tax"]["status"] == "FOUND" and (r["tax"]["t"], r["tax"]["t1"]) == (10, 8)
+
+
+def test_tax_table_not_adding_up_is_not_found():
+    bad = TAXNOTE.replace("Pasal 21 3 2", "Pasal 21 4 2")
+    assert run(instance(), [BS, PL, NOTE, bad])["tax"]["status"] == "NOT FOUND"
+
+
+def test_tax_prepaid_table_with_same_total_is_not_used():
+    prepaid = TAXNOTE.replace("b. Utang pajak b. Taxes payable", "a. Pajak dibayar di muka a. Prepaid taxes")
+    prepaid = prepaid.replace("Pasal 25 4 3", "Pasal 28A 4 3")
+    r = run(instance(), [BS, PL, NOTE, prepaid])
+    assert r["tax"]["status"] != "FOUND"
+
+
+def test_tax_columns_conflict_is_review():
+    # PTPW lesson: detail columns add up to the other year's total
+    sw = TAXNOTE.replace("Jumlah 15 12", "Jumlah 12 15")
+    r = run(instance(base={"TaxesPayable": (12, 15)}), [BS.replace("Utang pajak 15 12", "Utang pajak 12 15"), PL, NOTE, sw])
+    assert r["tax"]["status"] == "REVIEW"
+
+
+def test_false_alarms_from_stage3_are_gone():
+    bs = BS.replace("Aset tetap 500 480", "Aset tetap 500 480\nUang muka aset hak guna 1.244 - Advance for right of use assets"
+                    "\nPinjaman kepada pihak berelasi 100.000 - Loan to a related party")
+    r = run(instance(base={"OtherNonCurrentAdvances": (1244, None), "ReceivablesFromRelatedParties": (100000, None)}),
+            [bs, PL, NOTE])
+    assert not r["face_findings"]
+
+
+def test_bank_rule_not_fired_when_issuer_uses_current_maturity_concept_in_other_year():
+    # ZYRX lesson: long-term loan repaid; the short-term loan is genuine
+    r = run(instance(base={"LongTermBankLoans": (None, 160), "CurrentMaturitiesOfBankLoans": (None, 20),
+                           "ShortTermBankLoans": (150, None)}))
+    assert r["bank_rule"] == []
+
+
+def test_financial_institution_gate_needs_two_markers():
+    bs1 = BS.replace("Kas dan setara kas 120 110 Cash", "Kas dan setara kas 120 110 Cash\nPiutang pembiayaan konsumen 300 250 Consumer financing receivables")
+    assert not any("financial institution" in g for g in run(instance(), [bs1, PL, NOTE])["gate"])
+    bs2 = bs1.replace("Jumlah aset lancar", "Piutang sewa pembiayaan 50 40 Finance lease receivables\nJumlah aset lancar")
+    bs2 = bs2.replace("Utang pajak 15 12", "Simpanan nasabah 70 60 Deposits from customers\nUtang pajak 15 12")
+    assert any("financial institution" in g for g in run(instance(), [bs2, PL, NOTE])["gate"])

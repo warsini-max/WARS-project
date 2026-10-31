@@ -66,8 +66,9 @@ FAMILY_CONCEPTS = {
 # labels that look like a family but are not score items for it
 NOT_FAMILY = {
     "debt": re.compile(r"\b(biaya pinjaman|beban bunga|pembayaran|penerimaan|proceeds|payments?|repayment|"
-                       r"uang muka|advances?|piutang|investasi|investments?|laba|rugi|keuntungan|kerugian|gain|loss|selisih kurs)\b", re.I),
-    "rou": re.compile(r"\b(sertifikat|hak guna bangunan|hgb|building rights|liabilitas|liabilities|sewa|lease)\b", re.I),
+                       r"uang muka|advances?|piutang|investasi|investments?|laba|rugi|keuntungan|kerugian|gain|loss|selisih kurs|"
+                       r"kepada|loans? to)\b", re.I),
+    "rou": re.compile(r"\b(sertifikat|hak guna bangunan|hgb|building rights|liabilitas|liabilities|sewa|lease|uang muka|advances?)\b", re.I),
     "receivable": re.compile(r"\b(penyisihan|allowance|lain-lain|other)\b", re.I),
     "sga": re.compile(r"\b(laba|rugi|profit|loss|income|lain|lainnya|other)\b", re.I),
 }
@@ -358,8 +359,10 @@ def bank_loan_rule(inst: Instance) -> list:
     out = []
     for c in ("t", "t1"):
         lt, st, cm = (inst.plain(n, c, "i") for n in ("LongTermBankLoans", "ShortTermBankLoans", "CurrentMaturitiesOfBankLoans"))
-        lt_any = lt or inst.plain("LongTermBankLoans", "t1" if c == "t" else "t", "i")
-        if lt_any and st and cm is None:
+        other = "t1" if c == "t" else "t"
+        lt_any = lt or inst.plain("LongTermBankLoans", other, "i")
+        cm_ever = cm is not None or inst.plain("CurrentMaturitiesOfBankLoans", other, "i") is not None
+        if lt_any and st and not cm_ever:   # ZYRX (stage 3): issuer uses the current-maturity concept in the other year
             out.append({"column": c, "message": "short-term bank loans tagged while long-term bank loans exist and no "
                                                 "current maturities are tagged: check whether part is a current portion"})
     return out
@@ -406,5 +409,123 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
         if f.status == "FOUND" or f.value is None:
             f.status = "REVIEW"
         f.notes.append(b["message"] + " (rule 1)")
-    return {"gate": gate, "dei": inst.dei, "scale": inst.scale, "fields": fields, "face_pages": pages,
+    fi = financial_institution(lines, pages)
+    if fi:
+        gate.append("financial institution: " + "; ".join(f"{k} p{p} {lab}" for k, p, lab in fi))
+    tax = corporate_tax_payable(inst, lines, pages)
+    return {"gate": gate, "tax": tax, "dei": inst.dei, "scale": inst.scale, "fields": fields, "face_pages": pages,
             "face_findings": findings, "bank_rule": bank, "internal_checks": internal_checks(inst)}
+
+
+# ---------------------------------------------------------------------------- finance-company gate
+def financial_institution(lines: list, pages: dict) -> list:
+    """Same rule as the PDF reader (Gail, 28 Oct 2026): two or more distinct bank / insurer / finance-company
+    items on the face -> not scored. Uses the PDF face pages located from the XBRL pairs."""
+    from .pdf_reader import FI_MARKERS
+    found = {}
+    face = set(pages["bs"]) | set(pages["pl"])
+    for p, ln, _ in lines:
+        if p not in face:
+            continue
+        lab = re.sub(r"\s+", " ", re.split(r"\s\(?-?\d", ln.strip().lower(), maxsplit=1)[0]).strip(" -")
+        for i, (kind, rx) in enumerate(FI_MARKERS):
+            if i not in found and re.search(rx, lab):
+                found[i] = (kind, p, ln.strip()[:60])
+    return list(found.values()) if len(found) >= 2 else []
+
+
+# ---------------------------------------------------------------------------- corporate income tax payable (D-03)
+CORPORATE = re.compile(r"pasal 25|pasal 29|article 25|article 29|pph 25|pph 29|pph badan|pajak penghasilan badan|"
+                       r"corporate income tax|25/29|artical 25", re.I)
+NOT_CORPORATE = re.compile(r"pasal (4|15|21|22|23|26)\b|article (4|15|21|22|23|26)\b|pph (4|15|21|22|23|26)\b|"
+                           r"pertambahan nilai|value[- ]added|\bppn\b|bumi dan bangunan|\bpbb\b|pembangunan|"
+                           r"\bstp\b|skpkb|final|luar negeri|foreign|barang mewah|luxury|lain|other|daerah|cukai|excise", re.I)
+SUBTOTAL = re.compile(r"^(jumlah|total|sub[- ]?total|sub[- ]?jumlah|subjumlah)\b", re.I)
+TAX_HEAD = re.compile(r"utang pajak|taxes payable|tax payables?", re.I)
+STOP_HEAD = re.compile(r"pajak dibayar di ?muka|prepaid tax|beban pajak|tax expense|manfaat .*pajak", re.I)
+
+
+def _amounts(line: str) -> list:
+    """Ordered amounts on a table line, after removing article numbers in the label (Pasal 4(2), Article 25/29)."""
+    lab = re.sub(r"(?i)(pasal|article|artical|pph)\s*\d+(\s*\(\s*\d\s*\))?(\s*(/|dan|and)\s*\d+)*", " ", line)
+    lab = re.sub(r"\b\d+[a-z]\b|\b\d{1,2}[a-z]?,\s?\d", " ", lab)       # note references 13.b, 2,32
+    out = []
+    for m in re.finditer(r"\(?-?\d{1,3}(?:[.,]\d{3})+\)?|\(?-?\d+\)?|(?<!\S)-(?!\S)|--", lab):
+        tok = m.group(0)
+        out.append(0 if tok.strip("()") in ("-", "--") else int(re.sub(r"[^\d]", "", tok) or 0))
+    return out
+
+
+def _despace(s: str) -> str:
+    """'T o t a l' -> 'Total' (letter-spaced headings in some reports)."""
+    return re.sub(r"\b(?:[A-Za-z] ){2,}[A-Za-z]\b", lambda m: m.group(0).replace(" ", ""), s)
+
+
+DATE = re.compile(r"(?i)\b(januari|january|februari|february|maret|march|april|mei|may|juni|june|juli|july|agustus|"
+                  r"august|september|oktober|october|november|desember|december)\b")
+
+
+def _is_year_header(am: list, line: str = "") -> bool:
+    return (len(am) >= 2 and all(1990 <= x <= 2035 for x in am[-2:])) or bool(DATE.search(line))
+
+
+def corporate_tax_payable(inst: Instance, lines: list, pages: dict) -> dict:
+    """D-03: PPh 25/29 of the group from the taxes-payable table whose total equals the XBRL TaxesPayable pair.
+    FOUND only if the detail lines add up to that total; unclassified lines -> REVIEW. No table -> NOT FOUND."""
+    a, b = inst.plain("TaxesPayable", "t", "i"), inst.plain("TaxesPayable", "t1", "i")
+    res = {"t": None, "t1": None, "status": "NOT FOUND", "page": None, "lines": [], "notes": []}
+    if a is None or b is None:
+        res["notes"].append("TaxesPayable not tagged")
+        return res
+    A, B = round(abs(a)), round(abs(b))
+    by_page = {}
+    for p, ln, n in lines:
+        by_page.setdefault(p, []).append((ln, n))
+    for p, plines in by_page.items():
+        if p in pages["bs"]:
+            continue
+        for i, (ln, n) in enumerate(plines):
+            lab = _despace(ln.strip())
+            if not (A in n and B in n and (SUBTOTAL.search(lab) or not re.search(r"[A-Za-z]{3}", lab))):
+                continue
+            tot = [x for x in _amounts(ln) if x in (A, B)]
+            swap = len(tot) >= 2 and tot[-2] == B and tot[-1] == A and A != B
+            detail, j, head = [], i - 1, None
+            while j >= 0 and i - j <= 40:
+                lj = plines[j][0].strip()
+                if STOP_HEAD.search(lj) and len([x for x in _amounts(lj) if x]) < 2:
+                    head = "other"
+                    break
+                if TAX_HEAD.search(lj) and len([x for x in _amounts(lj) if x]) < 2:
+                    head = "tax"
+                    break
+                am = _amounts(lj)
+                if len(am) >= 2 and not SUBTOTAL.search(_despace(lj)) and not _is_year_header(am, lj):
+                    detail.append((lj, am[-1], am[-2]) if swap else (lj, am[-2], am[-1]))
+                j -= 1
+            if not detail or head == "other":
+                continue   # a prepaid-tax or tax-expense table with the same totals is not the payable table
+            st, s1 = sum(x[1] for x in detail), sum(x[2] for x in detail)
+            conflict = (st, s1) != (A, B) and (s1, st) == (A, B)
+            if conflict:
+                # PTPW 2022: the detail columns add up to the totals of the other year. The printed column order
+                # is kept and the figure is REVIEW (rule 7: a conflict is never resolved by guessing)
+                st, s1 = A, B
+                res["notes"].append(f"p{p}: detail columns add up to the other year's total; printed order kept")
+            corp = [x for x in detail if CORPORATE.search(x[0]) and not NOT_CORPORATE.search(x[0].split("Article")[0])]
+            unknown = [x for x in detail if not CORPORATE.search(x[0]) and not NOT_CORPORATE.search(x[0])]
+            res.update(page=p, lines=[x[0][:80] for x in detail])
+            if st != A or s1 != B:
+                res["notes"].append(f"p{p}: detail lines {st}/{s1} do not add up to {A}/{B}")
+                continue
+            res["t"], res["t1"] = float(sum(x[1] for x in corp)), float(sum(x[2] for x in corp))
+            res["status"] = "REVIEW" if unknown or not corp or conflict or head != "tax" else "FOUND"
+            if head != "tax":
+                res["notes"].append("table heading 'utang pajak / taxes payable' not found above the table")
+            if unknown:
+                res["notes"].append("unclassified lines: " + "; ".join(x[0][:40] for x in unknown))
+            if not corp:
+                res["notes"].append("no Article 25/29 line in a table that adds up: 0 from evidence")
+            return res
+    res["notes"].append("no taxes-payable table found whose total equals the face")
+    return res
