@@ -314,9 +314,16 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
         if col:
             facts.setdefault(f.concept, {})[col] = round(abs(float(f.value) / inst.scale))
     findings = []
+    section = None
     for p, ln, n in lines:
         if p not in pages["bs"] and p not in pages["pl"]:
             continue
+        if re.search(r"(?i)liabilitas jangka panjang|non-?current liabilit|liabilitas tidak lancar", ln) and not \
+                re.search(r"(?i)jatuh tempo|current maturit|bagian lancar|current portion|^\s*(jumlah|total)", ln):
+            section = "nc"
+        elif re.search(r"(?i)liabilitas jangka pendek|current liabilit|liabilitas lancar", ln) and not \
+                re.search(r"(?i)^\s*(jumlah|total)", ln):
+            section = "c"
         if not any(x >= 100 for x in n):
             continue   # small figures alone are note references or years, not amounts
         nums = set(n)
@@ -337,7 +344,8 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
                 continue   # third column only (e.g. 1 January of the comparative year); t and t-1 are '-'
 
             if not any(c in FAMILY_CONCEPTS[fam] for c in hits):
-                findings.append({"page": p, "line": ln.strip()[:120], "family": fam, "tagged_as": hits[:3]})
+                findings.append({"page": p, "line": ln.strip()[:120], "family": fam, "tagged_as": hits[:3],
+                                 "section": section if fam == "debt" else None})
     return findings
 
 
@@ -390,13 +398,17 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
             for nm in names:
                 f = fields[c][nm]
                 if f.value is None or (f.value == 0 and f.status != "FOUND"):
-                    if zero_allowed(inst, findings, bool(pages["bs"]), fam):
+                    sec = {"long_term_debt": "nc", "current_maturities_long_term_debt": "c"}.get(nm)
+                    rel = [f for f in findings if not (sec and f.get("section") and f.get("section") != sec)]
+                    if zero_allowed(inst, rel, bool(pages["bs"]), fam):
                         f.value, f.status = 0.0, "FOUND"
                         f.notes.append("not tagged; subtotals add up and no such line on the PDF face (rule 3)")
                     else:
                         f.notes.append("not tagged and zero not proven (rule 3)")
     for fd in findings:
-        targets = {"debt": ("long_term_debt", "current_maturities_long_term_debt"), "rou": ("rou_assets_net", "ppe_face"),
+        debt_targets = {"c": ("current_maturities_long_term_debt",), "nc": ("long_term_debt",)}.get(
+            fd.get("section"), ("long_term_debt", "current_maturities_long_term_debt"))
+        targets = {"debt": debt_targets, "rou": ("rou_assets_net", "ppe_face"),
                    "receivable": ("accounts_receivable",), "sga": ("selling_general_administrative_expenses",)}[fd["family"]]
         for c in ("t", "t1"):
             for nm in targets:
@@ -455,8 +467,10 @@ STOP_HEAD = re.compile(r"pajak dibayar di ?muka|prepaid tax|beban pajak|tax expe
 
 def _amounts(line: str) -> list:
     """Ordered amounts on a table line, after removing article numbers in the label (Pasal 4(2), Article 25/29)."""
-    lab = re.sub(r"(?i)(pasal|article|artical|pph)\s*\d+(\s*\(\s*\d\s*\))?(\s*(/|dan|and)\s*\d+)*", " ", line)
-    lab = re.sub(r"\b\d+[a-z]\b|\b\d{1,2}[a-z]?,\s?\d", " ", lab)       # note references 13.b, 2,32
+    lab = re.sub(r"(?i)(pasal|article|artical|pph)\s*\d+(\s*\(\s*\d\s*\))?(\s*(/|,|dan|and)\s*\d+(\s*\(\s*\d\s*\))?)*",
+                 " ", line)   # also 'Pasal 21, 22, 23, 26 dan 4(2)' (ASII)
+    lab = re.sub(r"\d+(?:[.,]\d+)?\s*%", " ", lab)  # rates in the label (Final 1%), never amounts
+    lab = re.sub(r"\b\d+[a-z]\b|\b\d{1,2}[a-z]?(?:,\s?\d{1,2}[a-z]?)+\b(?![\d.,])", " ", lab)  # note refs 13.b, 2,32 (not 6,384,025)
     out = []
     for m in re.finditer(r"\(?-?\d{1,3}(?:[.,]\d{3})+\)?|\(?-?\d+\)?|(?<!\S)-(?!\S)|--", lab):
         tok = m.group(0)
@@ -508,7 +522,8 @@ def corporate_tax_payable(inst: Instance, lines: list, pages: dict) -> dict:
                     head = "tax"
                     break
                 am = _amounts(lj)
-                if len(am) >= 2 and not SUBTOTAL.search(_despace(lj)) and not _is_year_header(am, lj):
+                unlabeled = not re.search(r"[A-Za-z]{3}", lj)   # ASII: unlabeled sub-totals inside the table
+                if len(am) >= 2 and not unlabeled and not SUBTOTAL.search(_despace(lj)) and not _is_year_header(am, lj):
                     detail.append((lj, am[-1], am[-2]) if swap else (lj, am[-2], am[-1]))
                 j -= 1
             if not detail or head == "other":
