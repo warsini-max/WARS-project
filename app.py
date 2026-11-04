@@ -361,13 +361,28 @@ def _proc_list(r=None):
         fy = ex.fiscal_year
         fs_ok = bool(loc.get("position") and loc.get("profit_loss"))
         n_ok = sum(1 for x in ex.checks if x[2]) + len(r.passed)
-        rows = [("ok" if fs_ok else "bad", T("ui.proc.fs"),
-                 T("ui.proc.fs_detail", a=pg("position"), b=pg("profit_loss"), c=pg("cash_flow"),
-                   t=fy or "?", t1=(fy - 1) if fy else "?") if fs_ok else ""),
-                ("ok" if loc.get("notes_start") else "bad", T("ui.proc.notes"), T("ui.proc.notes_detail")),
-                ("ok" if not r.errors else "bad", T("ui.proc.checks"),
-                 T("ui.proc.checks_detail", ok=n_ok, err=len(r.errors) + sum(1 for x in ex.checks if not x[2]))),
-                ("ok" if r.m_score is not None else "bad", T("ui.proc.calc").rstrip("…"), "")]
+        fs_row = ("ok" if fs_ok else "bad", T("ui.proc.fs"),
+                  T("ui.proc.fs_detail", a=pg("position"), b=pg("profit_loss"), c=pg("cash_flow"),
+                    t=fy or "?", t1=(fy - 1) if fy else "?") if fs_ok else "")
+        notes_row = ("ok" if loc.get("notes_start") else "bad", T("ui.proc.notes"), T("ui.proc.notes_detail"))
+        calc_row = ("ok" if r.m_score is not None else "bad", T("ui.proc.calc").rstrip("…"), "")
+        xb = getattr(r, "xbrl", None)
+        if xb:                                     # XBRL path: the reconciliation of XBRL to the PDF
+            face = [it for it in xb["items"] if it.field in check.FACE_FIELDS and it.value is not None]
+            n_found = sum(1 for it in face if it.status == "FOUND")
+            n_err = len(r.errors)
+            n_rev = sum(1 for f in r.flags if f.severity == "REVIEW")
+            rows = [fs_row,
+                    ("ok" if n_found == len(face) else "bad", T("ui.proc.xbrl"),
+                     T("ui.proc.xbrl_detail", ok=n_found, n=len(face), rev=len(face) - n_found)),
+                    notes_row,
+                    ("ok" if not n_err else "bad", T("ui.proc.checks"), T("ui.proc.checks_x", err=n_err, rev=n_rev)),
+                    calc_row]
+        else:
+            n_fail = len(r.errors) + sum(1 for x in ex.checks if not x[2])
+            rows = [fs_row, notes_row,
+                    ("ok" if not n_fail else "bad", T("ui.proc.checks"), T("ui.proc.checks_detail", ok=n_ok, err=n_fail)),
+                    calc_row]
     li = []
     for state, title, detail in rows:
         icon = {"ok": '<span class="ok">✓</span>', "bad": '<span class="bad">!</span>', "run": '<span class="run"></span>',

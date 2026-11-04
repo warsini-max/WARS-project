@@ -105,6 +105,7 @@ def merge_xbrl(pr, xres):
     # (reconciled to the PDF as a printed pair) replaces that reading
     found = {(it.field, it.column) for it in xres.items if it.status == "FOUND"}
     r.flags = _drop_pdf_reading_checks(r.flags, found)
+    ex.issues = [Msg("issue.xbrl_path")]            # the PDF reader's notes on the face statements no longer apply
     r.xbrl = {"items": xres.items, "found": found,
               "notes": {(it.field, it.column): _xbrl_note(it) for it in xres.items}, "face_findings": (xres.xbrl or {}).get("face_findings", []),
               "face_pages": (xres.xbrl or {}).get("face_pages", {}), "tax": xres.tax, "warnings": xres.warnings}
