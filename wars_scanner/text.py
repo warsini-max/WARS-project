@@ -1658,8 +1658,8 @@ CATALOG: dict = {
         "261 reconciled figures were incorrect. Automated reading is not yet reliable where: (a) line item captions wrap "
         "over several lines; (b) statement pages are images; (c) the year columns in the PDF text layer are out of order; "
         "or (d) amortisation is disclosed only in the narrative notes, in which case it is recorded as nil. Without the "
-        "XBRL file, the score is more often not calculated. Users should trace every figure in the checklist to its "
-        "source page before relying on this result.", "Gail 4 Nov 17.07 (arah), teks Claude, menunggu Gail"),
+        "XBRL file, the score is more often not calculated. Each figure in the checklist is to be traced to its "
+        "source page before the result is relied upon.", "Gail 4 Nov 17.07 (arah), teks Claude, menunggu Gail"),
     "rep.method.p4": _e(
         "Laporan ini hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur "
         "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",
