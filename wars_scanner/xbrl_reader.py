@@ -324,6 +324,7 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
     findings = []
     section = None
     in_cm = False              # inside the 'current maturities of long-term debt' block of current liabilities
+    liab_seen = False
     cl = facts.get("CurrentLiabilities", {})
     cl_pair = (cl.get("t"), cl.get("t1")) if cl.get("t") and cl.get("t1") else None
     catch_all = {c for c in facts if CATCH_ALL.match(c)} - FAMILY_CONCEPTS["debt"]
@@ -336,8 +337,10 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
         elif re.search(r"(?i)liabilitas jangka pendek|current liabilit|liabilitas lancar", ln) and not \
                 re.search(r"(?i)^\s*(jumlah|total)", ln) and section != "nc":
             section = "c"
-        if section != "nc" and p in pages["bs"] and CM_HEAD.search(ln) and not any(x >= 100 for x in n):
-            in_cm = True
+        if p in pages["bs"] and re.search(r"(?i)\bliabilitas\b|\bliabilities\b", ln):
+            liab_seen = True       # current maturities of assets (CLPI 'Bagian lancar atas: investasi') are not debt
+        if section != "nc" and liab_seen and p in pages["bs"] and CM_HEAD.search(ln):
+            in_cm = True           # the heading may share its line with the first item (DEAL 2022)
         if cl_pair and p in pages["bs"] and cl_pair[0] in n and cl_pair[1] in n:
             # the total current liabilities line: what follows is non-current, whatever the headings look like
             # (ICBP 2022: 'LIABILITAS JANGKA / PANJANG' wrapped over two lines)

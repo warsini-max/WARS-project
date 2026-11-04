@@ -270,7 +270,8 @@ def test_d03g_proxy_when_pph_not_found():
 
 
 # ---------------------------------------------------------------- structural debt check (Gail, 4 Nov 2026, after stage 5)
-BS_CM = BS.replace("Pinjaman bank jangka panjang 30 20 Current portion of bank loans",
+BS_CM = BS.replace("Utang pajak 15 12", "LIABILITAS JANGKA PENDEK\nUtang pajak 15 12").replace(
+                   "Pinjaman bank jangka panjang 30 20 Current portion of bank loans",
                    "Utang jangka panjang yang jatuh tempo dalam satu tahun:\n"
                    "Pinjaman bank jangka panjang 30 20 Current portion of bank loans\n"
                    "Pembiayaan 127 125 Financing")
@@ -319,3 +320,21 @@ def test_rule3_needs_a_readable_liabilities_face():
     # negative: liabilities printed and no debt line -> zero allowed (as before)
     bs = "\n".join(l for l in BS.split("\n") if "Pinjaman" not in l)
     assert run(instance(base=base), [bs, PL, NOTE])["fields"]["t"]["long_term_debt"].status == "FOUND"
+
+
+def test_current_maturity_heading_on_asset_side_does_not_open_debt_block():
+    # negative (CLPI 2022): 'Bagian lancar atas: investasi' among assets; other payables later are not debt
+    bs = BS.replace("Kas dan setara kas 120 110 Cash", "Kas dan setara kas 120 110 Cash\nBagian lancar atas:")
+    bs = bs.replace("Utang pajak 15 12 Taxes payable", "LIABILITAS JANGKA PENDEK\nUtang lain-lain 127 125 Other payables\n"
+                                                         "Utang pajak 15 12 Taxes payable")
+    r = run(instance(base={"OtherPayablesThirdParties": (127, 125)}), [bs, PL, NOTE])
+    assert not r["face_findings"]
+
+
+def test_current_maturity_heading_sharing_a_line_with_the_first_item():
+    # DEAL 2022: 'yang jatuh tempo dalam satu tahun : ... Utang bank - 3.361' on one line, 'Pembiayaan' next
+    bs = BS.replace("Pinjaman bank jangka panjang 30 20 Current portion of bank loans",
+                    "LIABILITAS\nUtang jangka panjang yang jatuh tempo dalam satu tahun: Utang bank 30 20 Bank debt\n"
+                    "Pembiayaan 127 125 Financing")
+    r = run(instance(base={"OtherPayablesThirdParties": (127, 125)}), [bs, PL, NOTE])
+    assert [x for x in r["face_findings"] if x.get("kind") == "catch-all"]
