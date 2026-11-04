@@ -1156,13 +1156,12 @@ CATALOG: dict = {
                               "{ok} of {n} primary statement amounts printed as a two-year pair; {rev} require verification",
                               "new"),
     "ui.proc.checks_x": _e("{err} gagal · {rev} perlu diperiksa", "{err} failed · {rev} need review", "new"),
-    "issue.xbrl_path": _e("Angka laporan posisi keuangan, laba rugi dan arus kas diambil dari berkas XBRL yang diunggah, "
-                          "lalu dicocokkan dengan PDF. Catatan dari pembacaan PDF atas ketiga laporan tersebut tidak "
-                          "ditampilkan karena angkanya tidak dipakai.",
-                          "The amounts in the statements of financial position, profit or loss and cash flows are taken "
-                          "from the uploaded XBRL file and matched to the PDF. Notes from the PDF reading of these "
-                          "statements are not shown because those amounts are not used.",
-                          "Claude 4 Nov atas pertanyaan Gail 16.53, menunggu Gail"),
+    "issue.xbrl_path": _e("Angka pada laporan posisi keuangan, laporan laba rugi dan laporan arus kas bersumber dari "
+                          "berkas XBRL yang diunggah dan telah dicocokkan dengan PDF. Oleh karena itu, catatan pembacaan "
+                          "PDF atas ketiga laporan tersebut tidak disajikan.",
+                          "Amounts in the statements of financial position, profit or loss and cash flows are sourced "
+                          "from the uploaded XBRL file and agreed to the PDF. Accordingly, the PDF reading notes on these "
+                          "statements are not presented.", "Gail 4 Nov 17.07 (arah), teks Claude, menunggu Gail"),
     "ui.res.another": _e("Analisis laporan lain", "Analyse another report", "Gail 28 Okt desain"),
     "ui.res.meta": _e("Tahun buku {t} vs {t1} · {stype} · {unit} · {pages} halaman",
                       "Financial year {t} vs {t1} · {stype} · {unit} · {pages} pages", "Gail 28 Okt desain"),
@@ -1649,18 +1648,18 @@ CATALOG: dict = {
         "Figures that were not found are not filled in; figures taken as 0 for the provisional result are listed in "
         "the checklist.", "new"),
     "beta.limits": _e(
-        "Versi Beta. Pada uji terakhir dengan data yang belum pernah dipakai untuk pengembangan (10 emiten BEI, laporan "
-        "keuangan FY2022, 4 November 2026), 2 dari 261 angka yang dinyatakan terbaca dan tercocokkan ternyata salah. "
-        "Penyebab yang diketahui: judul pos yang terpotong beberapa baris, halaman laporan berupa gambar, urutan kolom "
-        "tahun yang tidak konsisten pada lapisan teks PDF, dan amortisasi yang hanya diungkapkan dalam kalimat (dihitung "
-        "0). Tanpa berkas XBRL, aplikasi hanya memakai pembaca PDF, yang lebih sering menahan skor. Cocokkan setiap "
-        "angka di daftar periksa dengan halaman sumbernya sebelum memakai hasil ini.",
-        "Beta version. In the latest test on data never used in development (10 IDX companies, FY2022 financial "
-        "statements, 4 November 2026), 2 of 261 figures marked as read and reconciled were wrong. Known causes: line "
-        "labels wrapped over several lines, statement pages that are images, year columns out of order in the PDF text "
-        "layer, and amortisation disclosed only in a sentence (counted as 0). Without the XBRL file the app uses the "
-        "PDF reader alone, which withholds the score more often. Check every figure in the checklist against its "
-        "source page before relying on the result.", "Claude 4 Nov opsi 1, menunggu Gail"),
+        "Versi Beta. Pada pengujian terakhir atas 10 emiten BEI (laporan keuangan FY2022, per 4 November 2026), 2 dari "
+        "261 angka yang telah dicocokkan tidak tepat. Pembacaan otomatis belum optimal apabila: (a) nama pos tercetak "
+        "terpotong dalam beberapa baris; (b) halaman laporan berupa gambar; (c) urutan kolom tahun pada lapisan teks PDF "
+        "tidak konsisten; atau (d) amortisasi hanya diungkapkan dalam narasi catatan, sehingga dicatat nihil. Tanpa "
+        "berkas XBRL, skor lebih sering tidak dapat dihitung. Pengguna perlu menelusuri setiap angka dalam daftar "
+        "periksa ke halaman sumbernya sebelum menggunakan hasil ini.",
+        "Beta version. In the latest test of 10 IDX companies (FY2022 financial statements, as at 4 November 2026), 2 of "
+        "261 reconciled figures were incorrect. Automated reading is not yet reliable where: (a) line item captions wrap "
+        "over several lines; (b) statement pages are images; (c) the year columns in the PDF text layer are out of order; "
+        "or (d) amortisation is disclosed only in the narrative notes, in which case it is recorded as nil. Without the "
+        "XBRL file, the score is more often not calculated. Users should trace every figure in the checklist to its "
+        "source page before relying on this result.", "Gail 4 Nov 17.07 (arah), teks Claude, menunggu Gail"),
     "rep.method.p4": _e(
         "Laporan ini hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur "
         "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",
