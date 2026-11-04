@@ -123,8 +123,9 @@ streamlit run app.py
 ```
 
 Windows, step by step: [docs/run_locally_windows.md](docs/run_locally_windows.md).
-Uploads are limited to one PDF of up to 50 MB (`.streamlit/config.toml`). The IBM Plex fonts in
-`static/fonts` and `assets/fonts` are used under the SIL Open Font License (`OFL.txt`).
+Uploads are limited to one PDF of up to 50 MB (`.streamlit/config.toml`). The fonts in `static/fonts` and
+`assets/fonts` (Source Sans 3, Source Serif 4, Source Code Pro, by Adobe) are used under the SIL Open Font
+License (the `LICENSE-*.md` files next to them).
 
 ## Run the tests
 

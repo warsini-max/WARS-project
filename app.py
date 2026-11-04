@@ -79,7 +79,7 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 .block-container:has(.st-key-gatecard){border:1px solid rgba(27,30,35,.10);border-radius:18px;margin:18px auto 0;
   max-width:min(1040px,calc(100% - 32px));padding:0 2rem 1.9rem !important}
 .block-container:has(.st-key-gatecard) > div > div:first-child{margin-top:-1.1rem}
-.st-key-gatecard .w-title{margin:22px 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.3;color:var(--ink)}
+.st-key-gatecard .w-title{font-family:'WARS Serif',serif;margin:22px 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.3;color:var(--ink)}
 .st-key-gatecard .w-title,.st-key-gatecard p{text-wrap:balance}
 .w-meth{margin:0;padding-left:1.4em} .w-meth li{margin:0 0 .6em;line-height:1.55}
 .w-top{display:flex;align-items:center;gap:12px;padding:6px 0}
@@ -93,7 +93,7 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 .w-steps .on{font-weight:600;color:var(--green)} .w-steps .on .n{background:var(--green);color:#fff;border-color:var(--green)}
 .w-steps .done{color:var(--green)} .w-steps .done .n{background:#E8F3EF;color:var(--green);border-color:#E8F3EF}
 .w-steps .sep{color:#A3A8AE}
-.w-h1{margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.w-h1{font-family:'WARS Serif',serif;margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
 .w-sub{margin:6px 0 22px;color:var(--muted);font-size:15px}
 .w-note{margin:14px 0 0;font-size:13px;color:var(--muted)}
 .w-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px 30px 22px;margin-top:14px}
@@ -113,10 +113,10 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 @keyframes wspin{to{transform:rotate(360deg)}}
 .w-list .t{font-weight:600} .w-list .d{font-size:13px;color:var(--muted)}
 .w-tk{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--green)}
-.w-name{margin:2px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.w-name{font-family:'WARS Serif',serif;margin:2px 0 0;font-size:26px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
 .w-meta{margin:4px 0 0;font-size:14px;color:var(--muted)}
 .w-lbl{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
-.w-score{font-family:'IBM Plex Mono',monospace;font-size:56px;font-weight:600;line-height:1.05}
+.w-score{font-family:'WARS Mono',monospace;font-size:56px;font-weight:600;line-height:1.05}
 .w-row{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
 .w-chipok{display:inline-block;font-size:13px;font-weight:600;color:#1F4E43;background:#E8F3EF;border:1px solid #B9D9CD;padding:5px 12px;border-radius:999px}
 .w-chiphi{display:inline-block;font-size:13px;font-weight:600;color:#fff;background:var(--red);border:1px solid var(--red);padding:5px 12px;border-radius:999px}
@@ -128,7 +128,7 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 .w-scale .dot{position:absolute;top:17px;width:20px;height:20px;margin-left:-10px;border-radius:50%;border:3px solid #fff;box-sizing:border-box}
 .w-scale .lab{position:absolute;top:44px;font-size:12px;color:var(--muted);white-space:nowrap;transform:translateX(-50%)}
 .w-scale .me{position:absolute;top:-4px;transform:translateX(-50%);font-size:12px;font-weight:600;white-space:nowrap}
-.w-mono{font-family:'IBM Plex Mono',monospace}
+.w-mono{font-family:'WARS Mono',monospace}
 .w-small{margin:0;font-size:13px !important;color:var(--muted)}
 .w-note{font-size:13px !important} .w-meta{font-size:14px !important} .w-sub{font-size:15px !important}
 .w-drv p{font-size:14px !important} .w-warn p{font-size:14px !important}
@@ -144,14 +144,14 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 .w-drv h3{margin:0;font-size:16px;font-weight:600}
 .w-drv .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
 .w-drv p{margin:0;font-size:14px;line-height:1.55}
-.w-push{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--red)}
+.w-push{font-family:'WARS Mono',monospace;font-size:14px;font-weight:600;color:var(--red)}
 .w-tbl{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:24px}
 .w-tbl .h{margin:0 0 12px;font-size:16px;font-weight:600}
 .w-tbl table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.4}
 .w-tbl th{padding:8px 10px;font-weight:600;font-size:12px;letter-spacing:.04em;color:var(--soft);text-align:left;border-bottom:1.5px solid var(--ink)}
 .w-tbl td{padding:9px 10px;border-bottom:1px solid #ECEEEB;vertical-align:top}
 .w-tbl tr:last-child td{border-bottom:0}
-.w-tbl .r{text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.w-tbl .r{text-align:right;font-family:'WARS Mono',monospace;white-space:nowrap}
 .w-tbl tr.drv{background:#FBF1F1} .w-tbl tr.drv .p{font-weight:600;color:var(--red)}
 .w-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;padding:16px 0 4px;border-top:1px solid var(--line);margin-top:40px}
 .w-foot .dis{margin:0;max-width:720px;font-size:12px;font-style:italic;color:#6B6B6B;line-height:1.5}
@@ -186,7 +186,7 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 .ck-cap{font-size:12px;color:var(--muted);margin:10px 0 4px}
 .ck-read{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 10px}
 .ck-read div{background:var(--bg);border-radius:10px;padding:9px 12px}
-.ck-read .l{font-size:12px;color:var(--muted)} .ck-read .v{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500}
+.ck-read .l{font-size:12px;color:var(--muted)} .ck-read .v{font-family:'WARS Mono',monospace;font-size:15px;font-weight:500}
 .ck-prev{font-size:12px;color:var(--soft);margin:-6px 0 0}
 .st-key-cksum{background:#fff;border:1px solid var(--line) !important;border-radius:14px;padding:20px !important}
 .ck-sum h3{margin:0 0 10px;font-size:16px;font-weight:600}

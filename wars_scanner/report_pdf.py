@@ -47,30 +47,32 @@ MONTHS = {"id": "Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des".split(),
 
 
 def _fonts():
-    if "Plex" in pdfmetrics.getRegisteredFontNames():
+    """Source Sans 3 (text), Source Serif 4 (headings), Source Code Pro (figures); SIL OFL (Gail, 4 Nov 2026)."""
+    if "Sans" in pdfmetrics.getRegisteredFontNames():
         return
-    for name, f in (("Plex", "IBMPlexSans-Regular"), ("Plex-It", "IBMPlexSans-Italic"),
-                    ("Plex-Semi", "IBMPlexSans-SemiBold"), ("Plex-Bold", "IBMPlexSans-Bold"),
-                    ("PlexMono", "IBMPlexMono-Regular"), ("PlexMono-Semi", "IBMPlexMono-SemiBold")):
+    for name, f in (("Sans", "SourceSans3-Regular"), ("Sans-It", "SourceSans3-It"),
+                    ("Sans-Semi", "SourceSans3-Semibold"), ("Sans-SemiIt", "SourceSans3-SemiboldIt"),
+                    ("Sans-Bold", "SourceSans3-Bold"), ("Serif-Semi", "SourceSerif4-Semibold"),
+                    ("Mono", "SourceCodePro-Regular"), ("Mono-Semi", "SourceCodePro-Semibold")):
         pdfmetrics.registerFont(TTFont(name, os.path.join(FONTS, f + ".ttf")))
-    pdfmetrics.registerFontFamily("Plex", normal="Plex", bold="Plex-Semi", italic="Plex-It", boldItalic="Plex-Semi")
+    pdfmetrics.registerFontFamily("Sans", normal="Sans", bold="Sans-Semi", italic="Sans-It", boldItalic="Sans-SemiIt")
 
 
 def _styles():
     s = {}
-    s["body"] = ParagraphStyle("body", fontName="Plex", fontSize=9.5, leading=13.5, textColor=INK)
+    s["body"] = ParagraphStyle("body", fontName="Sans", fontSize=9.5, leading=13.5, textColor=INK)
     s["small"] = ParagraphStyle("small", parent=s["body"], fontSize=8, leading=11, textColor=SOFT)
     s["muted"] = ParagraphStyle("muted", parent=s["small"], textColor=MUTED)
     s["cell"] = ParagraphStyle("cell", parent=s["body"], fontSize=8, leading=10.5)
-    s["cellm"] = ParagraphStyle("cellm", parent=s["cell"], fontName="PlexMono", fontSize=7.6, alignment=TA_RIGHT)
+    s["cellm"] = ParagraphStyle("cellm", parent=s["cell"], fontName="Mono", fontSize=7.6, alignment=TA_RIGHT)
     s["tiny"] = ParagraphStyle("tiny", parent=s["cell"], fontSize=7, leading=9, textColor=SOFT)
-    s["head"] = ParagraphStyle("head", parent=s["cell"], fontName="Plex-Semi", fontSize=7.2, textColor=SOFT)
-    s["h1"] = ParagraphStyle("h1", fontName="Plex-Semi", fontSize=17, leading=21, textColor=INK)
-    s["h2"] = ParagraphStyle("h2", fontName="Plex-Semi", fontSize=11.5, leading=15, textColor=INK, spaceBefore=4)
-    s["label"] = ParagraphStyle("label", fontName="Plex-Semi", fontSize=7.2, leading=9.5, textColor=GREEN)
-    s["field"] = ParagraphStyle("field", fontName="Plex", fontSize=7, leading=9, textColor=MUTED)
+    s["head"] = ParagraphStyle("head", parent=s["cell"], fontName="Sans-Semi", fontSize=7.2, textColor=SOFT)
+    s["h1"] = ParagraphStyle("h1", fontName="Serif-Semi", fontSize=17, leading=21, textColor=INK)
+    s["h2"] = ParagraphStyle("h2", fontName="Serif-Semi", fontSize=11.5, leading=15, textColor=INK, spaceBefore=4)
+    s["label"] = ParagraphStyle("label", fontName="Sans-Semi", fontSize=7.2, leading=9.5, textColor=GREEN)
+    s["field"] = ParagraphStyle("field", fontName="Sans", fontSize=7, leading=9, textColor=MUTED)
     s["fieldv"] = ParagraphStyle("fieldv", parent=s["body"], fontSize=9, leading=12)
-    s["score"] = ParagraphStyle("score", fontName="PlexMono-Semi", fontSize=34, leading=38, textColor=INK)
+    s["score"] = ParagraphStyle("score", fontName="Mono-Semi", fontSize=34, leading=38, textColor=INK)
     return s
 
 
@@ -112,26 +114,26 @@ def _decorate(c, page, pages, info):
         c.drawImage(LOGO, 18 * mm, h - 21 * mm, width=30 * mm, height=30 * mm * 358 / 1392, mask="auto")
     except Exception:                                    # noqa: BLE001  logo missing: header text still shown
         pass
-    c.setFont("Plex", 6.8)
+    c.setFont("Sans", 6.8)
     c.setFillColor(MUTED)
     c.drawString(18 * mm, h - 24 * mm, "Window-dressing Accounting Red-Flag Scanner")
-    c.setFont("Plex-Semi", 9)
+    c.setFont("Sans-Semi", 9)
     c.setFillColor(INK)
     c.drawRightString(w - 18 * mm, h - 13 * mm, t("rep.title", lang))
-    c.setFont("Plex", 7.5)
+    c.setFont("Sans", 7.5)
     c.setFillColor(MUTED)
     c.drawRightString(w - 18 * mm, h - 17.5 * mm, info["who"])
-    c.setFont("PlexMono", 7)
+    c.setFont("Mono", 7)
     c.drawRightString(w - 18 * mm, h - 21.5 * mm, info["rid"] + " · " + t("rep.version", lang))
     c.setStrokeColor(LINE)
     c.setLineWidth(0.5)
     c.line(18 * mm, h - 27 * mm, w - 18 * mm, h - 27 * mm)
     # footer: identity left, English disclaimer right (R-06, R-07, R-08, R-11)
     c.line(18 * mm, 22 * mm, w - 18 * mm, 22 * mm)
-    c.setFont("Plex-Bold", 7.5)
+    c.setFont("Sans-Bold", 7.5)
     c.setFillColor(GREEN)
     c.drawString(18 * mm, 18 * mm, "WARS")
-    c.setFont("Plex", 6.8)
+    c.setFont("Sans", 6.8)
     c.setFillColor(SOFT)
     c.drawString(18 * mm, 14.8 * mm, "Window-dressing Accounting Red-Flag Scanner · Beta")
     c.setFillColor(MUTED)
@@ -140,7 +142,7 @@ def _decorate(c, page, pages, info):
     _contact(c, 18 * mm, 6.6 * mm, lang)                  # link names unique across pages
     info["annots"] = c._annotationCount
     p = Paragraph(_x(t("rep.footer_disclaimer", lang)),
-                  ParagraphStyle("f", fontName="Plex-It", fontSize=6.6, leading=8.6, textColor=colors.HexColor("#6B6B6B"),
+                  ParagraphStyle("f", fontName="Sans-It", fontSize=6.6, leading=8.6, textColor=colors.HexColor("#6B6B6B"),
                                  alignment=TA_RIGHT))
     pw, ph = p.wrap(98 * mm, 20 * mm)
     p.drawOn(c, w - 18 * mm - pw, 19.2 * mm - ph)
@@ -154,12 +156,12 @@ CONTACT_EMAIL = "warsiniak@gmail.com"
 def _contact(c, x, y, lang):
     """'Contact us' followed by two icons of the same size on one line (Gail, 28 Oct 2026): a profile icon that
     opens LinkedIn and an envelope icon that opens an email. Generic icons are drawn, not LinkedIn's logo."""
-    c.setFont("Plex-Semi", 6.8)
+    c.setFont("Sans-Semi", 6.8)
     c.setFillColor(SOFT)
     label = t("rep.contact", lang)
     c.drawString(x, y, label)
     s, gap = 3.4 * mm, 1.6 * mm
-    x += c.stringWidth(label, "Plex-Semi", 6.8) + 2.4 * mm
+    x += c.stringWidth(label, "Sans-Semi", 6.8) + 2.4 * mm
     bottom = y + 0.85 * mm - s / 2                      # icons centred on the text's x-height
     for kind, url in (("profile", LINKEDIN_URL), ("mail", "mailto:" + CONTACT_EMAIL)):
         c.setFillColor(GREEN)
@@ -202,13 +204,13 @@ class _Scale(Flowable):
         c.rect(x(NEUTRAL_M) - 0.3, y - 1 * mm, 0.6, 4.6 * mm, stroke=0, fill=1)
         c.setFillColor(INK)
         c.rect(x(THRESHOLD) - 0.4, y - 1.6 * mm, 0.8, 5.8 * mm, stroke=0, fill=1)
-        c.setFont("PlexMono", 7)
+        c.setFont("Mono", 7)
         c.setFillColor(MUTED)
         c.drawString(0, 2 * mm, dec(lo, 2, self.lang))
         c.drawRightString(w, 2 * mm, dec(hi, 2, self.lang))
-        c.setFont("Plex", 7)
+        c.setFont("Sans", 7)
         c.drawCentredString(x(NEUTRAL_M), 2 * mm, t("ui.res.scale_neutral", self.lang, n=Num(NEUTRAL_M, 2)))
-        c.setFont("Plex-Semi", 7)
+        c.setFont("Sans-Semi", 7)
         c.setFillColor(INK)
         c.drawCentredString(x(THRESHOLD), 2 * mm, t("ui.res.scale_thr", self.lang, thr=Num(THRESHOLD, 2)))
         if self.m is not None:
@@ -217,7 +219,7 @@ class _Scale(Flowable):
             c.setStrokeColor(colors.white)
             c.setLineWidth(1.5)
             c.circle(x(self.m), y + 1.3 * mm, 2.4 * mm, stroke=1, fill=1)
-            c.setFont("Plex-Semi", 7.5)
+            c.setFont("Sans-Semi", 7.5)
             c.drawCentredString(x(self.m), y + 5 * mm, f"{self.ticker} {dec(self.m, 2, self.lang)}".strip())
 
 
@@ -287,11 +289,11 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         chip = t("ui.res.chip_above", lang, thr=Num(THRESHOLD, 2)) if above else \
             t("ui.res.chip_below", lang, thr=Num(THRESHOLD, 2))
         chip_p = Paragraph(f'<font color="{"#FFFFFF" if above else "#1F4E43"}">{_x(chip)}</font>',
-                           ParagraphStyle("chip", fontName="Plex-Semi", fontSize=8.5, leading=11, alignment=TA_RIGHT))
+                           ParagraphStyle("chip", fontName="Sans-Semi", fontSize=8.5, leading=11, alignment=TA_RIGHT))
         right = [chip_p]
         if not above:
             right.append(Paragraph(_x(t("ui.res.chip_note", lang)), ParagraphStyle(
-                "cn", fontName="Plex", fontSize=6.8, leading=9, textColor=colors.HexColor("#6B6B6B"), alignment=TA_RIGHT)))
+                "cn", fontName="Sans", fontSize=6.8, leading=9, textColor=colors.HexColor("#6B6B6B"), alignment=TA_RIGHT)))
         top = Table([[[P(t("rep.score_label", lang), "field"),
                        Paragraph(dec(m, 2, lang), S["score"])], right]], colWidths=[W * 0.5 - 8 * mm, W * 0.5 - 8 * mm],
                     style=[("VALIGN", (0, 0), (-1, -1), "BOTTOM"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
@@ -363,7 +365,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         story.append(Spacer(1, 3 * mm))
         story.append(Paragraph(_x(t("rep.sum_line", lang, n=Num(NEUTRAL_M, 3), p=Num(m - NEUTRAL_M, 3, True), m=Num(m, 3),
                                     thr=Num(THRESHOLD, 2))),
-                               ParagraphStyle("sum", parent=S["body"], fontName="Plex-Semi", alignment=TA_RIGHT)))
+                               ParagraphStyle("sum", parent=S["body"], fontName="Sans-Semi", alignment=TA_RIGHT)))
 
     # ------------------------------------------------------------------------------ 3 Findings
     story.append(PageBreak())
@@ -378,7 +380,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
             f = report.finding(r, d["index"], None, lang)
             block = [Table([[Paragraph(_x(t("rep.finding", lang, n=n, idx=d["index"]) + " · " + d["name"]), S["h2"]),
                              Paragraph(f'<font color="#FFFFFF">{_x(t("rep.push_tag", lang, p=Num(d["push_vs_neutral"], 3, True)))}</font>',
-                                       ParagraphStyle("tag", fontName="Plex-Semi", fontSize=7.5, leading=10,
+                                       ParagraphStyle("tag", fontName="Sans-Semi", fontSize=7.5, leading=10,
                                                       alignment=TA_RIGHT))]],
                            colWidths=[W - 40 * mm, 40 * mm],
                            style=[("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("BACKGROUND", (1, 0), (1, 0), RED),
@@ -495,11 +497,11 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     # ------------------------------------------------------------------------------ Methodology
     story.append(PageBreak())
     _section(story, t("rep.s7", lang), S)
-    num = ParagraphStyle("methnum", parent=S["body"], leftIndent=6 * mm, bulletIndent=0)
+    num = ParagraphStyle("methnum", parent=S["body"], leftIndent=6 * mm, bulletIndent=0, bulletFontName="Sans")
     for n_, k in enumerate(report.METHOD_KEYS, 1):     # numbered (Gail, 4 Nov 2026)
         story += [Paragraph(_x(t(k, lang)), num, bulletText=f"{n_}."), Spacer(1, 3 * mm)]
     story += [P(t("rep.formula", lang, const=Num(report.M_CONSTANT, 2)), "small"), Spacer(1, 3 * mm),
-              P(t("app.disclaimer", lang))]
+              Paragraph(_x(t("app.disclaimer", lang)), ParagraphStyle("disc", parent=S["body"], fontName="Sans-It"))]
 
     doc.build(story, canvasmaker=lambda *a, **kw: _Numbered(*a, info=info, **kw))
     return buf.getvalue()
@@ -544,7 +546,7 @@ class _Chart(Flowable):
         c, d, w, h = self.canv, self.d, self.width, self.height
         series, cols = d["series"], ("t1", "t")
         two = len(series) > 1
-        c.setFont("Plex-Semi", 7.2)
+        c.setFont("Sans-Semi", 7.2)
         c.setFillColor(INK)
         c.drawString(0, h - 3 * mm, d["title"])
         vals = [v[col] for _, v in series for col in cols]
@@ -566,11 +568,11 @@ class _Chart(Flowable):
                 y = y_of(v[col])
                 c.setFillColor(fills[si] if two else fills[gi])
                 c.rect(x, min(zero, y), bar_w, abs(y - zero), stroke=0, fill=1)
-                c.setFont("PlexMono", 6.4)
+                c.setFont("Mono", 6.4)
                 c.setFillColor(INK)
                 ly = (y + 1 * mm) if v[col] >= 0 else (y - 3 * mm)
                 c.drawCentredString(x + bar_w / 2, ly, self._fmt(v[col]))
-            c.setFont("Plex", 7)
+            c.setFont("Sans", 7)
             c.setFillColor(MUTED)
             c.drawCentredString(gx, year_y, d["years"][col])
         c.setStrokeColor(LINE)
@@ -581,10 +583,10 @@ class _Chart(Flowable):
             for si, (name, _) in enumerate(series):
                 c.setFillColor(fills[si])
                 c.rect(x, 0.4 * mm, 2.2 * mm, 2.2 * mm, stroke=0, fill=1)
-                c.setFont("Plex", 6.6)
+                c.setFont("Sans", 6.6)
                 c.setFillColor(SOFT)
                 c.drawString(x + 3 * mm, 0.8 * mm, name)
-                x += 3 * mm + c.stringWidth(name, "Plex", 6.6) + 4 * mm
+                x += 3 * mm + c.stringWidth(name, "Sans", 6.6) + 4 * mm
 
 
 class _Box(Flowable):
