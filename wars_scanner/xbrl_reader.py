@@ -63,6 +63,14 @@ FAMILY_CONCEPTS = {
                              "NonCurrentCustomerReceivablesRelatedParties"},
     "sga": set(SGA),
 }
+# catch-all concepts: a line tagged only with one of these may hide interest-bearing debt (structural check)
+CATCH_ALL = re.compile(r"^Other.*(Payables?|Liabilities|Borrowings?)(ThirdParties|RelatedParties)?$")
+CM_HEAD = re.compile(r"(?i)jatuh tempo dalam (waktu )?(satu|1) tahun|current maturit|bagian lancar|current portion|"
+                     r"due within one year")
+# liabilities that are never interest-bearing debt, whatever their tag (employee benefits, tax, provisions ...)
+NOT_DEBT_LINE = re.compile(r"(?i)imbalan|employee|pajak|tax|provisi|provision|pendapatan diterima|unearned|"
+                           r"liabilitas kontrak|contract liabilit|uang muka|advances?|jaminan|deposit|"
+                           r"^\s*(jumlah|total)")
 # labels that look like a family but are not score items for it
 NOT_FAMILY = {
     "debt": re.compile(r"\b(biaya pinjaman|beban bunga|pembayaran|penerimaan|proceeds|payments?|repayment|"
@@ -315,18 +323,41 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
             facts.setdefault(f.concept, {})[col] = round(abs(float(f.value) / inst.scale))
     findings = []
     section = None
+    in_cm = False              # inside the 'current maturities of long-term debt' block of current liabilities
+    cl = facts.get("CurrentLiabilities", {})
+    cl_pair = (cl.get("t"), cl.get("t1")) if cl.get("t") and cl.get("t1") else None
+    catch_all = {c for c in facts if CATCH_ALL.match(c)} - FAMILY_CONCEPTS["debt"]
     for p, ln, n in lines:
         if p not in pages["bs"] and p not in pages["pl"]:
             continue
         if re.search(r"(?i)liabilitas jangka panjang|non-?current liabilit|liabilitas tidak lancar", ln) and not \
                 re.search(r"(?i)jatuh tempo|current maturit|bagian lancar|current portion|^\s*(jumlah|total)", ln):
-            section = "nc"
+            section, in_cm = "nc", False
         elif re.search(r"(?i)liabilitas jangka pendek|current liabilit|liabilitas lancar", ln) and not \
-                re.search(r"(?i)^\s*(jumlah|total)", ln):
+                re.search(r"(?i)^\s*(jumlah|total)", ln) and section != "nc":
             section = "c"
+        if section != "nc" and p in pages["bs"] and CM_HEAD.search(ln) and not any(x >= 100 for x in n):
+            in_cm = True
+        if cl_pair and p in pages["bs"] and cl_pair[0] in n and cl_pair[1] in n:
+            # the total current liabilities line: what follows is non-current, whatever the headings look like
+            # (ICBP 2022: 'LIABILITAS JANGKA / PANJANG' wrapped over two lines)
+            section, in_cm = "nc", False
+            continue
         if not any(x >= 100 for x in n):
             continue   # small figures alone are note references or years, not amounts
         nums = set(n)
+        # Structural check (Gail, 4 Nov 2026, after stage 5): a liabilities line inside the current-maturities block or
+        # in non-current liabilities that is tagged only with a catch-all 'Other ...' concept may be interest-bearing
+        # debt whatever its label (DEAL 'Pembiayaan' as other payables; ICBP lease liabilities as other financial
+        # liabilities). Debt is then not FOUND.
+        if p in pages["bs"] and (in_cm or section == "nc") and not NOT_DEBT_LINE.search(ln):
+            def _on(d):
+                a, b = d.get("t") or 0, d.get("t1") or 0
+                return (a or b) and (not a or a in nums) and (not b or b in nums)
+            tagged = [c for c, d in facts.items() if _on(d)]
+            if tagged and all(c in catch_all for c in tagged) and not FAMILY_LABEL["debt"].search(ln):
+                findings.append({"page": p, "line": ln.strip()[:120], "family": "debt", "tagged_as": tagged[:3],
+                                 "section": "c" if in_cm else "nc", "kind": "catch-all"})
         for fam, rx in FAMILY_LABEL.items():
             if (fam == "sga") != (p in pages["pl"] and p not in pages["bs"]):
                 continue   # SGA lines on the P&L only; debt, ROU, receivables on the balance sheet only
@@ -393,6 +424,9 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
     pages = face_pages(fields, lines)
     findings = face_check(inst, lines, pages)
     bank = bank_loan_rule(inst)
+    # rule 3 needs a readable liabilities face: the total current (or total) liabilities pair printed on a line
+    liabilities_printed = any(fields[c][nm].status == "FOUND" for c in ("t",)
+                              for nm in ("current_liabilities", "total_liabilities"))
     for fam, names in (("debt", ("long_term_debt", "current_maturities_long_term_debt")), ("rou", ("rou_assets_net",))):
         for c in ("t", "t1"):
             for nm in names:
@@ -400,11 +434,13 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
                 if f.value is None or (f.value == 0 and f.status != "FOUND"):
                     sec = {"long_term_debt": "nc", "current_maturities_long_term_debt": "c"}.get(nm)
                     rel = [f for f in findings if not (sec and f.get("section") and f.get("section") != sec)]
-                    if zero_allowed(inst, rel, bool(pages["bs"]), fam):
+                    readable = bool(pages["bs"]) and (fam != "debt" or liabilities_printed)
+                    if zero_allowed(inst, rel, readable, fam):
                         f.value, f.status = 0.0, "FOUND"
                         f.notes.append("not tagged; subtotals add up and no such line on the PDF face (rule 3)")
                     else:
-                        f.notes.append("not tagged and zero not proven (rule 3)")
+                        f.notes.append("not tagged and zero not proven (rule 3)" if readable else
+                                       "not tagged; the liabilities face is not readable in the PDF (rule 3)")
     for fd in findings:
         debt_targets = {"c": ("current_maturities_long_term_debt",), "nc": ("long_term_debt",)}.get(
             fd.get("section"), ("long_term_debt", "current_maturities_long_term_debt"))

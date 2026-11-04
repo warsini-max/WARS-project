@@ -267,3 +267,55 @@ def test_d03g_proxy_when_pph_not_found():
     # negative: PPh 25/29 found -> no proxy
     r = run(instance(), [BS, PL, NOTE, TAXNOTE])
     assert r["tax"]["proxy"] is False and r["tax"]["status"] == "FOUND"
+
+
+# ---------------------------------------------------------------- structural debt check (Gail, 4 Nov 2026, after stage 5)
+BS_CM = BS.replace("Pinjaman bank jangka panjang 30 20 Current portion of bank loans",
+                   "Utang jangka panjang yang jatuh tempo dalam satu tahun:\n"
+                   "Pinjaman bank jangka panjang 30 20 Current portion of bank loans\n"
+                   "Pembiayaan 127 125 Financing")
+
+
+def test_catch_all_line_in_current_maturities_block_is_review():
+    # DEAL 2022 lesson: 'Pembiayaan' (financing, current portion) tagged as other payables
+    r = run(instance(base={"OtherPayablesThirdParties": (127, 125)}), [BS_CM, PL, NOTE])
+    f = [x for x in r["face_findings"] if x.get("kind") == "catch-all"]
+    assert f and f[0]["section"] == "c"
+    assert r["fields"]["t"]["current_maturities_long_term_debt"].status == "REVIEW"
+    assert r["fields"]["t"]["long_term_debt"].status == "FOUND"
+
+
+def test_catch_all_other_payables_outside_maturities_block_is_not_flagged():
+    # negative: ordinary 'Utang lain-lain' among current liabilities, before the current-maturities block
+    bs = BS.replace("Utang pajak 15 12 Taxes payable", "Utang lain-lain 127 125 Other payables\nUtang pajak 15 12 Taxes payable")
+    r = run(instance(base={"OtherPayablesThirdParties": (127, 125)}), [bs, PL, NOTE])
+    assert not r["face_findings"]
+    assert r["fields"]["t"]["current_maturities_long_term_debt"].status == "FOUND"
+
+
+def test_non_current_section_from_total_current_liabilities_line():
+    # ICBP 2022 lesson: the non-current heading is wrapped ('LIABILITAS JANGKA / PANJANG'); the lease line below the
+    # total current liabilities is non-current, so long-term debt is REVIEW
+    bs = BS.replace("JUMLAH LIABILITAS", "LIABILITAS JANGKA\nPANJANG\nLiabilitas sewa 109 111 Lease liabilities\nJUMLAH LIABILITAS")
+    r = run(instance(base={"OtherNonCurrentFinancialLiabilities": (109, 111)}), [bs, PL, NOTE])
+    f = [x for x in r["face_findings"] if x["family"] == "debt"]
+    assert f and f[0]["section"] == "nc"
+    assert r["fields"]["t"]["long_term_debt"].status == "REVIEW"
+
+
+def test_non_debt_catch_all_line_in_non_current_is_not_flagged():
+    # negative: employee benefits or provisions tagged with a catch-all concept are not debt
+    bs = BS.replace("JUMLAH LIABILITAS", "Liabilitas imbalan kerja 109 111 Employee benefits liability\nJUMLAH LIABILITAS")
+    r = run(instance(base={"OtherNonCurrentLiabilities": (109, 111)}), [bs, PL, NOTE])
+    assert not r["face_findings"]
+
+
+def test_rule3_needs_a_readable_liabilities_face():
+    # TECH 2022 lesson: the liabilities page is an image; debt = 0 cannot be proven from the face
+    base = {"LongTermBankLoans": (None, None), "CurrentMaturitiesOfBankLoans": (None, None)}
+    assets_only = "\n".join(BS.split("\n")[:6])
+    r = run(instance(base=base), [assets_only, PL, NOTE])
+    assert r["fields"]["t"]["long_term_debt"].value is None
+    # negative: liabilities printed and no debt line -> zero allowed (as before)
+    bs = "\n".join(l for l in BS.split("\n") if "Pinjaman" not in l)
+    assert run(instance(base=base), [bs, PL, NOTE])["fields"]["t"]["long_term_debt"].status == "FOUND"
