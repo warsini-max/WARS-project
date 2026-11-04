@@ -1161,7 +1161,7 @@ CATALOG: dict = {
                           "PDF atas ketiga laporan tersebut tidak disajikan.",
                           "Amounts in the statements of financial position, profit or loss and cash flows are sourced "
                           "from the uploaded XBRL file and agreed to the PDF. Accordingly, the PDF reading notes on these "
-                          "statements are not presented.", "Gail 4 Nov 17.07 (arah), teks Claude, menunggu Gail"),
+                          "statements are not presented.", "Gail 4 Nov 17.07 (arah); teks disetujui Gail 4 Nov 18.40"),
     "ui.res.another": _e("Analisis laporan lain", "Analyse another report", "Gail 28 Okt desain"),
     "ui.res.meta": _e("Tahun buku {t} vs {t1} · {stype} · {unit} · {pages} halaman",
                       "Financial year {t} vs {t1} · {stype} · {unit} · {pages} pages", "Gail 28 Okt desain"),
@@ -1659,7 +1659,7 @@ CATALOG: dict = {
         "over several lines; (b) statement pages are images; (c) the year columns in the PDF text layer are out of order; "
         "or (d) amortisation is disclosed only in the narrative notes, in which case it is recorded as nil. Without the "
         "XBRL file, the score is more often not calculated. Each figure in the checklist is to be traced to its "
-        "source page before the result is relied upon.", "Gail 4 Nov 17.07 (arah), teks Claude, menunggu Gail"),
+        "source page before the result is relied upon.", "Gail 4 Nov 17.07 (arah); teks disetujui Gail 4 Nov 18.40"),
     "rep.method.p4": _e(
         "Laporan ini hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur "
         "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",
