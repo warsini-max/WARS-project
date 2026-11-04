@@ -135,3 +135,18 @@ def test_finding_chart_uses_the_figures_behind_the_index():
     assert finding_chart(r, "DSRI", "en") is None
     assert compact_money(252448924906, "Units", "IDR", "id") == "Rp252,4 M"
     assert compact_money(-140738938560, "Units", "IDR", "en") == "−Rp140.7bn"
+
+
+# ---------------------------------------------------------------- score scale (Gail, 4 Nov 2026: labels overlapped for an extreme score)
+def test_scale_is_capped_and_marks_scores_beyond_it():
+    from wars_scanner.report import scale_range
+    assert scale_range(-19.96) == (-4.5, -0.5, "below")
+    assert scale_range(3.13) == (-3.5, 1.5, "above")
+
+
+def test_scale_unchanged_for_ordinary_scores():
+    # negative: a score inside the usual range keeps the usual scale and no arrow
+    from wars_scanner.report import scale_range
+    assert scale_range(-2.37) == (-3.5, -0.5, "")
+    assert scale_range(-3.9) == (-4.0, -0.5, "")
+    assert scale_range(None) == (-3.5, -0.5, "")

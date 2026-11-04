@@ -38,6 +38,20 @@ PENDING_ANSWER, OK_ANSWER, BAD_ANSWER = "PENDING", "OK", "BAD"
 ANSWERS = (PENDING_ANSWER, OK_ANSWER, BAD_ANSWER)
 
 
+# score scale shown in the app and the PDF report: it widens with the score up to these limits; a score beyond
+# them sits at the edge with an arrow, so the neutral and threshold labels never overlap (Gail, 4 Nov 2026)
+SCALE_MIN, SCALE_MAX = -4.5, 1.5
+
+
+def scale_range(m):
+    """(lo, hi, where): where is "below" / "above" when the score lies outside the drawn scale, else ""."""
+    if m is None:
+        return -3.5, -0.5, ""
+    lo = max(min(-3.5, round((m - 0.3) * 2) / 2), SCALE_MIN)
+    hi = min(max(-0.5, round((m + 0.3) * 2) / 2), SCALE_MAX)
+    return lo, hi, "below" if m < lo else "above" if m > hi else ""
+
+
 # methodology and limitations, in the app and the PDF report (numbered list, Gail 4 Nov 2026)
 METHOD_KEYS = ("rep.method.p1", "rep.method.p2", "rep.method.p3", "rep.method.p4", "beta.limits")
 

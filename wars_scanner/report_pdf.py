@@ -193,8 +193,8 @@ class _Scale(Flowable):
 
     def draw(self):
         c, w = self.canv, self.width
-        lo, hi = min(-3.5, (self.m or 0) - 0.3 if self.m is not None else -3.5), max(-0.5, (self.m or -9) + 0.3)
-        x = lambda v: (v - lo) / (hi - lo) * w                    # noqa: E731
+        lo, hi, out = report.scale_range(self.m)
+        x = lambda v: (min(max(v, lo), hi) - lo) / (hi - lo) * w  # noqa: E731
         y = 7 * mm
         c.setFillColor(colors.HexColor("#ECEEF1"))
         c.roundRect(0, y, w, 2.6 * mm, 1.3 * mm, stroke=0, fill=1)
@@ -220,7 +220,13 @@ class _Scale(Flowable):
             c.setLineWidth(1.5)
             c.circle(x(self.m), y + 1.3 * mm, 2.4 * mm, stroke=1, fill=1)
             c.setFont("Sans-Semi", 7.5)
-            c.drawCentredString(x(self.m), y + 5 * mm, f"{self.ticker} {dec(self.m, 2, self.lang)}".strip())
+            label = f"{self.ticker} {dec(self.m, 2, self.lang)}".strip()
+            if out == "below":
+                c.drawString(0, y + 5 * mm, "◀ " + label)
+            elif out == "above":
+                c.drawRightString(w, y + 5 * mm, label + " ▶")
+            else:
+                c.drawCentredString(x(self.m), y + 5 * mm, label)
 
 
 def _section(story, title, S, number=None):

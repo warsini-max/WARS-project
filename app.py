@@ -568,9 +568,12 @@ def page_check():
 
 
 def _scale(m, ticker):
-    lo = min(-3.5, round((m - 0.3) * 2) / 2)
-    hi = max(-0.5, round((m + 0.3) * 2) / 2)
+    lo, hi, out = report.scale_range(m)
     x = lambda v: f"{(min(max(v, lo), hi) - lo) / (hi - lo) * 100:.2f}%"        # noqa: E731
+    me_pos = "left:0;transform:none" if out == "below" else "left:auto;right:0;transform:none" if out == "above" \
+        else f"left:{x(m)}"
+    me_txt = ("◀ " if out == "below" else "") + ((ticker + " ") if ticker else "") + dec(m, 2, lang()) + \
+        (" ▶" if out == "above" else "")
     col = "#C03A3A" if m > THRESHOLD else "#006B53"
     L = lang()
     return (f'<div class="w-scale" role="img" aria-label="M-score {E(dec(m, 2, L))}">'
@@ -578,7 +581,7 @@ def _scale(m, ticker):
             f'<div class="tick" style="left:{x(NEUTRAL_M)};top:16px;height:22px;background:#7A8089"></div>'
             f'<div class="tick" style="left:{x(THRESHOLD)};top:13px;height:28px;background:#1B1E23"></div>'
             f'<div class="dot" style="left:{x(m)};background:{col};box-shadow:0 0 0 1px {col}"></div>'
-            f'<div class="me" style="left:{x(m)};color:{col}">{E((ticker + " ") if ticker else "")}{E(dec(m, 2, L))}</div>'
+            f'<div class="me" style="{me_pos};color:{col}">{E(me_txt)}</div>'
             f'<div class="lab w-mono" style="left:0;transform:none">{E(dec(lo, 2, L))}</div>'
             f'<div class="lab" style="left:{x(NEUTRAL_M)}">{E(T("ui.res.scale_neutral", n=Num(NEUTRAL_M, 2)))}</div>'
             f'<div class="lab" style="left:{x(THRESHOLD)};font-weight:600;color:#1B1E23">'
