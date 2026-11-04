@@ -1442,6 +1442,12 @@ CATALOG: dict = {
     "chk.f.taxes_payable": _e("Utang pajak penghasilan badan", "Corporate income tax payable", "Gail 4 Nov 09.07"),
     "chk.f.ppe_depreciation_disclosed": _e("Beban penyusutan aset tetap dan aset hak-guna",
                                            "Depreciation of fixed assets and right-of-use assets", "Gail 4 Nov 09.07"),
+    "chk.f.amortization_intangibles": _e("Amortisasi aset takberwujud", "Amortisation of intangible assets",
+                                         "Claude 4 Nov opsi 1 (label r0 8), menunggu Gail"),
+    "chk.f.depreciation_amortization_non_ppe": _e(
+        "Penyusutan dan amortisasi aset selain aset tetap/hak-guna dan aset takberwujud",
+        "Depreciation and amortisation of assets other than PPE/right of use assets and intangible assets",
+        "Claude 4 Nov opsi 1 (label r1 C7), menunggu Gail"),
     "chk.f.net_income": _e("Laba tahun berjalan", "Profit for the year", "Gail 4 Nov 09.07"),
     "chk.f.cash_flow_from_operations": _e("Arus kas dari aktivitas operasi", "Cash flows from operating activities", "Gail 4 Nov 09.07"),
     "chk.r.tax_proxy": _e("Utang PPh badan (Pasal 25 dan 29) tidak dapat direkonsiliasi dengan total utang pajak, sehingga "
@@ -1462,9 +1468,11 @@ CATALOG: dict = {
                               "interest-bearing debt in XBRL. Lease liabilities and other interest-bearing borrowings are "
                               "included in this item.", "Gail 4 Nov 09.07"),
     "chk.r.ppe_rou": _e("Pos \u201c{line}\u201d pada laporan posisi keuangan tidak diklasifikasikan dalam XBRL. Nilai "
-                        "aset tetap yang digunakan mencakup aset hak-guna.",
+                        "aset tetap yang digunakan harus mencakup aset hak-guna; periksa apakah pos ini sudah termasuk "
+                        "dalam angka di atas.",
                         "The line \u201c{line}\u201d in the statement of financial position is not classified in XBRL. "
-                        "The fixed asset amount used includes right-of-use assets.", "Gail 4 Nov 09.07"),
+                        "The fixed asset amount used must include right-of-use assets; check whether this line is "
+                        "already included in the amount above.", "Gail 4 Nov 09.07; diubah Claude 4 Nov opsi 1, menunggu Gail"),
     "chk.r.dep_rou": _e("Aset hak-guna disajikan terpisah dan tidak diklasifikasikan dalam XBRL. Beban penyusutan yang "
                         "digunakan harus mencakup penyusutan aset hak-guna.",
                         "Right-of-use assets are presented separately and are not classified in XBRL. The depreciation "
@@ -1638,6 +1646,19 @@ CATALOG: dict = {
         "Figures are read automatically from the digital PDF. Each figure is recorded with its source page and line. "
         "Figures that were not found are not filled in; figures taken as 0 for the provisional result are listed in "
         "the checklist.", "new"),
+    "beta.limits": _e(
+        "Versi Beta. Pada uji terakhir dengan data yang belum pernah dipakai untuk pengembangan (10 emiten BEI, laporan "
+        "keuangan FY2022, 4 November 2026), 2 dari 261 angka yang dinyatakan terbaca dan tercocokkan ternyata salah. "
+        "Penyebab yang diketahui: judul pos yang terpotong beberapa baris, halaman laporan berupa gambar, urutan kolom "
+        "tahun yang tidak konsisten pada lapisan teks PDF, dan amortisasi yang hanya diungkapkan dalam kalimat (dihitung "
+        "0). Tanpa berkas XBRL, aplikasi hanya memakai pembaca PDF, yang lebih sering menahan skor. Cocokkan setiap "
+        "angka di daftar periksa dengan halaman sumbernya sebelum memakai hasil ini.",
+        "Beta version. In the latest test on data never used in development (10 IDX companies, FY2022 financial "
+        "statements, 4 November 2026), 2 of 261 figures marked as read and reconciled were wrong. Known causes: line "
+        "labels wrapped over several lines, statement pages that are images, year columns out of order in the PDF text "
+        "layer, and amortisation disclosed only in a sentence (counted as 0). Without the XBRL file the app uses the "
+        "PDF reader alone, which withholds the score more often. Check every figure in the checklist against its "
+        "source page before relying on the result.", "Claude 4 Nov opsi 1, menunggu Gail"),
     "rep.method.p4": _e(
         "Laporan ini hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur "
         "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",

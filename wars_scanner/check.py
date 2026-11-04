@@ -27,8 +27,11 @@ CHECK_FIELDS = [
     "revenue", "cost_of_goods_sold", "selling_general_administrative_expenses", "accounts_receivable",
     "total_assets", "current_assets", "property_plant_equipment_net", "current_liabilities", "total_liabilities",
     "long_term_debt", "current_maturities_long_term_debt", "cash_and_cash_equivalents", "taxes_payable",
-    "ppe_depreciation_disclosed", "net_income", "cash_flow_from_operations",
+    "ppe_depreciation_disclosed", "amortization_intangibles", "depreciation_amortization_non_ppe",
+    "net_income", "cash_flow_from_operations",
 ]
+# the components of the D&A total (workbook: depreciation_expense = D&A - amortisation - non-PPE)
+DA_PARTS = ("ppe_depreciation_disclosed", "amortization_intangibles", "depreciation_amortization_non_ppe")
 SIGNED = {"net_income", "cash_flow_from_operations"}
 CONFIRMED, AMENDED = "USER CONFIRMED", "USER AMENDED"
 
@@ -40,6 +43,8 @@ LABELS = {
     "current_maturities_long_term_debt": ["Liabilitas sewa", "Lease liabilities", "jatuh tempo", "Current maturities"],
     "taxes_payable": ["Pasal 25", "Pasal 29", "Article 29", "Utang pajak"],
     "ppe_depreciation_disclosed": ["Penyusutan aset hak", "Depreciation of right", "dialokasikan", "allocated"],
+    "amortization_intangibles": ["Amortisasi", "Amortization", "Amortisation"],
+    "depreciation_amortization_non_ppe": ["Penyusutan", "Depreciation", "Amortisasi", "Amortization"],
 }
 ROU_DEP_LABELS = ["Penyusutan aset hak guna", "Penyusutan aset hak-guna", "Depreciation of right-of-use",
                   "Depreciation of right of use", "Right-of-use assets depreciation"]
@@ -95,6 +100,11 @@ def merge_xbrl(pr, xres):
     r.assumed = [(it.field, it.column, _user_note(it)) for it in xres.items if it.status == "ASSUMED"]
     if xres.held:
         r.calc["m_score_B"] = ""          # P8 / not found: withheld, the reasons are in r.missing
+    if pr.unreadable:
+        # the PDF statements could not be read (e.g. image pages): the XBRL figures cannot be reconciled to the
+        # face of the report and the review step has nothing to show, so the score is withheld (rule 7;
+        # XBRL stage 6, 4 Nov 2026: a score was shown with REVIEW inputs unchecked)
+        r.calc["m_score_B"] = ""
     if xres.gate:
         r.unreadable = Msg("chk.gate", why=Raw("; ".join(str(g) for g in xres.gate)))
     try:
@@ -275,10 +285,8 @@ def apply(r, checks, answers):
             checked.append((it.field, c, status, old, new))
     # the D&A total is built from its components (workbook: depreciation_expense = D&A - amortisation - non-PPE)
     for c in ("t", "t1"):
-        if any(f == "ppe_depreciation_disclosed" and cc == c and s == AMENDED for f, cc, s, _, _ in checked):
-            dep = p.get(f"ppe_depreciation_disclosed_{c}")
-            p[f"depreciation_amortization_total_{c}"] = dep + (p.get(f"amortization_intangibles_{c}") or 0) + \
-                (p.get(f"depreciation_amortization_non_ppe_{c}") or 0)
+        if any(f in DA_PARTS and cc == c and s == AMENDED for f, cc, s, _, _ in checked):
+            p[f"depreciation_amortization_total_{c}"] = sum(p.get(f"{f}_{c}") or 0 for f in DA_PARTS)
     done = {(f, c) for f, c, *_ in checked}
     r2.review = [x for x in r2.review if (x[0], x[1]) not in done] + \
         [(f, c, s, Msg("chk.prov.note", old=Amt(o)) if s == AMENDED else "") for f, c, s, o, _ in checked]

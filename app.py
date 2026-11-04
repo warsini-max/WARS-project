@@ -741,6 +741,7 @@ def page_result():
     st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
     with st.expander(T("app.method.title")):
         st.markdown(E(T("ui.method")))
+        st.markdown(E(T("beta.limits")))
     with st.expander(T("ui.proc.summary") if not r.unreadable else T("ui.read_details")):
         if not r.unreadable:
             st.markdown(_proc_list(r), unsafe_allow_html=True)

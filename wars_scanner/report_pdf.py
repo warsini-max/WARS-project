@@ -495,7 +495,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     # ------------------------------------------------------------------------------ Methodology
     story.append(PageBreak())
     _section(story, t("rep.s7", lang), S)
-    for k in ("rep.method.p1", "rep.method.p2", "rep.method.p3", "rep.method.p4"):
+    for k in ("rep.method.p1", "rep.method.p2", "rep.method.p3", "rep.method.p4", "beta.limits"):
         story += [P(t(k, lang)), Spacer(1, 3 * mm)]
     story += [P(t("rep.formula", lang, const=Num(report.M_CONSTANT, 2)), "small"), Spacer(1, 3 * mm),
               P(t("app.disclaimer", lang))]

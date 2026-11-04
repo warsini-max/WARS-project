@@ -75,3 +75,60 @@ def test_xbrl_path_reason_comes_from_technical_note_not_user_text():
                         ("taxes_payable", "t1"): "D-03g PENDEKATAN (total taxes payable)"}}
     its = check.items(r)
     assert {i.field: i.reason.key for i in its}["taxes_payable"] == "chk.r.tax_proxy"
+
+
+# ---------------------------------------------------------------- opsi 1 safety fixes (after XBRL stage 6, 4 Nov 2026)
+def _amort_result():
+    vals = [Value("amortization_intangibles", "t", 0, "REVIEW"), Value("amortization_intangibles", "t1", 0, "REVIEW"),
+            Value("ppe_depreciation_disclosed", "t", 50, "FOUND"), Value("ppe_depreciation_disclosed", "t1", 40, "FOUND")]
+    ex = SimpleNamespace(values=vals, fiscal_year=2022, statements={}, fs_location={})
+    p = {"amortization_intangibles_t": 0, "amortization_intangibles_t1": 0, "ppe_depreciation_disclosed_t": 50,
+         "ppe_depreciation_disclosed_t1": 40, "depreciation_amortization_non_ppe_t": 0,
+         "depreciation_amortization_non_ppe_t1": 0, "depreciation_amortization_total_t": 50,
+         "depreciation_amortization_total_t1": 40}
+    return SimpleNamespace(extraction=ex, inputs=p, calc={}, flags=[], missing=[], unreadable="",
+                           review=[("amortization_intangibles", "t", "REVIEW", ""),
+                                   ("amortization_intangibles", "t1", "REVIEW", "")])
+
+
+def test_amortisation_in_review_is_shown_and_rebuilds_the_da_total():
+    r = _amort_result()
+    its = check.items(r)
+    assert [i.field for i in its] == ["amortization_intangibles"]     # stage 6: REVIEW here never reached the user
+    r2 = check.apply(r, its, {"amortization_intangibles": {"choice": "edit", "t": "101", "t1": "103"}})
+    assert (r2.inputs["depreciation_amortization_total_t"], r2.inputs["depreciation_amortization_total_t1"]) == (151, 143)
+
+
+def test_agreed_amortisation_leaves_the_da_total_alone():
+    # negative: confirming the reading changes nothing
+    r = _amort_result()
+    r2 = check.apply(r, check.items(r), {"amortization_intangibles": {"choice": "ok"}})
+    assert r2.inputs["depreciation_amortization_total_t"] == 50
+
+
+def _merge_inputs(unreadable):
+    pr = SimpleNamespace(extraction=SimpleNamespace(values=[], issues=[]), inputs={}, calc={}, flags=[],
+                         unreadable=unreadable, review=[], missing=[], assumed=[])
+    xres = SimpleNamespace(items=[], inputs={}, calc={"m_score_B": 3.1}, held=[], gate=[], xbrl={}, tax={},
+                           warnings=[])
+    return pr, xres
+
+
+def test_xbrl_score_withheld_when_pdf_statements_unreadable():
+    pr, xres = _merge_inputs("statement pages are images")
+    r = check.merge_xbrl(pr, xres)
+    assert r.calc["m_score_B"] == ""
+
+
+def test_xbrl_score_kept_when_pdf_readable():
+    # negative: a readable PDF does not withhold the score
+    pr, xres = _merge_inputs("")
+    pr.extraction.values = []
+    import wars_scanner.validation as V
+    orig = V.check
+    V.check = lambda p, ex: []
+    try:
+        r = check.merge_xbrl(pr, xres)
+    finally:
+        V.check = orig
+    assert r.calc["m_score_B"] == 3.1
