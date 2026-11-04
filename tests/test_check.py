@@ -66,3 +66,12 @@ def test_same_amount_entered_counts_as_agreed_not_amended():
     r2 = check.apply(r, its, {"accounts_receivable": {"choice": "edit", "t": "250", "t1": "220"},
                               "taxes_payable": {"choice": "ok"}})
     assert {s for f, c, s, _, _ in r2.user_checked} == {check.CONFIRMED}
+
+
+def test_xbrl_path_reason_comes_from_technical_note_not_user_text():
+    r = _result()
+    r.review = [(f, c, s, check.Msg("chk.note.single")) for f, c, s, _ in r.review]
+    r.xbrl = {"notes": {("taxes_payable", "t"): "D-03g PENDEKATAN (total taxes payable)",
+                        ("taxes_payable", "t1"): "D-03g PENDEKATAN (total taxes payable)"}}
+    its = check.items(r)
+    assert {i.field: i.reason.key for i in its}["taxes_payable"] == "chk.r.tax_proxy"

@@ -83,16 +83,16 @@ def merge_xbrl(pr, xres):
             if it.status == "FOUND" and ev:
                 line = next((e[1] for e in xf.evidence if len(e) > 1 and e[1]), "")
                 v.quotes = [line] if line else []
-        v.note = Raw(_xbrl_note(it)) if it.status != "FOUND" and _xbrl_note(it) else ""
+        v.note = _user_note(it)
         if it.status != "FOUND":
             v.quotes = []
     r.inputs = dict(xres.inputs)
     r.calc = dict(xres.calc)
-    r.review = [(it.field, it.column, it.status, Raw(_xbrl_note(it)) if _xbrl_note(it) else "")
+    r.review = [(it.field, it.column, it.status, _user_note(it))
                 for it in xres.items if it.status in ("REVIEW", "ASSUMED", "UNDISCLOSED") and it.value is not None]
-    r.missing = [(it.field, it.column, it.status, Raw(_xbrl_note(it))) for it in xres.items
+    r.missing = [(it.field, it.column, it.status, _user_note(it)) for it in xres.items
                  if it.status in ("NOT FOUND", "NOT ASSESSED")]
-    r.assumed = [(it.field, it.column, Raw(_xbrl_note(it))) for it in xres.items if it.status == "ASSUMED"]
+    r.assumed = [(it.field, it.column, _user_note(it)) for it in xres.items if it.status == "ASSUMED"]
     if xres.held:
         r.calc["m_score_B"] = ""          # P8 / not found: withheld, the reasons are in r.missing
     if xres.gate:
@@ -105,7 +105,8 @@ def merge_xbrl(pr, xres):
     # (reconciled to the PDF as a printed pair) replaces that reading
     found = {(it.field, it.column) for it in xres.items if it.status == "FOUND"}
     r.flags = _drop_pdf_reading_checks(r.flags, found)
-    r.xbrl = {"items": xres.items, "found": found, "face_findings": (xres.xbrl or {}).get("face_findings", []),
+    r.xbrl = {"items": xres.items, "found": found,
+              "notes": {(it.field, it.column): _xbrl_note(it) for it in xres.items}, "face_findings": (xres.xbrl or {}).get("face_findings", []),
               "face_pages": (xres.xbrl or {}).get("face_pages", {}), "tax": xres.tax, "warnings": xres.warnings}
     return r
 
@@ -113,6 +114,29 @@ def merge_xbrl(pr, xres):
 def _drop_pdf_reading_checks(flags, found):
     return [fl for fl in flags if not (fl.code in PDF_READING_CHECKS and fl.fields
                                        and all((x, fl.column) in found for x in fl.fields))]
+
+
+def _user_note(it):
+    """What the user reads about an XBRL-path item: catalogue text only (the technical note stays in it.note).
+    Items verified in the review step get their reason from annotate()."""
+    if it.status == "FOUND":
+        return ""
+    if it.status in ("ASSUMED", "UNDISCLOSED"):
+        return Msg("chk.note.assumed")
+    if it.status in ("NOT FOUND", "NOT ASSESSED"):
+        return Msg("chk.note.not_found")
+    return Msg("chk.note.single")
+
+
+def annotate(r, checks):
+    """Put each verification reason on the item in the reading, so the report checklist shows it (also when
+    the review step is skipped)."""
+    reasons = {it.field: it.reason for it in checks}
+    r.review = [(f, c, s_, reasons.get(f, n)) if s_ == "REVIEW" else (f, c, s_, n) for f, c, s_, n in r.review]
+    for v in r.extraction.values:
+        if v.field in reasons and v.status == "REVIEW":
+            v.note = reasons[v.field]
+    return r
 
 
 def _xbrl_note(it) -> str:
@@ -126,8 +150,9 @@ def items(r) -> list:
     if r.unreadable:
         return []
     by = {(v.field, v.column): v for v in r.extraction.values}
-    rev = {(f, c): note for f, c, s, note in r.review if s == "REVIEW"}
     xb = getattr(r, "xbrl", None) or {}
+    tech = xb.get("notes") or {}           # XBRL path: the technical note decides the reason, the user reads catalogue text
+    rev = {(f, c): tech.get((f, c), note) for f, c, s, note in r.review if s == "REVIEW"}
     findings = xb.get("face_findings", [])
     face_text = " ".join(f.get("line", "") for f in findings)
     out = []

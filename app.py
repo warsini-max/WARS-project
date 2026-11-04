@@ -267,6 +267,7 @@ def analyse(data: bytes, xdata: bytes | None = None):
         else:
             r = pipeline.apply_provisional(pipeline.run(path, "UPLOAD"))
     checks = check.items(r)
+    check.annotate(r, checks)
     r.extraction.statements = {}          # not needed after reading; keeps the cache small
     return r, checks
 
