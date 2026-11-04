@@ -34,7 +34,8 @@ def test_verdict_levels_and_language():
     head, detail, _ = report.verdict(_result(-2.5, NEUTRAL))
     assert head == "M-score −2,50: tidak melewati batas −1,78" and "Bukan jaminan" in detail
     assert not FORBIDDEN.search(t("app.disclaimer")) and not FORBIDDEN.search(t("app.disclaimer", "en"))
-    assert "bukan bukti kecurangan" in t("app.disclaimer") and "not evidence of fraud" in t("app.disclaimer", "en")
+    # disclaimer in professional English in both versions (Gail, 4 Nov 2026)
+    assert t("app.disclaimer") == t("app.disclaimer", "en") and "not constitute a conclusion of fraud" in t("app.disclaimer")
 
 
 def test_not_calculated_never_shows_a_score():

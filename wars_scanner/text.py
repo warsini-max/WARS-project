@@ -268,11 +268,12 @@ CATALOG: dict = {
     "app.subtitle": _e("Beneish M-score (1999) untuk laporan keuangan tahunan emiten BEI",
                        "Beneish M-score (1999) for annual financial statements of IDX-listed companies", "Gail 28 Okt C6 7.1"),
     "app.lang": _e("Bahasa / Language", "Bahasa / Language", "Gail 28 Okt impl"),
+    # Disclaimer: professional English in every language version, app, website and PDF (Gail, 4 Nov 2026 09.07)
     "app.disclaimer": _e(
-        "Hasil ini adalah penyaringan red flag dengan Beneish M-score, bukan bukti kecurangan. Akun yang ditandai "
-        "perlu diperiksa lebih lanjut.",
-        "This is a red-flag screen using the Beneish M-score, not evidence of fraud. The flagged accounts need "
-        "closer examination.", "Gail 28 Okt C6 7.2 (versi halus Claude disetujui)"),
+        "WARS is a red-flag detection system; its results do not constitute a conclusion of fraud and require further "
+        "review.",
+        "WARS is a red-flag detection system; its results do not constitute a conclusion of fraud and require further "
+        "review.", "Gail 4 Nov 09.07 (EN di kedua versi)"),
     "app.beta": _e("Versi beta untuk uji coba. Hasil dapat berubah seiring perbaikan pembaca.",
                    "Beta version for testing. Results may change as the reader is improved.", "Gail 28 Okt A1"),
     "app.get_lk.title": _e("Cara mendapatkan PDF laporan keuangan", "How to get the financial statements PDF",
@@ -1345,6 +1346,127 @@ CATALOG: dict = {
 
     # ---------------------------------------------------------------- provisional assumptions (Gail 28 Okt 10.41)
     "status.ASSUMED": _e("Asumsi hasil sementara", "Provisional assumption", "new"),
+
+    # ---------------------------------------------------------------- verification step in the app (Gail 4 Nov 2026)
+    "ui.step.check": _e("Pengecekan", "Review", "Gail 4 Nov 09.07"),
+    "ui.up.xbrl": _e("File XBRL (opsional)", "XBRL file (optional)", "new"),
+    "ui.up.xbrl_sub": _e("instance.zip dari situs BEI, untuk laporan tahun buku 2022 dan seterusnya. Angka laporan utama "
+                         "diambil dari XBRL lalu dicocokkan dengan PDF.",
+                         "instance.zip from the IDX website, for financial years 2022 onwards. Primary statement amounts "
+                         "are taken from XBRL and reconciled to the PDF.", "new"),
+    "chk.title": _e("Skor ditahan: {n} pos memerlukan verifikasi", "Score withheld: {n} items require verification", "Gail 4 Nov 09.07"),
+    "chk.sub": _e("Pos lainnya telah selesai pembacaan automated dan rekonsiliasi silang. Pos berikut belum dapat "
+                  "direkonsiliasi dengan sumber kedua dalam laporan. Tinjau setiap pos terhadap potongan halaman sumber, "
+                  "lalu pilih Sesuai apabila pembacaan WARS telah tepat, atau Ganti nilai untuk memasukkan nilai yang benar. "
+                  "Skor dihitung setelah seluruh pos diverifikasi.",
+                  "All other items have completed automated reading and cross-reconciliation. The items below could not be "
+                  "reconciled to a second source within the report. Review each item against the source page extract, then "
+                  "select Agree if the WARS reading is correct, or Amend to enter the correct amount. The score is "
+                  "calculated once all items have been verified.", "Gail 4 Nov 09.07"),
+    "chk.item_of": _e("POS {i} DARI {n}", "ITEM {i} OF {n}", "Gail 4 Nov 09.07"),
+    "chk.reading": _e("Pembacaan WARS {y}", "WARS reading {y}", "Gail 4 Nov 09.07"),
+    "chk.ok": _e("Sesuai", "Agree", "Gail 4 Nov 09.07"),
+    "chk.edit": _e("Ganti nilai", "Amend", "Gail 4 Nov 09.07"),
+    "chk.input": _e("Nilai yang benar {y}", "Correct amount {y}", "Gail 4 Nov 09.07"),
+    "chk.input_help": _e("Tanpa desimal, dalam {unit}.", "No decimals, in {unit}.", "Gail 4 Nov 09.07"),
+    "chk.badge.pending": _e("Belum diverifikasi", "Pending", "Gail 4 Nov 09.07"),
+    "chk.badge.ok": _e("Sesuai", "Agreed", "Gail 4 Nov 09.07"),
+    "chk.badge.edit": _e("Diganti", "Amended", "Gail 4 Nov 09.07"),
+    "chk.extract": _e("Potongan halaman {p}", "Page extract, page {p}", "Gail 4 Nov 09.07"),
+    "chk.no_extract": _e("Potongan halaman tidak tersedia. Periksa laporan pada halaman {p}.",
+                         "Page extract unavailable. Refer to page {p} of the report.", "Gail 4 Nov 09.07"),
+    "chk.summary": _e("Ringkasan", "Summary", "Gail 4 Nov 09.07"),
+    "chk.progress": _e("{d} dari {n} pos telah diverifikasi", "{d} of {n} items verified", "Gail 4 Nov 09.07"),
+    "chk.others": _e("{n} pos lainnya: Selesai pembacaan automated.", "{n} other items: automated reading completed.", "Gail 4 Nov 09.07"),
+    "chk.calc": _e("Hitung skor", "Calculate score", "Gail 4 Nov 09.07"),
+    "chk.calc_hint": _e("Tersedia setelah seluruh pos diverifikasi.", "Available once all items have been verified.", "Gail 4 Nov 09.07"),
+    "chk.skip": _e("Lewati langkah pengecekan. Unduh laporan.", "Skip the review step. Download the report.", "Gail 4 Nov 09.07"),
+    "chk.skipped": _e("Langkah pengecekan dilewati. Skor tidak dihitung; pos yang memerlukan verifikasi tercantum di "
+                      "daftar periksa laporan.",
+                      "The review step was skipped. No score is calculated; the items that require verification are listed "
+                      "in the report checklist.", "Gail 4 Nov 09.07"),
+    "chk.back": _e("Ubah verifikasi", "Change verification", "Gail 4 Nov 09.07"),
+    "chk.gate": _e("File XBRL tidak dapat digunakan: {why}", "The XBRL file cannot be used: {why}", "new"),
+    "chk.err.format": _e("Nilai tidak valid. Masukkan angka tanpa desimal, misalnya 91.300.000.000.",
+                         "Invalid amount. Enter a whole number, for example 91,300,000,000.", "Gail 4 Nov 09.07"),
+    "chk.err.pending": _e("{item} belum diverifikasi.", "{item} has not been verified.", "Gail 4 Nov 09.07"),
+    "chk.err.missing": _e("Nilai {y} untuk {item} belum diisi.", "The {y} amount for {item} has not been entered.", "Gail 4 Nov 09.07"),
+    "chk.err.negative": _e("{item} tidak boleh bernilai negatif.", "{item} cannot be negative.", "Gail 4 Nov 09.07"),
+    "chk.err.checks": _e("Nilai yang dimasukkan tidak lolos pemeriksaan: {msg}", "The amounts entered failed a check: {msg}",
+                         "Gail 4 Nov 09.07"),
+    "chk.prov.note": _e("Pembacaan WARS {old}; diganti pengguna", "WARS reading {old}; amended by the user", "Gail 4 Nov 09.07"),
+    "chk.res.origin": _e("ASAL NILAI", "ORIGIN OF AMOUNTS", "Gail 4 Nov 09.07"),
+    "chk.res.auto": _e("Selesai pembacaan automated", "Automated reading completed", "Gail 4 Nov 09.07"),
+    "chk.res.agreed": _e("Diverifikasi sesuai oleh pengguna", "Agreed by the user", "Gail 4 Nov 09.07"),
+    "chk.res.amended": _e("Diganti oleh pengguna", "Amended by the user", "Gail 4 Nov 09.07"),
+    "chk.res.n": _e("{n} pos", "{n} items", "Gail 4 Nov 09.07"),
+    "chk.res.caveat": _e("Skor ini menggunakan nilai yang diverifikasi atau diganti oleh pengguna. Seluruh nilai tersebut "
+                         "tercantum dalam laporan yang diunduh.",
+                         "This score uses amounts agreed or amended by the user. All such amounts are listed in the "
+                         "downloadable reports.", "Gail 4 Nov 09.07"),
+    "chk.res.table": _e("Pos yang diverifikasi pengguna", "Items verified by the user", "Gail 4 Nov 09.07"),
+    "chk.res.col.item": _e("Pos", "Item", "Gail 4 Nov 09.07"),
+    "chk.res.col.status": _e("Status", "Status", "Gail 4 Nov 09.07"),
+    "chk.res.col.reading": _e("Pembacaan WARS {t} / {t1}", "WARS reading {t} / {t1}", "Gail 4 Nov 09.07"),
+    "chk.res.col.used": _e("Digunakan {t} / {t1}", "Used {t} / {t1}", "Gail 4 Nov 09.07"),
+    "status.USER CONFIRMED": _e("Diverifikasi sesuai oleh pengguna", "Agreed by the user", "Gail 4 Nov 09.07"),
+    "status.USER AMENDED": _e("Diganti oleh pengguna", "Amended by the user", "Gail 4 Nov 09.07"),
+    "chk.f.revenue": _e("Pendapatan", "Revenue", "Gail 4 Nov 09.07"),
+    "chk.f.cost_of_goods_sold": _e("Beban pokok pendapatan", "Cost of revenue", "Gail 4 Nov 09.07"),
+    "chk.f.selling_general_administrative_expenses": _e("Beban penjualan, umum dan administrasi",
+                                                        "Selling, general and administrative expenses", "Gail 4 Nov 09.07"),
+    "chk.f.accounts_receivable": _e("Piutang usaha", "Trade receivables", "Gail 4 Nov 09.07"),
+    "chk.f.total_assets": _e("Total aset", "Total assets", "Gail 4 Nov 09.07"),
+    "chk.f.current_assets": _e("Aset lancar", "Current assets", "Gail 4 Nov 09.07"),
+    "chk.f.property_plant_equipment_net": _e("Aset tetap dan aset hak-guna", "Fixed assets and right-of-use assets", "Gail 4 Nov 09.07"),
+    "chk.f.current_liabilities": _e("Liabilitas jangka pendek", "Current liabilities", "Gail 4 Nov 09.07"),
+    "chk.f.total_liabilities": _e("Total liabilitas", "Total liabilities", "Gail 4 Nov 09.07"),
+    "chk.f.long_term_debt": _e("Utang berbunga jangka panjang", "Interest-bearing long-term debt", "Gail 4 Nov 09.07"),
+    "chk.f.current_maturities_long_term_debt": _e("Bagian lancar utang berbunga jangka panjang",
+                                                  "Current maturities of interest-bearing long-term debt", "Gail 4 Nov 09.07"),
+    "chk.f.cash_and_cash_equivalents": _e("Kas dan setara kas", "Cash and cash equivalents", "Gail 4 Nov 09.07"),
+    "chk.f.taxes_payable": _e("Utang pajak penghasilan badan", "Corporate income tax payable", "Gail 4 Nov 09.07"),
+    "chk.f.ppe_depreciation_disclosed": _e("Beban penyusutan aset tetap dan aset hak-guna",
+                                           "Depreciation of fixed assets and right-of-use assets", "Gail 4 Nov 09.07"),
+    "chk.f.net_income": _e("Laba tahun berjalan", "Profit for the year", "Gail 4 Nov 09.07"),
+    "chk.f.cash_flow_from_operations": _e("Arus kas dari aktivitas operasi", "Cash flows from operating activities", "Gail 4 Nov 09.07"),
+    "chk.r.tax_proxy": _e("Utang PPh badan (Pasal 25 dan 29) tidak dapat direkonsiliasi dengan total utang pajak, sehingga "
+                          "total utang pajak digunakan sebagai pendekatan. Pilih Sesuai untuk mempertahankan pendekatan "
+                          "tersebut, atau Ganti nilai dengan jumlah utang PPh badan.",
+                          "Corporate income tax payable (Articles 25 and 29) could not be reconciled to total taxes payable; "
+                          "total taxes payable is therefore used as an approximation. Select Agree to retain the "
+                          "approximation, or Amend to enter the corporate income tax payable.", "Gail 4 Nov 09.07"),
+    "chk.r.ar_contract": _e("Nilai XBRL mencakup tagihan bruto kepada pemberi kerja (aset kontrak). Aset kontrak tidak "
+                            "termasuk piutang usaha; apabila rinciannya disajikan, nilai yang digunakan hanya piutang "
+                            "usaha pihak ketiga dan pihak berelasi.",
+                            "The XBRL amount includes gross amounts due from customers (contract assets). Contract assets "
+                            "are excluded from trade receivables; where a breakdown is presented, only third-party and "
+                            "related-party trade receivables are used.", "Gail 4 Nov 09.07"),
+    "chk.r.debt_untagged": _e("Pos \u201c{line}\u201d pada laporan posisi keuangan tidak diklasifikasikan sebagai utang "
+                              "berbunga dalam XBRL. Liabilitas sewa dan pinjaman berbunga lainnya termasuk dalam pos ini.",
+                              "The line \u201c{line}\u201d in the statement of financial position is not classified as "
+                              "interest-bearing debt in XBRL. Lease liabilities and other interest-bearing borrowings are "
+                              "included in this item.", "Gail 4 Nov 09.07"),
+    "chk.r.ppe_rou": _e("Pos \u201c{line}\u201d pada laporan posisi keuangan tidak diklasifikasikan dalam XBRL. Nilai "
+                        "aset tetap yang digunakan mencakup aset hak-guna.",
+                        "The line \u201c{line}\u201d in the statement of financial position is not classified in XBRL. "
+                        "The fixed asset amount used includes right-of-use assets.", "Gail 4 Nov 09.07"),
+    "chk.r.dep_rou": _e("Aset hak-guna disajikan terpisah dan tidak diklasifikasikan dalam XBRL. Beban penyusutan yang "
+                        "digunakan harus mencakup penyusutan aset hak-guna.",
+                        "Right-of-use assets are presented separately and are not classified in XBRL. The depreciation "
+                        "used must include depreciation of right-of-use assets.", "Gail 4 Nov 09.07"),
+    "chk.r.dep_conflict": _e("Beban penyusutan menurut catatan atas laporan keuangan berbeda dengan tabel mutasi aset "
+                             "tetap dalam XBRL ({x}). Beban penyusutan yang digunakan mencakup aset tetap milik sendiri "
+                             "dan aset hak-guna, tanpa amortisasi aset takberwujud.",
+                             "Depreciation per the notes to the financial statements differs from the XBRL fixed asset "
+                             "movement schedule ({x}). The depreciation used covers owned fixed assets and right-of-use "
+                             "assets, excluding amortisation of intangible assets.", "Gail 4 Nov 09.07"),
+    "chk.r.not_printed": _e("Nilai XBRL tidak ditemukan sebagai pasangan angka dua tahun pada satu baris laporan PDF, "
+                            "sehingga belum dapat direkonsiliasi.",
+                            "The XBRL amount does not appear as a two-year pair on a single line of the PDF statements and "
+                            "could not be reconciled.", "Gail 4 Nov 09.07"),
+    "chk.r.single": _e("Nilai ini belum dapat direkonsiliasi dengan sumber kedua dalam laporan.",
+                       "This amount could not be reconciled to a second source within the report.", "Gail 4 Nov 09.07"),
     "note.assumed_am": _e("Aset takberwujud tidak ditemukan; amortisasi dianggap 0 untuk hasil sementara. Periksa "
                           "di catatan atas laporan keuangan apakah memang tidak ada.",
                           "No intangible assets were found; amortisation is taken as 0 for the provisional result. "
@@ -1365,10 +1487,10 @@ CATALOG: dict = {
     "rep.generated": _e("Dibuat {d}", "Generated {d}", "new"),
     "rep.version": _e("Bahasa Indonesia", "English", "new"),
     "rep.footer_disclaimer": _e(
-        "This is a red-flag screen using the Beneish M-score, not evidence of fraud. The flagged accounts need closer "
-        "examination. In case of any discrepancy, the Indonesian version prevails.",
-        "This is a red-flag screen using the Beneish M-score, not evidence of fraud. The flagged accounts need closer "
-        "examination. In case of any discrepancy, the Indonesian version prevails.", "Gail 23 Okt R-06 R-07 R-11"),
+        "WARS is a red-flag detection system; its results do not constitute a conclusion of fraud and require further "
+        "review. In case of any discrepancy, the Indonesian version prevails.",
+        "WARS is a red-flag detection system; its results do not constitute a conclusion of fraud and require further "
+        "review. In case of any discrepancy, the Indonesian version prevails.", "Gail 23 Okt R-06 R-07 R-11; 4 Nov 09.07"),
     "rep.s1": _e("Ikhtisar", "Overview", "r0 report"),
     "rep.s2": _e("Rincian skor", "Score breakdown", "r0 report"),
     "rep.s3": _e("Temuan", "Findings", "r0 report"),

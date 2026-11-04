@@ -58,6 +58,7 @@ class Result:
     held: list = field(default_factory=list)       # reasons the score is withheld
     tax: dict = field(default_factory=dict)
     xbrl: dict = field(default_factory=dict)
+    pdf: object = None                             # pipeline.Result of the PDF reader (metadata, evidence pages)
 
     @property
     def m_score(self):
@@ -82,6 +83,7 @@ def _xbrl_dep(xr, col):
 ALLOC_HEAD = re.compile(r"(?i)(penyusutan|beban penyusutan)[^.]{0,40}?(dialokasikan|dibebankan|pembebanan)|"
                         r"pembebanan penyusutan|depreciation (expense )?(was|is|were)? ?(allocated|charged)")
 FX_LINE = re.compile(r"(?i)selisih kurs|penjabaran|exchange difference|translation")
+AMORT_ROW = re.compile(r"(?i)\bamorti[sz]a(si|tion)\b")   # intangible amortisation inside a depreciation table (EDGE)
 
 
 def allocation_total(lines, pages, own_t, own_t1, all_t=None, all_t1=None):
@@ -116,7 +118,8 @@ def allocation_total(lines, pages, own_t, own_t1, all_t=None, all_t1=None):
                                 "total": (float(pair[0]), float(pair[1]))}
                     break
                 rows.append(pair)
-                if FX_LINE.search(pl[k]):
+                here = pl[k] + " " + (pl[k - 1] if k - 1 > i and not [x for x in X._amounts(pl[k - 1]) if x] else "")
+                if FX_LINE.search(pl[k]) or (AMORT_ROW.search(here) and not re.search(r"(?i)penyusutan|depreciation", here)):
                     fx = [fx[0] + pair[0], fx[1] + pair[1]]
     return None
 
@@ -210,6 +213,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             items.append(Item("taxes_payable", c, None, "NOT FOUND", "", "; ".join(tax["notes"])))
 
     # ---- PPE depreciation (owned + ROU)
+    rou_untagged = any(f.get("family") == "rou" for f in xr.get("face_findings") or [])
     own = {c: xr["fields"][c]["ppe_depreciation_owned"].value for c in ("t", "t1")}
     xall = {c: _xbrl_dep(xr, c) for c in ("t", "t1")}
     alloc = allocation_total(lines, xr["face_pages"], own["t"], own["t1"], xall["t"], xall["t1"])
@@ -222,8 +226,10 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             a_dep = alloc[c] if with_rou else x_dep - own[c] + alloc[c]
             same = abs(tot_c - (x_dep if with_rou else own[c])) <= 1
             fxv = alloc["fx_" + c]
-            if pdf_dep is not None and abs(pdf_dep - a_dep) <= 1:
+            if pdf_dep is not None and abs(pdf_dep - a_dep) <= 1 and (same or abs(pdf_dep - x_dep) <= 1):
                 st, src, note = "FOUND", "PDF notes = allocation table", ""
+            elif pdf_dep is not None and abs(pdf_dep - a_dep) <= 1:
+                st, src, note = "REVIEW", "PDF notes = allocation table", f"XBRL movement table gives {x_dep:,.0f}"
             elif same and not fxv and (pdf_dep is None or abs(pdf_dep - x_dep) <= 1):
                 pdf_dep, st, src, note = x_dep, "FOUND", "XBRL movement = PDF allocation table", ""
             else:
@@ -248,6 +254,8 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
                 am = p.get(f"amortization_intangibles_{c}") or 0
                 npp = p.get(f"depreciation_amortization_non_ppe_{c}") or 0
                 p[f"depreciation_amortization_total_{c}"] = pdf_dep + am + npp
+        if st == "FOUND" and rou_untagged:
+            st, note = "REVIEW", "right-of-use assets on the face are not tagged in XBRL; their depreciation may be missing"
         items.append(Item("ppe_depreciation_disclosed", c, pdf_dep, st, src, note))
 
     # ---- intangible amortisation: XBRL says intangibles exist, PDF reader did not read the amount
@@ -331,7 +339,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     missing = [f"{i.field}_{i.column}" for i in items if i.status in ("NOT FOUND", "NOT ASSESSED")]
     if missing:
         held.append("not found: " + ", ".join(missing))
-    return Result(gate, p, calc, items, warnings, held, tax, xr)
+    return Result(gate, p, calc, items, warnings, held, tax, xr, pr)
 
 
 IP_FV = re.compile(r"(?i)properti investasi[^.]{0,80}?(dicatat|diukur|dinyatakan|disajikan)[^.]{0,60}?nilai wajar|"

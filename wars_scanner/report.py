@@ -392,6 +392,8 @@ def verdict(r: Result, confirm=None, lang="id", reviewer="", provisional_note=Tr
         return (t("v.unusable", lang),
                 t("v.rejected_detail", lang, name=Raw(who), n=confirm["bad"], items=Raw(names)), "none")
     m = r.m_score
+    if getattr(r, "verification_skipped", False):        # Gail 4 Nov 2026: the review step was skipped
+        return t("v.withheld", lang), t("chk.skipped", lang), "none"
     inv = (getattr(r.extraction, "non_ppe_evidence", None) or {}).get("invprop_face")
     if m is None and r.status == "AWAITING NON-PPE STATUS" and inv:
         return (t("v.withheld", lang), t("v.held_invprop", lang, p=inv["page"], years=_years(r.non_ppe_pending, lang)),

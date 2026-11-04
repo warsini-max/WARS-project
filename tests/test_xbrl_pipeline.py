@@ -141,3 +141,26 @@ def test_year_line_without_roll_check_is_not_used():
 Amortisasi tahun berjalan 23 3.395 1.453 4.871
 Nilai tercatat 112.060"""
     assert XP.movement_charge(L(txt), 112_060, PAGES) is None
+
+
+def test_allocation_total_takes_out_intangible_amortisation_row():
+    # EDGE pattern: 'Beban penyusutan dan amortisasi' table with an intangible amortisation row (wrapped label)
+    txt = """Beban penyusutan dan amortisasi dialokasikan sebagai berikut:
+2022 2021
+Penyusutan aset tetap 58,631 45,391 Depreciation of fixed assets
+Amortisasi aset Amortisation of intangible
+takberwujud 23 33 assets
+Total 58,654 45,424 Total"""
+    a = XP.allocation_total(L(txt), PAGES, 56_222, 43_139, 58_631, 45_391)
+    assert (a["t"], a["t1"]) == (58_631, 45_391)
+
+
+def test_allocation_total_keeps_combined_depreciation_and_amortisation_row():
+    # negative: a row labelled 'Penyusutan dan amortisasi' is depreciation for this rule and is not taken out
+    txt = """Penyusutan dialokasikan sebagai berikut:
+2022 2021
+Beban pokok penjualan 5,000 4,000
+Penyusutan dan amortisasi 1,000 900
+Total 6,000 4,900"""
+    a = XP.allocation_total(L(txt), PAGES, 6_000, 4_900)
+    assert (a["t"], a["t1"]) == (6_000, 4_900)

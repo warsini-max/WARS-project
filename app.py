@@ -1,7 +1,8 @@
 """WARS web app: Window-dressing Accounting Red-Flag Scanner (Beneish M-score) for annual financial statements.
 
-Flow (design approved by Gail, 28 Oct 2026, canvas "WARS App Design"):
-  continue as guest -> upload the PDF -> reading -> short result -> download the PDF report / Excel table.
+Flow (design approved by Gail, 28 Oct 2026, canvas "WARS App Design"; review step approved 4 Nov 2026):
+  continue as guest -> upload the PDF (+ optional XBRL instance) -> reading -> review of the items that could
+  not be reconciled (Agree / Amend) -> result -> download the PDF report / Excel table.
 
 Every text comes from the bilingual catalogue (wars_scanner.text); the ID / EN switch changes the
 page and the downloads. The score is shown at once as a provisional result; figures to check and
@@ -10,6 +11,7 @@ the assumptions for figures not found go to the checklist in the PDF report (Gai
 Run:  streamlit run app.py
 """
 import base64
+import copy
 import datetime as dt
 import hashlib
 import html
@@ -18,7 +20,7 @@ import tempfile
 
 import streamlit as st
 
-from wars_scanner import pipeline, report, report_pdf, report_xlsx
+from wars_scanner import check, pipeline, report, report_pdf, report_xlsx, xbrl_pipeline
 from wars_scanner.report import NEUTRAL_M, THRESHOLD, dec
 from wars_scanner.text import Msg, Num, Raw, fmt_number, render, t, unit_msg
 
@@ -166,11 +168,43 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 .st-key-gatecard{background:#fff;border:1px solid var(--line) !important;border-radius:16px;padding:34px 32px 28px !important;box-shadow:0 1px 2px rgba(27,30,35,.04),0 8px 24px rgba(27,30,35,.06);margin-top:56px}
 .st-key-dlcard{background:#fff;border:1px solid var(--line) !important;border-radius:16px;padding:22px 26px !important;margin-top:24px}
 [data-testid="stExpander"] details{background:#fff;border:1px solid var(--line);border-radius:12px}
+/* review step (Gail, 4 Nov 2026) */
+[class*="st-key-ckcard_"]{background:#fff;border:1px solid var(--line) !important;border-radius:14px;padding:20px 22px !important;margin-bottom:6px}
+[class*="st-key-ckcard_"].pend{border:2px solid #E2B13C !important}
+.ck-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.ck-of{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+.ck-h{margin:2px 0 0;font-size:19px;font-weight:600;line-height:1.3}
+.ck-why{margin:8px 0 2px;font-size:13px !important;line-height:1.55;color:var(--soft)}
+.ck-b{font-size:12px;font-weight:600;border-radius:999px;padding:3px 11px;white-space:nowrap}
+.ck-b.pend{background:#FFF1CC;color:#5B4300}.ck-b.ok{background:#E3EAFD;color:#1A3E9E}.ck-b.edit{background:#FDEBD8;color:#7A3A05}
+.ck-cap{font-size:12px;color:var(--muted);margin:10px 0 4px}
+.ck-read{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 10px}
+.ck-read div{background:var(--bg);border-radius:10px;padding:9px 12px}
+.ck-read .l{font-size:12px;color:var(--muted)} .ck-read .v{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500}
+.ck-prev{font-size:12px;color:var(--soft);margin:-6px 0 0}
+.st-key-cksum{background:#fff;border:1px solid var(--line) !important;border-radius:14px;padding:20px !important}
+.ck-sum h3{margin:0 0 10px;font-size:16px;font-weight:600}
+.ck-prog{height:8px;border-radius:999px;background:#E3E6E2;overflow:hidden;margin:6px 0 12px}
+.ck-prog div{height:8px;background:var(--green)}
+.ck-sum ul{list-style:none;margin:0;padding:0;font-size:13px}
+.ck-sum li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #F0F1EE}
+.ck-sum li:last-child{border-bottom:0}
+.ck-sum .s-pend{color:#5B4300;font-weight:600}.ck-sum .s-ok{color:#1A3E9E;font-weight:600}.ck-sum .s-edit{color:#7A3A05;font-weight:600}
+.ck-oth{font-size:13px;color:var(--soft);border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+.w-orig{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-top:14px}
+.w-orig .row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:3px 0}
+.w-orig .a{color:#1A3E9E}.w-orig .e{color:#7A3A05}
+.w-orig .cav{margin:10px 0 0;font-size:13px;color:#5C3D00;background:#FBF6EA;border-radius:8px;padding:9px 12px}
+.st-key-xbrlbox [data-testid="stFileUploaderDropzone"]{padding:16px 20px;flex-direction:row;gap:12px}
+.st-key-xbrlbox [data-testid="stFileUploaderDropzone"]::before{width:26px;height:26px}
+.st-key-xbrlbox [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] p::after{content:var(--w-dropx)}
+.st-key-xbrlbox [data-testid="stFileUploaderDropzoneInstructions"]::after{content:var(--w-scanx)}
 [data-testid="stExpander"] summary p{font-weight:600;font-size:14px}
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
-st.markdown(f"<style>:root{{--w-drop:'{T('ui.up.drop')}';--w-scan:'{T('ui.up.scan')}'}}</style>", unsafe_allow_html=True)
+st.markdown(f"<style>:root{{--w-drop:'{T('ui.up.drop')}';--w-scan:'{T('ui.up.scan')}';"
+            f"--w-dropx:'{T('ui.up.xbrl')}';--w-scanx:'instance.zip'}}</style>", unsafe_allow_html=True)
 
 
 def _keep_lang():
@@ -206,8 +240,8 @@ def footer():
                 unsafe_allow_html=True)
 
 
-def steps(active):
-    names = [T("ui.step.upload"), T("ui.step.read"), T("ui.step.result")]
+def steps(active, review=False):
+    names = [T("ui.step.upload"), T("ui.step.read")] + ([T("ui.step.check")] if review else []) + [T("ui.step.result")]
     out = []
     for i, n in enumerate(names, 1):
         cls, mark = ("done", "✓") if i < active else ("on", str(i)) if i == active else ("", str(i))
@@ -221,15 +255,27 @@ def _size(n):
 
 # ------------------------------------------------------------------------------------------------ analysis
 @st.cache_data(show_spinner=False, max_entries=20)
-def analyse(data: bytes):
+def analyse(data: bytes, xdata: bytes | None = None):
+    """(Result, items to verify). With an XBRL instance the face figures come from XBRL, reconciled to the PDF."""
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "report.pdf")
         with open(path, "wb") as fh:
             fh.write(data)
-        r = pipeline.run(path, "UPLOAD")
-    r = pipeline.apply_provisional(r)
+        if xdata:
+            x = xbrl_pipeline.run(xdata, path)
+            r = check.merge_xbrl(x.pdf, x)
+        else:
+            r = pipeline.apply_provisional(pipeline.run(path, "UPLOAD"))
+    checks = check.items(r)
     r.extraction.statements = {}          # not needed after reading; keeps the cache small
-    return r
+    return r, checks
+
+
+@st.cache_data(show_spinner=False, max_entries=200)
+def extract_img(sha, field_name, _data, _item, second=False):
+    if second:
+        return check.second_extract_png(_data, _item, _item.pages[0] if _item.pages else None)
+    return check.extract_png(_data, _item)
 
 
 @st.cache_data(show_spinner=False)
@@ -242,12 +288,12 @@ def page_count(data: bytes):
 
 
 @st.cache_data(show_spinner=False, max_entries=40)
-def make_pdf(sha, lg, name, _r):
+def make_pdf(sha, lg, name, variant, _r):
     return report_pdf.build(_r, lg, name, sha)
 
 
 @st.cache_data(show_spinner=False, max_entries=40)
-def make_xlsx(sha, lg, name, generated, _r):
+def make_xlsx(sha, lg, name, generated, variant, _r):
     return report_xlsx.build(_r, lg, name, sha, generated)
 
 
@@ -286,9 +332,16 @@ def page_upload():
                 if st.button(T("ui.up.replace"), key="replace", use_container_width=True):
                     ss.upn += 1
                     st.rerun()
+        with st.container(key="xbrlbox"):
+            st.markdown(f'<p class="w-small" style="margin:14px 0 6px"><strong>{E(T("ui.up.xbrl"))}</strong> · '
+                        f'{E(T("ui.up.xbrl_sub"))}</p>', unsafe_allow_html=True)
+            xup = st.file_uploader(T("ui.up.xbrl"), type=["zip"], key=f"xbrl{ss.upn}", label_visibility="collapsed")
         if st.button(T("ui.up.start"), type="primary", use_container_width=True, disabled=up is None, key="start"):
             data = up.getvalue()
-            ss.pdf = {"name": up.name, "data": data, "sha": hashlib.sha256(data).hexdigest()}
+            xdata = xup.getvalue() if xup is not None else None
+            ss.pdf = {"name": up.name, "data": data, "xbrl": xdata,
+                      "sha": hashlib.sha256(data).hexdigest() + (hashlib.sha256(xdata).hexdigest()[:12] if xdata else "")}
+            ss.answers, ss.verified, ss.skipped = {}, False, False
             ss.page = "proc"
             st.rerun()
         st.markdown(f'<p class="w-note">{E(T("ui.up.bank"))}</p>', unsafe_allow_html=True)
@@ -338,7 +391,7 @@ def page_proc():
                     f'<p class="w-sub">{E(T("ui.proc.sub", name=Raw(pdf["name"]), pages=n if n else "?"))}</p>'
                     f'<div class="w-bar"><div></div></div>' + _proc_list(), unsafe_allow_html=True)
         try:
-            analyse(pdf["data"])
+            _, checks = analyse(pdf["data"], pdf.get("xbrl"))
         except Exception as e:                                     # noqa: BLE001
             st.error(T("app.pdf_error"))
             with st.expander(T("app.pdf_error_detail")):
@@ -349,8 +402,146 @@ def page_proc():
                 st.rerun()
             footer()
             return
-    ss.page = "result"
+    ss.page = "check" if checks else "result"
     st.rerun()
+
+
+# ------------------------------------------------------------------------------------------------ review step
+def _fmt_amt(v):
+    return fmt_number(v, lang(), 0) if v is not None else "—"
+
+
+def _answer_state(checks):
+    """Answers from the widgets (or the stored answers when the widgets are not on the page)."""
+    out = {}
+    for it in checks:
+        stored = (ss.get("answers") or {}).get(it.field, {})
+        choice = ss.get(f"ck_{it.field}", stored.get("choice"))
+        out[it.field] = {"choice": choice, "t": ss.get(f"ck_{it.field}_t", stored.get("t", "")),
+                         "t1": ss.get(f"ck_{it.field}_t1", stored.get("t1", ""))}
+    return out
+
+
+def _complete(a):
+    return a.get("choice") == "ok" or (a.get("choice") == "edit" and str(a.get("t", "")).strip()
+                                       and str(a.get("t1", "")).strip())
+
+
+def page_check():
+    header(True)
+    pdf = ss.get("pdf")
+    if not pdf:
+        ss.page = "upload"
+        st.rerun()
+    r, checks = analyse(pdf["data"], pdf.get("xbrl"))
+    if not checks:
+        ss.page = "result"
+        st.rerun()
+    L = lang()
+    ex = r.extraction
+    fy = ex.fiscal_year
+    yt, yt1 = (str(fy), str(fy - 1)) if fy else ("t", "t−1")
+    ticker, name = report.issuer_line(r, L)
+    unit = R(unit_msg(ex.unit_scale, getattr(ex, "currency", None)))
+    ans = _answer_state(checks)
+    done = sum(1 for it in checks if _complete(ans[it.field]))
+    n = len(checks)
+
+    steps(3, review=True)
+    st.markdown((f'<div class="w-tk">{E(ticker)}</div>' if ticker else "")
+                + f'<div class="w-name" style="font-size:20px">{E(name)}</div>'
+                + f'<h1 class="w-h1" style="margin-top:14px">{E(T("chk.title", n=n))}</h1>'
+                + f'<p class="w-sub" style="max-width:760px">{E(T("chk.sub"))}</p>', unsafe_allow_html=True)
+
+    left, right = st.columns([2.3, 1], gap="large")
+    with left:
+        for i, it in enumerate(checks, 1):
+            a = ans[it.field]
+            state = "edit" if a.get("choice") == "edit" and _complete(a) else "ok" if a.get("choice") == "ok" else "pend"
+            if not _complete(a):
+                state = "pend"
+            badge = T({"pend": "chk.badge.pending", "ok": "chk.badge.ok", "edit": "chk.badge.edit"}[state])
+            with st.container(key=f"ckcard_{it.field}"):
+                if state == "pend":
+                    st.markdown(f"<style>.st-key-ckcard_{it.field}{{border:2px solid #E2B13C !important}}</style>",
+                                unsafe_allow_html=True)
+                st.markdown(f'<div class="ck-top"><div><div class="ck-of">{E(T("chk.item_of", i=i, n=n))}</div>'
+                            f'<div class="ck-h">{E(T("chk.f." + it.field))}</div></div>'
+                            f'<span class="ck-b {state}">{E(badge)}</span></div>'
+                            f'<p class="ck-why">{E(R(it.reason))}</p>', unsafe_allow_html=True)
+                png, pg = extract_img(pdf["sha"], it.field, pdf["data"], it)
+                if png:
+                    st.markdown(f'<div class="ck-cap">{E(T("chk.extract", p=pg))}</div>', unsafe_allow_html=True)
+                    st.image(png, use_container_width=True)
+                else:
+                    st.markdown(f'<div class="ck-cap">{E(T("chk.no_extract", p=Raw(", ".join(map(str, it.pages)) or "—")))}</div>',
+                                unsafe_allow_html=True)
+                if it.second:
+                    png2, pg2 = extract_img(pdf["sha"], it.field + "#2", pdf["data"], it, True)
+                    if png2:
+                        st.markdown(f'<div class="ck-cap">{E(T("chk.extract", p=pg2))}</div>', unsafe_allow_html=True)
+                        st.image(png2, use_container_width=True)
+                st.markdown(f'<div class="ck-read"><div><div class="l">{E(T("chk.reading", y=yt))}</div>'
+                            f'<div class="v">{E(_fmt_amt(it.values["t"]))}</div></div>'
+                            f'<div><div class="l">{E(T("chk.reading", y=yt1))}</div>'
+                            f'<div class="v">{E(_fmt_amt(it.values["t1"]))}</div></div></div>', unsafe_allow_html=True)
+                stored = (ss.get("answers") or {}).get(it.field, {})
+                if f"ck_{it.field}" not in ss and stored.get("choice"):
+                    ss[f"ck_{it.field}"] = stored["choice"]
+                st.segmented_control(T("chk.ok"), ["ok", "edit"], key=f"ck_{it.field}", label_visibility="collapsed",
+                                     format_func=lambda x: ("✓  " + T("chk.ok")) if x == "ok" else T("chk.edit"))
+                if ss.get(f"ck_{it.field}") == "edit":
+                    c1, c2 = st.columns(2)
+                    for col, c, y in ((c1, "t", yt), (c2, "t1", yt1)):
+                        with col:
+                            k = f"ck_{it.field}_{c}"
+                            if k not in ss and stored.get(c):
+                                ss[k] = stored[c]
+                            v = st.text_input(T("chk.input", y=y), key=k, placeholder=_fmt_amt(it.values[c]))
+                            try:
+                                amt = check.parse_amount(v)
+                                msg = ("= " + _fmt_amt(amt) + " · " + unit) if amt is not None else T("chk.input_help", unit=Raw(unit))
+                            except check.AnswerError as e:
+                                msg = R(e.args[0])
+                            st.markdown(f'<p class="ck-prev">{E(msg)}</p>', unsafe_allow_html=True)
+
+    with right:
+        with st.container(key="cksum"):
+            rows = []
+            for it in checks:
+                a = ans[it.field]
+                if not _complete(a):
+                    cls, txt = "s-pend", T("chk.badge.pending")
+                elif a["choice"] == "ok":
+                    cls, txt = "s-ok", T("chk.badge.ok")
+                else:
+                    cls, txt = "s-edit", T("chk.badge.edit")
+                rows.append(f'<li><span>{E(T("chk.f." + it.field))}</span><span class="{cls}">{E(txt)}</span></li>')
+            st.markdown(f'<div class="ck-sum"><h3>{E(T("chk.summary"))}</h3>'
+                        f'<div style="font-size:14px"><strong>{E(T("chk.progress", d=done, n=n))}</strong></div>'
+                        f'<div class="ck-prog" role="progressbar" aria-valuemin="0" aria-valuemax="{n}" aria-valuenow="{done}">'
+                        f'<div style="width:{round(done / n * 100)}%"></div></div><ul>{"".join(rows)}</ul>'
+                        f'<div class="ck-oth">{E(T("chk.others", n=len(check.CHECK_FIELDS) - n))}</div></div>',
+                        unsafe_allow_html=True)
+            err = st.empty()
+            if st.button(T("chk.calc"), type="primary", use_container_width=True, disabled=done < n, key="ck_calc"):
+                try:
+                    r2 = check.apply(r, checks, ans)
+                    if r2.errors:
+                        raise check.AnswerError(Msg("chk.err.checks", msg=Raw("; ".join(R(f.message) for f in r2.errors))))
+                    ss.answers, ss.verified, ss.skipped = ans, True, False
+                    ss.page = "result"
+                    st.rerun()
+                except check.AnswerError as e:
+                    err.markdown(f'<div class="w-err">{E(R(e.args[0]))}</div>', unsafe_allow_html=True)
+            if done < n:
+                st.markdown(f'<p class="w-small" style="font-size:12px;margin-top:-4px">{E(T("chk.calc_hint"))}</p>',
+                            unsafe_allow_html=True)
+            if st.button(T("chk.skip"), type="tertiary", use_container_width=True, key="ck_skip"):
+                ss.answers, ss.verified, ss.skipped = ans, False, True
+                ss.page = "result"
+                st.rerun()
+    footer()
 
 
 def _scale(m, ticker):
@@ -378,7 +569,20 @@ def page_result():
     if not pdf:
         ss.page = "upload"
         st.rerun()
-    r = analyse(pdf["data"])
+    r, checks = analyse(pdf["data"], pdf.get("xbrl"))
+    variant = ""
+    if checks and ss.get("verified"):
+        r = check.apply(r, checks, ss.get("answers") or {})
+        variant = repr(sorted((k, tuple(sorted(v.items()))) for k, v in (ss.get("answers") or {}).items()))
+    elif checks and ss.get("skipped"):
+        r = copy.deepcopy(r)
+        r.verification_skipped = True
+        r.calc = dict(r.calc, m_score_B="")
+        variant = "skipped"
+    elif checks:
+        ss.page = "check"
+        st.rerun()
+    variant = ("xbrl|" if pdf.get("xbrl") else "") + variant
     L = lang()
     ex = r.extraction
     fy = ex.fiscal_year
@@ -387,7 +591,7 @@ def page_result():
     unit = unit_msg(ex.unit_scale, getattr(ex, "currency", None))
     stype = Msg(f"ui.res.stype.{ex.statement_type}") if ex.statement_type in ("Consolidated", "Parent-only") else Msg("ui.res.stype.unknown")
 
-    steps(3)
+    steps(4 if checks else 3, review=bool(checks))
     a, b = st.columns([3, 1], vertical_alignment="bottom")
     with a:
         meta = T("ui.res.meta", t=yt, t1=yt1, stype=stype, unit=unit, pages=ex.n_pages) if not r.unreadable else \
@@ -403,6 +607,8 @@ def page_result():
     # ------------------------------------------------------------------ score card
     head, detail, level = report.verdict(r, None, L, provisional_note=False)
     items = report.checklist_rows(r, L) if not r.unreadable else []
+    done_keys = {f"in:{f}:{c}" for f, c, *_ in (getattr(r, "user_checked", None) or [])}
+    items = [x for x in items if x["key"] not in done_keys]          # verified in the review step
     m = r.m_score
     if m is not None:
         above = m > THRESHOLD
@@ -427,6 +633,41 @@ def page_result():
         for f in r.errors:
             body += f'<div class="w-err">{E(T("app.check_failed", msg=f.message))}</div>'
     st.markdown(f'<section class="w-card">{body}</section>', unsafe_allow_html=True)
+
+    # ------------------------------------------------------------------ origin of the amounts (review step)
+    uc = getattr(r, "user_checked", None)
+    if uc:
+        fields_ok = sorted({f for f, c, s_, o, n_ in uc if s_ == check.CONFIRMED} -
+                           {f for f, c, s_, o, n_ in uc if s_ == check.AMENDED})
+        fields_ed = sorted({f for f, c, s_, o, n_ in uc if s_ == check.AMENDED})
+        n_auto = len(check.CHECK_FIELDS) - len(fields_ok) - len(fields_ed)
+        rows = ""
+        by = {}
+        for f, c, s_, o, n_ in uc:
+            by.setdefault(f, {})[c] = (s_, o, n_)
+        for f in [x.field for x in checks]:
+            d = by.get(f, {})
+            amended = any(v[0] == check.AMENDED for v in d.values())
+            chip = (f'<span class="ck-b edit">{E(T("chk.badge.edit"))}</span>' if amended else
+                    f'<span class="ck-b ok">{E(T("chk.badge.ok"))}</span>')
+            old_v = " / ".join(_fmt_amt(d[c][1]) for c in ("t", "t1") if c in d)
+            new_v = " / ".join(_fmt_amt(d[c][2]) for c in ("t", "t1") if c in d)
+            rows += (f'<tr><td>{E(T("chk.f." + f))}</td><td>{chip}</td>'
+                     f'<td class="r" style="{"text-decoration:line-through;color:#6B7178" if amended else ""}">{E(old_v)}</td>'
+                     f'<td class="r" style="font-weight:600">{E(new_v)}</td></tr>')
+        st.markdown(f'<section class="w-orig"><div class="w-lbl">{E(T("chk.res.origin"))}</div>'
+                    f'<div class="row" style="margin-top:8px"><span>{E(T("chk.res.auto"))}</span><strong>{E(T("chk.res.n", n=n_auto))}</strong></div>'
+                    f'<div class="row a"><span>{E(T("chk.res.agreed"))}</span><strong>{E(T("chk.res.n", n=len(fields_ok)))}</strong></div>'
+                    f'<div class="row e"><span>{E(T("chk.res.amended"))}</span><strong>{E(T("chk.res.n", n=len(fields_ed)))}</strong></div>'
+                    f'<p class="cav">{E(T("chk.res.caveat"))}</p></section>'
+                    f'<section class="w-tbl" style="margin-top:14px"><div class="h">{E(T("chk.res.table"))}</div>'
+                    f'<div style="overflow-x:auto"><table><thead><tr><th>{E(T("chk.res.col.item"))}</th>'
+                    f'<th>{E(T("chk.res.col.status"))}</th><th style="text-align:right">{E(T("chk.res.col.reading", t=yt, t1=yt1))}</th>'
+                    f'<th style="text-align:right">{E(T("chk.res.col.used", t=yt, t1=yt1))}</th></tr></thead>'
+                    f'<tbody>{rows}</tbody></table></div></section>', unsafe_allow_html=True)
+        if st.button(T("chk.back"), key="ck_back", type="tertiary"):
+            ss.page = "check"
+            st.rerun()
 
     # ------------------------------------------------------------------ drivers and the eight indices
     if m is not None:
@@ -467,12 +708,12 @@ def page_result():
             stamp = dt.datetime.now(dt.timezone(dt.timedelta(hours=7))).strftime("%Y-%m-%d %H:%M WIB")
             base_name = f"WARS_{ticker or 'NA'}_{yt}_{L.upper()}"
             with c1:
-                st.download_button("⤓  " + T("ui.dl.pdf"), make_pdf(pdf["sha"], L, pdf["name"], r),
+                st.download_button("⤓  " + T("ui.dl.pdf"), make_pdf(pdf["sha"][:64], L, pdf["name"], variant, r),
                                    file_name=base_name + ".pdf", mime="application/pdf", type="primary",
                                    use_container_width=True, on_click="ignore", key="dl_pdf")
                 st.markdown(f'<p class="w-small">{E(T("ui.dl.pdf_sub"))}</p>', unsafe_allow_html=True)
             with c2:
-                st.download_button("▦  " + T("ui.dl.xlsx"), make_xlsx(pdf["sha"], L, pdf["name"], stamp, r),
+                st.download_button("▦  " + T("ui.dl.xlsx"), make_xlsx(pdf["sha"][:64], L, pdf["name"], stamp, variant, r),
                                    file_name=base_name + ".xlsx", type="secondary", use_container_width=True,
                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                    on_click="ignore", key="dl_xlsx")
@@ -492,4 +733,5 @@ def page_result():
     footer()
 
 
-{"gate": page_gate, "upload": page_upload, "proc": page_proc, "result": page_result}.get(ss.page, page_gate)()
+{"gate": page_gate, "upload": page_upload, "proc": page_proc, "check": page_check,
+ "result": page_result}.get(ss.page, page_gate)()
