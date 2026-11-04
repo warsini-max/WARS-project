@@ -1138,8 +1138,7 @@ CATALOG: dict = {
                      "Financial statements of banks, insurers and finance companies cannot be used in this system yet.",
                      "Gail 28 Okt desain"),
     "ui.proc.title": _e("Membaca laporan", "Reading the report", "Gail 28 Okt desain"),
-    "ui.proc.sub": _e("{name} · {pages} halaman. Biasanya selesai dalam 1–2 menit.",
-                      "{name} · {pages} pages. This usually takes 1–2 minutes.", "new (diukur 4 Nov: KETR 161 hal. + XBRL ±1 menit)"),
+    "ui.proc.sub": _e("{name} · {pages} halaman", "{name} · {pages} pages", "Gail 4 Nov 16.53 (perkiraan waktu dihapus)"),
     "ui.proc.fs": _e("Laporan utama ditemukan", "Primary statements found", "Gail 28 Okt desain"),
     "ui.proc.fs_detail": _e("Posisi keuangan hal. {a} · Laba rugi hal. {b} · Arus kas hal. {c} · tahun {t} dan {t1}",
                             "Financial position p. {a} · Profit or loss p. {b} · Cash flows p. {c} · years {t} and {t1}",
@@ -1157,10 +1156,13 @@ CATALOG: dict = {
                               "{ok} of {n} primary statement amounts printed as a two-year pair; {rev} require verification",
                               "new"),
     "ui.proc.checks_x": _e("{err} gagal · {rev} perlu diperiksa", "{err} failed · {rev} need review", "new"),
-    "issue.xbrl_path": _e("Angka laporan utama diambil dari XBRL dan direkonsiliasi dengan PDF; catatan teknis pembaca "
-                          "PDF untuk laporan utama tidak digunakan.",
-                          "Primary statement amounts are taken from XBRL and reconciled to the PDF; the PDF reader's "
-                          "technical notes on the primary statements are not used.", "new"),
+    "issue.xbrl_path": _e("Angka laporan posisi keuangan, laba rugi dan arus kas diambil dari berkas XBRL yang diunggah, "
+                          "lalu dicocokkan dengan PDF. Catatan dari pembacaan PDF atas ketiga laporan tersebut tidak "
+                          "ditampilkan karena angkanya tidak dipakai.",
+                          "The amounts in the statements of financial position, profit or loss and cash flows are taken "
+                          "from the uploaded XBRL file and matched to the PDF. Notes from the PDF reading of these "
+                          "statements are not shown because those amounts are not used.",
+                          "Claude 4 Nov atas pertanyaan Gail 16.53, menunggu Gail"),
     "ui.res.another": _e("Analisis laporan lain", "Analyse another report", "Gail 28 Okt desain"),
     "ui.res.meta": _e("Tahun buku {t} vs {t1} · {stype} · {unit} · {pages} halaman",
                       "Financial year {t} vs {t1} · {stype} · {unit} · {pages} pages", "Gail 28 Okt desain"),

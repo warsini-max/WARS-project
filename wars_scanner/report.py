@@ -38,6 +38,10 @@ PENDING_ANSWER, OK_ANSWER, BAD_ANSWER = "PENDING", "OK", "BAD"
 ANSWERS = (PENDING_ANSWER, OK_ANSWER, BAD_ANSWER)
 
 
+# methodology and limitations, in the app and the PDF report (numbered list, Gail 4 Nov 2026)
+METHOD_KEYS = ("rep.method.p1", "rep.method.p2", "rep.method.p3", "rep.method.p4", "beta.limits")
+
+
 def dec(v, n=3, lang="id"):
     """Decimal per language (R-04), e.g. −2,316 / −2.316."""
     return fmt_number(v, lang, n)

@@ -495,8 +495,9 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     # ------------------------------------------------------------------------------ Methodology
     story.append(PageBreak())
     _section(story, t("rep.s7", lang), S)
-    for k in ("rep.method.p1", "rep.method.p2", "rep.method.p3", "rep.method.p4", "beta.limits"):
-        story += [P(t(k, lang)), Spacer(1, 3 * mm)]
+    num = ParagraphStyle("methnum", parent=S["body"], leftIndent=6 * mm, bulletIndent=0)
+    for n_, k in enumerate(report.METHOD_KEYS, 1):     # numbered (Gail, 4 Nov 2026)
+        story += [Paragraph(_x(t(k, lang)), num, bulletText=f"{n_}."), Spacer(1, 3 * mm)]
     story += [P(t("rep.formula", lang, const=Num(report.M_CONSTANT, 2)), "small"), Spacer(1, 3 * mm),
               P(t("app.disclaimer", lang))]
 

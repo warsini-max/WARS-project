@@ -76,6 +76,12 @@ CSS = """
 header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],
 [data-testid="stSidebarCollapsedControl"]{display:none !important}
 .block-container{max-width:1040px;padding-top:0.6rem !important;padding-bottom:1.5rem !important}
+.block-container:has(.st-key-gatecard){border:1px solid rgba(27,30,35,.10);border-radius:18px;margin:18px auto 0;
+  max-width:min(1040px,calc(100% - 32px));padding:0 2rem 1.9rem !important}
+.block-container:has(.st-key-gatecard) > div > div:first-child{margin-top:-1.1rem}
+.st-key-gatecard .w-title{margin:22px 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.3;color:var(--ink)}
+.st-key-gatecard .w-title,.st-key-gatecard p{text-wrap:balance}
+.w-meth{margin:0;padding-left:1.4em} .w-meth li{margin:0 0 .6em;line-height:1.55}
 .w-top{display:flex;align-items:center;gap:12px;padding:6px 0}
 .w-top img{height:26px;width:auto;display:block}
 .w-chip{font-size:12px;font-weight:600;letter-spacing:.08em;color:#6E4700;background:#FBF1DC;border:1px solid #E8D3A6;padding:2px 8px;border-radius:999px}
@@ -165,7 +171,7 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],[data-
 [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] p::after{content:var(--w-drop);font-size:15px;font-weight:600}
 [data-testid="stFileUploaderDropzoneInstructions"] span{display:none}
 [data-testid="stFileUploaderDropzoneInstructions"]::after{content:var(--w-scan);font-size:13px;color:#5A6069}
-.st-key-gatecard{background:#fff;border:1px solid var(--line) !important;border-radius:16px;padding:34px 32px 28px !important;box-shadow:0 1px 2px rgba(27,30,35,.04),0 8px 24px rgba(27,30,35,.06);margin-top:56px}
+.st-key-gatecard{max-width:460px;margin-left:auto;margin-right:auto;background:#fff;border:1px solid var(--line) !important;border-radius:16px;padding:34px 32px 28px !important;box-shadow:0 1px 2px rgba(27,30,35,.04),0 8px 24px rgba(27,30,35,.06);margin-top:56px}
 .st-key-dlcard{background:#fff;border:1px solid var(--line) !important;border-radius:16px;padding:22px 26px !important;margin-top:24px}
 [data-testid="stExpander"] details{background:#fff;border:1px solid var(--line);border-radius:12px}
 /* review step (Gail, 4 Nov 2026) */
@@ -300,13 +306,14 @@ def make_xlsx(sha, lg, name, generated, variant, _r):
 
 # ------------------------------------------------------------------------------------------------ pages
 def page_gate():
+    # front page: a light frame around the page and a fixed-width card with balanced line breaks (Gail, 4 Nov 2026)
     header(False)
-    _, mid, _ = st.columns([1, 2, 1])
+    _, mid, _ = st.columns([1, 3, 1])
     with mid:
         with st.container(key="gatecard"):
             st.markdown(f'<div style="text-align:center"><img src="{WORDMARK}" alt="WARS" style="width:200px;height:auto">'
-                        f'<h1 style="margin:22px 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em;padding:0">'
-                        f'{E(T("app.title")).replace("Red-Flag", "Red\u2011Flag")}</h1><p style="margin:0 0 20px;color:#5A6069;font-size:14px">'
+                        f'<div class="w-title" role="heading" aria-level="1">'
+                        f'{E(T("app.title")).replace("Red-Flag", "Red\u2011Flag")}</div><p style="margin:0 0 20px;color:#5A6069;font-size:14px">'
                         f'{E(T("ui.tagline"))}</p></div>', unsafe_allow_html=True)
             if st.button("👤  " + T("ui.guest"), type="primary", use_container_width=True, key="guest"):
                 ss.page = "upload"
@@ -740,8 +747,8 @@ def page_result():
     # ------------------------------------------------------------------ methodology and reading details
     st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
     with st.expander(T("app.method.title")):
-        st.markdown(E(T("ui.method")))
-        st.markdown(E(T("beta.limits")))
+        st.markdown('<ol class="w-meth">' + "".join(f"<li>{E(T(k))}</li>" for k in report.METHOD_KEYS) + "</ol>",
+                    unsafe_allow_html=True)
     with st.expander(T("ui.proc.summary") if not r.unreadable else T("ui.read_details")):
         if not r.unreadable:
             st.markdown(_proc_list(r), unsafe_allow_html=True)
