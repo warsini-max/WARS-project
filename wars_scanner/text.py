@@ -231,9 +231,22 @@ def _render(key, params, lang, codes):
         return params["sep"].join(render(p, lang, codes) for p in params["parts"])
     e = CATALOG[key]
     text = _Fmt(lang, codes).format(e[lang], **params)
+    if lang == "en":
+        text = _en_singular(text)
     if codes and e.get("codes"):
         text += " [" + ", ".join(e["codes"]) + "]"
     return text
+
+
+# English plural after a count of one: "1 items require" -> "1 item requires" (Gail, 5 Nov 2026). Only a lone "1"
+# counts ("11 items", "0.1 items" and "2 of 1 items" are left alone, the last as "of 1 item").
+_ONE = re.compile(r"(?<![\d.,])\b1 (item|figure|assumption|page|line|year|issue|check)s\b")
+_ONE_VERB = re.compile(r"(?<![\d.,])\b(1 (?:item|figure|assumption|issue|check)) (require|need|remain)\b")
+
+
+def _en_singular(text):
+    text = _ONE.sub(r"1 \1", text)
+    return _ONE_VERB.sub(r"\1 \2s", text)
 
 
 def t(key, lang=DEFAULT_LANG, codes=False, **params):

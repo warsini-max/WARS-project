@@ -202,3 +202,19 @@ def test_disclaimer_is_shown_in_both_languages_without_an_upload():
         shown = " ".join(x.value for x in at.markdown)
         assert CATALOG["app.disclaimer"][lang] in shown, lang
         assert not at.exception
+
+
+def test_english_singular_after_one():
+    # Gail, 5 Nov 2026: "1 items require verification" on the review step
+    from wars_scanner.text import t
+    assert t("chk.title", "en", n=1) == "Score withheld: 1 item requires verification"
+    assert t("chk.res.n", "en", n=1) == "1 item"
+
+
+def test_english_plural_kept_for_other_counts():
+    # negative: 0, 2 and 11 stay plural; Indonesian is untouched
+    from wars_scanner.text import t, _en_singular
+    assert t("chk.title", "en", n=3) == "Score withheld: 3 items require verification"
+    assert _en_singular("11 items require") == "11 items require"
+    assert _en_singular("0.1 items") == "0.1 items"
+    assert t("chk.title", "id", n=1) == "Skor ditahan: 1 pos memerlukan verifikasi"
