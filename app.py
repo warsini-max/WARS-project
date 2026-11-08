@@ -441,13 +441,17 @@ def _answer_state(checks):
         stored = (ss.get("answers") or {}).get(it.field, {})
         choice = ss.get(f"ck_{it.field}", stored.get("choice"))
         out[it.field] = {"choice": choice, "t": ss.get(f"ck_{it.field}_t", stored.get("t", "")),
-                         "t1": ss.get(f"ck_{it.field}_t1", stored.get("t1", ""))}
+                         "t1": ss.get(f"ck_{it.field}_t1", stored.get("t1", "")),
+                         "page": ss.get(f"ck_{it.field}_page", stored.get("page", "")),
+                         "note": ss.get(f"ck_{it.field}_note", stored.get("note", ""))}
     return out
 
 
 def _complete(a):
-    return a.get("choice") == "ok" or (a.get("choice") == "edit" and str(a.get("t", "")).strip()
-                                       and str(a.get("t1", "")).strip())
+    filled = lambda k: bool(str(a.get(k, "")).strip())                        # noqa: E731
+    c = a.get("choice")
+    return c == "ok" or (c in ("edit", "enter") and filled("t") and filled("t1") and (c == "edit" or filled("page"))) \
+        or (c == "nil" and filled("note"))
 
 
 def page_check():
@@ -480,7 +484,8 @@ def page_check():
     with left:
         for i, it in enumerate(checks, 1):
             a = ans[it.field]
-            state = "edit" if a.get("choice") == "edit" and _complete(a) else "ok" if a.get("choice") == "ok" else "pend"
+            state = "edit" if a.get("choice") in ("edit", "enter", "nil") and _complete(a) else \
+                "ok" if a.get("choice") == "ok" else "pend"
             if not _complete(a):
                 state = "pend"
             badge = T({"pend": "chk.badge.pending", "ok": "chk.badge.ok", "edit": "chk.badge.edit"}[state])
@@ -496,7 +501,7 @@ def page_check():
                 if png:
                     st.markdown(f'<div class="ck-cap">{E(T("chk.extract", p=pg))}</div>', unsafe_allow_html=True)
                     st.image(png, use_container_width=True)
-                else:
+                elif it.pages or it.mode != "missing":   # a line not found at all has no page to point to
                     st.markdown(f'<div class="ck-cap">{E(T("chk.no_extract", p=Raw(", ".join(map(str, it.pages)) or "—")))}</div>',
                                 unsafe_allow_html=True)
                 if it.second:
@@ -511,16 +516,32 @@ def page_check():
                 stored = (ss.get("answers") or {}).get(it.field, {})
                 if f"ck_{it.field}" not in ss and stored.get("choice"):
                     ss[f"ck_{it.field}"] = stored["choice"]
-                st.segmented_control(T("chk.ok"), ["ok", "edit"], key=f"ck_{it.field}", label_visibility="collapsed",
-                                     format_func=lambda x: ("✓  " + T("chk.ok")) if x == "ok" else T("chk.edit"))
-                if ss.get(f"ck_{it.field}") == "edit":
+                if it.mode == "missing":
+                    opts = ["enter"] + (["nil"] if it.field in check.NIL_FIELDS else [])
+                    st.segmented_control(T("chk.miss.enter"), opts, key=f"ck_{it.field}", label_visibility="collapsed",
+                                         format_func=lambda x: T("chk.miss.enter") if x == "enter" else T("chk.miss.nil"))
+                else:
+                    st.segmented_control(T("chk.ok"), ["ok", "edit"], key=f"ck_{it.field}", label_visibility="collapsed",
+                                         format_func=lambda x: ("✓  " + T("chk.ok")) if x == "ok" else T("chk.edit"))
+                if ss.get(f"ck_{it.field}") == "nil":
+                    k = f"ck_{it.field}_note"
+                    if k not in ss and stored.get("note"):
+                        ss[k] = stored["note"]
+                    st.text_input(T("chk.miss.note"), key=k)
+                if ss.get(f"ck_{it.field}") == "enter":
+                    k = f"ck_{it.field}_page"
+                    if k not in ss and stored.get("page"):
+                        ss[k] = stored["page"]
+                    st.text_input(T("chk.miss.page"), key=k, max_chars=4)
+                if ss.get(f"ck_{it.field}") in ("edit", "enter"):
                     c1, c2 = st.columns(2)
                     for col, c, y in ((c1, "t", yt), (c2, "t1", yt1)):
                         with col:
                             k = f"ck_{it.field}_{c}"
                             if k not in ss and stored.get(c):
                                 ss[k] = stored[c]
-                            v = st.text_input(T("chk.input", y=y), key=k, placeholder=_fmt_amt(it.values[c]))
+                            v = st.text_input(T("chk.miss.input" if it.mode == "missing" else "chk.input", y=y), key=k,
+                                              placeholder=_fmt_amt(it.values[c]))
                             try:
                                 amt = check.parse_amount(v)
                                 msg = ("= " + _fmt_amt(amt) + " · " + unit) if amt is not None else T("chk.input_help", unit=Raw(unit))

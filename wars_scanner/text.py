@@ -1524,6 +1524,23 @@ CATALOG: dict = {
                             "sehingga belum dapat direkonsiliasi.",
                             "The XBRL amount does not appear as a two-year pair on a single line of the PDF statements and "
                             "could not be reconciled.", "Gail 4 Nov 09.07"),
+    # A line WARS did not find (Gail 8 Nov 16.21: run it on the test branch first); wording awaits her review
+    "chk.r.missing": _e("WARS tidak menemukan nilai ini dalam laporan, sehingga skor belum dapat dihitung. Masukkan "
+                        "nilai beserta halaman sumbernya, atau nyatakan nihil apabila pos ini memang tidak ada.",
+                        "WARS did not find this amount in the report, so the score cannot yet be calculated. Enter "
+                        "the amount with its source page, or state nil where the line does not exist.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.miss.enter": _e("Masukkan nilai", "Enter amount", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.miss.nil": _e("Tidak ada (nihil)", "None (nil)", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.miss.input": _e("Nilai {y}", "Amount {y}", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.miss.page": _e("Halaman sumber", "Source page", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.miss.note": _e("Catatan yang diperiksa (mis. Catatan 15 dan 18)",
+                        "Notes examined (e.g. Notes 15 and 18)", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.prov.entered": _e("Dimasukkan oleh pengguna dari halaman {p}.",
+                           "Entered by the user from page {p}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.prov.nil": _e("Dinyatakan nihil oleh pengguna; catatan yang diperiksa: {note}.",
+                       "Stated as nil by the user; notes examined: {note}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.err.page": _e("Isi halaman sumber untuk {item}.", "Enter the source page for {item}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    "chk.err.note": _e("Isi catatan yang diperiksa untuk {item}.", "Enter the notes examined for {item}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
     "chk.r.risk": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris atau "
                      "catatan. Pastikan seluruh komponen, termasuk liabilitas sewa dan aset hak-guna, telah tercakup "
                      "dalam Pembacaan WARS.",

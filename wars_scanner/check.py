@@ -62,6 +62,7 @@ class CheckItem:
     numbers: list = field(default_factory=list)   # amounts to highlight on the page extract
     labels: list = field(default_factory=list)    # labels to highlight when the amount is not printed
     second: list = field(default_factory=list)    # labels for a second extract (e.g. right-of-use depreciation)
+    mode: str = "review"                          # "review": Agree / Amend; "missing": Enter amount / Nil
 
 
 # ----------------------------------------------------------------------------------- XBRL + PDF merge
@@ -161,6 +162,10 @@ def _xbrl_note(it) -> str:
 RISK_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_payable",
                "ppe_depreciation_disclosed", "amortization_intangibles", "depreciation_amortization_non_ppe")
 ZERO_STATUSES = ("ASSUMED", "UNDISCLOSED")
+# A score line WARS did not find at all can be completed by the user (Gail, 8 Nov 2026 16.21): the amount with
+# its source page, or "nil" with the notes checked. Nil only where nil is a real possibility for the line.
+NIL_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_payable", "amortization_intangibles",
+              "depreciation_amortization_non_ppe")
 
 
 def _risk_status(r, f):
@@ -181,14 +186,20 @@ def items(r) -> list:
     findings = xb.get("face_findings", [])
     face_text = " ".join(f.get("line", "") for f in findings)
     out = []
+    missing = {f for f, c, s, _ in (getattr(r, "missing", None) or []) if s == "NOT FOUND"}
     for f in CHECK_FIELDS:
+        vals = {c: r.inputs.get(f"{f}_{c}") for c in ("t", "t1")}
+        if f in missing and any(v is None for v in vals.values()):
+            pages = sorted({pg for v in r.extraction.values if v.field == f for pg in (getattr(v, "pages", None) or [])})
+            out.append(CheckItem(f, vals, Msg("chk.r.missing"), pages, [], [], mode="missing"))
+            continue
         cols = [c for c in ("t", "t1") if (f, c) in rev]
         risk = _risk_status(r, f) if f in RISK_FIELDS else {}
         if not cols and not risk:
             continue
         vals = {c: r.inputs.get(f"{f}_{c}") for c in ("t", "t1")}
         if any(v is None for v in vals.values()):
-            continue                                   # not found: the score is withheld for another reason
+            continue                                   # handled below as a missing line
         if cols:
             note = " ".join(str(rev[(f, c)]) for c in cols)
             reason, labels = _reason(f, note, findings, r)
@@ -282,8 +293,13 @@ def apply(r, checks, answers):
     by = {(v.field, v.column): v for v in r2.extraction.values}
     p = r2.inputs
     checked = []
+    filled = set()
     for it in checks:
         a = answers.get(it.field) or {}
+        if it.mode == "missing":
+            checked += _apply_missing(r2, by, p, it, a)
+            filled.add(it.field)
+            continue
         if a.get("choice") not in ("ok", "edit"):
             raise AnswerError(Msg("chk.err.pending", item=Msg(f"label.{it.field}")))
         for c in ("t", "t1"):
@@ -310,8 +326,9 @@ def apply(r, checks, answers):
     done = {(f, c) for f, c, *_ in checked}
     r2.review = [x for x in r2.review if (x[0], x[1]) not in done] + \
         [(f, c, s, Msg("chk.prov.note", old=Amt(o)) if s == AMENDED else "") for f, c, s, o, _ in checked]
+    r2.missing = [x for x in (getattr(r2, "missing", None) or []) if x[0] not in filled]
     r2.calc = engine.calculate(p)
-    if getattr(r, "calc", {}).get("m_score_B") == "" and r.missing:
+    if getattr(r, "calc", {}).get("m_score_B") == "" and r2.missing:
         r2.calc["m_score_B"] = ""
     try:
         r2.flags = validation.check(p, r2.extraction)
@@ -323,6 +340,42 @@ def apply(r, checks, answers):
     r2.flags = _drop_pdf_reading_checks(r2.flags, replaced)
     r2.user_checked = checked
     return r2
+
+
+def _apply_missing(r2, by, p, it, a):
+    """A line WARS did not find: the user's amount (with its source page) or nil (with the notes checked)."""
+    item = Msg(f"label.{it.field}")
+    choice = a.get("choice")
+    if choice not in ("enter", "nil") or (choice == "nil" and it.field not in NIL_FIELDS):
+        raise AnswerError(Msg("chk.err.pending", item=item))
+    if choice == "enter":
+        page = str(a.get("page") or "").strip()
+        if not page.isdigit() or int(page) < 1:
+            raise AnswerError(Msg("chk.err.page", item=item))
+        note = Msg("chk.prov.entered", p=Raw(page))
+    else:
+        checked_notes = str(a.get("note") or "").strip()
+        if not checked_notes:
+            raise AnswerError(Msg("chk.err.note", item=item))
+        note = Msg("chk.prov.nil", note=Raw(checked_notes))
+    out = []
+    for c in ("t", "t1"):
+        old = it.values[c]
+        if choice == "nil":
+            new = 0
+        else:
+            new = parse_amount(a.get(c))
+            if new is None:
+                raise AnswerError(Msg("chk.err.missing", item=item, y=Raw(_year(r2, c))))
+            if it.field not in SIGNED and new < 0:
+                raise AnswerError(Msg("chk.err.negative", item=item))
+        status = CONFIRMED if (old is not None and new == old) else AMENDED
+        p[f"{it.field}_{c}"] = new
+        v = by.get((it.field, c))
+        if v is not None:
+            v.value, v.status, v.note = new, status, note
+        out.append((it.field, c, status, old, new))
+    return out
 
 
 def _year(r, c):

@@ -215,3 +215,50 @@ def test_pdf_reading_check_kept_for_unchecked_field(monkeypatch):
     monkeypatch.setattr(V, "check", lambda p, ex: [fl])
     r2 = check.apply(r, check.items(r), {"revenue": {"choice": "ok"}})
     assert any(f.code == "a_ppe_note" for f in r2.flags)
+
+
+# ---------------------------------------------------------------- lines WARS did not find (Gail, 8 Nov 2026 16.21)
+def _miss_result(field, both=True):
+    r = _b_result({"revenue": "FOUND", field: "NOT FOUND"})
+    r.missing = [(field, "both" if both else "t", "NOT FOUND", "")]
+    return r
+
+
+def test_not_found_score_line_is_offered_for_completion():
+    r = _miss_result("current_maturities_long_term_debt")
+    its = check.items(r)
+    assert [(i.field, i.mode, i.reason.key) for i in its] == [
+        ("current_maturities_long_term_debt", "missing", "chk.r.missing")]
+    # negative: a blank amount with no NOT FOUND record (withheld for another reason) is not offered
+    r.missing = []
+    assert check.items(r) == []
+
+
+def test_enter_amount_needs_the_source_page():
+    r = _miss_result("current_maturities_long_term_debt")
+    its = check.items(r)
+    with pytest.raises(check.AnswerError):
+        check.apply(r, its, {"current_maturities_long_term_debt": {"choice": "enter", "t": "8109", "t1": "5609"}})
+    r2 = check.apply(r, its, {"current_maturities_long_term_debt":
+                              {"choice": "enter", "t": "8109", "t1": "5609", "page": "45"}})
+    assert (r2.inputs["current_maturities_long_term_debt_t"], r2.inputs["current_maturities_long_term_debt_t1"]) == \
+        (8109, 5609)
+    assert r2.missing == [] and {s for _, _, s, _, _ in r2.user_checked} == {check.AMENDED}
+    v = [x for x in r2.extraction.values if x.field == "current_maturities_long_term_debt"][0]
+    assert v.note.key == "chk.prov.entered"
+
+
+def test_nil_needs_the_notes_examined_and_only_where_nil_is_possible():
+    r = _miss_result("long_term_debt")
+    its = check.items(r)
+    with pytest.raises(check.AnswerError):
+        check.apply(r, its, {"long_term_debt": {"choice": "nil", "note": " "}})
+    r2 = check.apply(r, its, {"long_term_debt": {"choice": "nil", "note": "Catatan 15 dan 18"}})
+    assert (r2.inputs["long_term_debt_t"], r2.inputs["long_term_debt_t1"]) == (0, 0)
+    # negative: nil is refused for a line that cannot be nil (revenue)
+    r = _miss_result("total_assets")
+    with pytest.raises(check.AnswerError):
+        check.apply(r, check.items(r), {"total_assets": {"choice": "nil", "note": "Catatan 1"}})
+    # negative: Agree is not an answer for a line that was not found
+    with pytest.raises(check.AnswerError):
+        check.apply(r, check.items(r), {"total_assets": {"choice": "ok"}})
