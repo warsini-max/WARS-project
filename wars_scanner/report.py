@@ -205,7 +205,7 @@ def _chg(a, b):
 
 
 # Part C of a finding chosen from the company's own figures instead of one fixed list for every company
-# (Gail, 8 Nov 2026: "gue setuju lo update ini"). Wording and the two limits below await Gail's review.
+# (Gail, 8 Nov 2026: "gue setuju lo update ini"); wording and the two limits approved by Gail 8 Nov 11.38.
 # Only figures already read for the score are used: no new line items, so no new reading risk (rule 7).
 SMALL_BASE_SHARE = 0.01      # prior-year receivables (of sales) or soft assets (of total assets) below this share
 SMALL_BASE_INDEX = 2.0       # ... and the index at least this high
