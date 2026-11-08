@@ -1404,11 +1404,13 @@ CATALOG: dict = {
     "chk.sub": _e("Pos lainnya telah selesai pembacaan automated dan rekonsiliasi silang. Pos berikut belum dapat "
                   "direkonsiliasi dengan sumber kedua dalam laporan. Tinjau setiap pos terhadap potongan halaman sumber, "
                   "lalu pilih Sesuai apabila pembacaan WARS telah tepat, atau Ganti nilai untuk memasukkan nilai yang benar. "
+                  "Untuk pos yang tidak ditemukan, lengkapi nilai beserta rujukan halaman sumber atau nyatakan nihil. "
                   "Skor dihitung setelah seluruh pos diverifikasi.",
                   "All other items have completed automated reading and cross-reconciliation. The items below could not be "
                   "reconciled to a second source within the report. Review each item against the source page extract, then "
-                  "select Agree if the WARS reading is correct, or Amend to enter the correct amount. The score is "
-                  "calculated once all items have been verified.", "Gail 4 Nov 09.07"),
+                  "select Agree if the WARS reading is correct, or Amend to enter the correct amount. For lines not "
+                  "found, complete the amount with its source page reference or state nil. The score is "
+                  "calculated once all items have been verified.", "Gail 4 Nov 09.07; tambahan Gail 8 Nov 16.32"),
     "chk.item_of": _e("POS {i} DARI {n}", "ITEM {i} OF {n}", "Gail 4 Nov 09.07"),
     "chk.reading": _e("Pembacaan WARS {y}", "WARS reading {y}", "Gail 4 Nov 09.07"),
     "chk.ok": _e("Sesuai", "Agree", "Gail 4 Nov 09.07"),
@@ -1524,23 +1526,26 @@ CATALOG: dict = {
                             "sehingga belum dapat direkonsiliasi.",
                             "The XBRL amount does not appear as a two-year pair on a single line of the PDF statements and "
                             "could not be reconciled.", "Gail 4 Nov 09.07"),
-    # A line WARS did not find (Gail 8 Nov 16.21: run it on the test branch first); wording awaits her review
-    "chk.r.missing": _e("WARS tidak menemukan nilai ini dalam laporan, sehingga skor belum dapat dihitung. Masukkan "
-                        "nilai beserta halaman sumbernya, atau nyatakan nihil apabila pos ini memang tidak ada.",
-                        "WARS did not find this amount in the report, so the score cannot yet be calculated. Enter "
-                        "the amount with its source page, or state nil where the line does not exist.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.miss.enter": _e("Masukkan nilai", "Enter amount", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.miss.nil": _e("Tidak ada (nihil)", "None (nil)", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.miss.input": _e("Nilai {y}", "Amount {y}", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.miss.page": _e("Halaman sumber", "Source page", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.miss.note": _e("Catatan yang diperiksa (mis. Catatan 15 dan 18)",
-                        "Notes examined (e.g. Notes 15 and 18)", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.prov.entered": _e("Dimasukkan oleh pengguna dari halaman {p}.",
-                           "Entered by the user from page {p}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.prov.nil": _e("Dinyatakan nihil oleh pengguna; catatan yang diperiksa: {note}.",
-                       "Stated as nil by the user; notes examined: {note}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.err.page": _e("Isi halaman sumber untuk {item}.", "Enter the source page for {item}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
-    "chk.err.note": _e("Isi catatan yang diperiksa untuk {item}.", "Enter the notes examined for {item}.", "Claude 8 Nov pos tidak ditemukan, menunggu Gail"),
+    # A line WARS did not find (Gail 8 Nov 16.21: test branch first; wording chosen by Gail 16.32: 1A, 2A, 3B, 4A)
+    "chk.r.missing": _e("Nilai pos ini tidak teridentifikasi dalam laporan sehingga skor belum dapat dihitung. "
+                        "Masukkan nilai beserta rujukan halaman sumber, atau nyatakan nihil apabila pos ini tidak "
+                        "terdapat dalam laporan.",
+                        "The amount for this line was not identified in the report, so the score cannot yet be "
+                        "calculated. Enter the amount with its source page reference, or state nil where the line is "
+                        "not present in the report.", "Gail 8 Nov 16.32"),
+    "chk.miss.enter": _e("Masukkan nilai", "Enter amount", "Gail 8 Nov 16.32"),
+    "chk.miss.nil": _e("Nihil", "Nil", "Gail 8 Nov 16.32"),
+    "chk.miss.input": _e("Nilai tercatat {y}", "Recorded amount {y}", "Gail 8 Nov 16.32"),
+    "chk.miss.page": _e("Halaman sumber", "Source page", "Gail 8 Nov 16.32"),
+    "chk.miss.note": _e("Dasar pernyataan nihil (catatan yang diperiksa)", "Basis for nil (notes examined)", "Gail 8 Nov 16.32"),
+    "chk.prov.entered": _e("Dilengkapi oleh pengguna; rujukan halaman {p}.",
+                           "Completed by the user; page reference {p}.", "Gail 8 Nov 16.32"),
+    "chk.prov.nil": _e("Dinyatakan nihil oleh pengguna berdasarkan telaah atas: {note}.",
+                       "Stated as nil by the user based on a review of: {note}.", "Gail 8 Nov 16.32"),
+    "chk.err.page": _e("Isi halaman sumber untuk {item}.", "Enter the source page for {item}.",
+                       "Claude 8 Nov, mengikuti 3B; menunggu Gail"),
+    "chk.err.note": _e("Isi dasar pernyataan nihil untuk {item}.", "Enter the basis for nil for {item}.",
+                       "Claude 8 Nov, mengikuti 3B; menunggu Gail"),
     "chk.r.risk": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris atau "
                      "catatan. Pastikan seluruh komponen, termasuk liabilitas sewa dan aset hak-guna, telah tercakup "
                      "dalam Pembacaan WARS.",
