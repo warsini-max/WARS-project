@@ -317,7 +317,7 @@ def _variants(v):
     return [dots, f"{n:,}"]
 
 
-def extract_png(pdf_bytes: bytes, item: CheckItem, scale: float = 2.0):
+def extract_png(pdf_bytes: bytes, item: CheckItem, scale: float = 4.0):
     """PNG of the part of a page that holds the item's amounts (or labels), the hits highlighted.
     Returns (png bytes, page number) or (None, None)."""
     import pypdfium2 as pdfium
@@ -391,7 +391,7 @@ def _find(tp, text):
     return out
 
 
-def second_extract_png(pdf_bytes: bytes, item: CheckItem, skip_page=None, scale: float = 2.0):
+def second_extract_png(pdf_bytes: bytes, item: CheckItem, skip_page=None, scale: float = 4.0):
     """A second extract for the item: the first line, outside the accounting-policy pages, that carries one of
     item.second followed by two amounts (e.g. right-of-use depreciation in the expense note)."""
     if not item.second:
