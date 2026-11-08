@@ -5,6 +5,7 @@ import pytest
 
 from wars_scanner import check
 from wars_scanner.pdf_reader import Value
+from wars_scanner.text import Msg
 
 
 def test_parse_amount_accepts_both_separators_and_brackets():
@@ -262,3 +263,50 @@ def test_nil_needs_the_notes_examined_and_only_where_nil_is_possible():
     # negative: Agree is not an answer for a line that was not found
     with pytest.raises(check.AnswerError):
         check.apply(r, check.items(r), {"total_assets": {"choice": "ok"}})
+
+
+# ---------------------------------------------------------------- page extract ignores text outside the page
+def _pdf_with_offpage_text():
+    import io as _io
+    from reportlab.pdfgen import canvas
+    buf = _io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=(595, 842))
+    c.drawString(300, 700, "Jumlah 1,429,971 1,110,881")
+    c.drawString(-370, 160, "1,110,881")            # hidden text left of the page
+    c.drawString(100, 160, "Unrelated insurance sentence")
+    c.save()
+    return buf.getvalue()
+
+
+def test_extract_ignores_hits_outside_the_page():
+    from PIL import Image
+    import io as _io
+    data = _pdf_with_offpage_text()
+    it = check.CheckItem("ppe_depreciation_disclosed", {"t": 1429971, "t1": 1110881}, Msg("chk.r.risk"), [1],
+                         [1429971, 1110881], [])
+    png, pg = check.extract_png(data, it, scale=1.0)
+    assert pg == 1
+    h = Image.open(_io.BytesIO(png)).size[1]
+    assert h < 300          # the crop stays around the amounts at y=700, not stretched down to y=160
+
+
+def test_extract_still_finds_amounts_on_the_page():
+    # negative: amounts printed on the page are still found
+    data = _pdf_with_offpage_text()
+    it = check.CheckItem("ppe_depreciation_disclosed", {"t": 1429971, "t1": 1110881}, Msg("chk.r.risk"), [1],
+                         [1429971], [])
+    png, pg = check.extract_png(data, it, scale=1.0)
+    assert png is not None and pg == 1
+
+
+# ---------------------------------------------------------------- stage 6 finding F: inconsistent columns withhold
+def test_layout_flag_empties_the_review_screen_and_survives_apply():
+    from wars_scanner.validation import Flag
+    r = _b_result({"long_term_debt": "FOUND"})
+    r.flags = [Flag(check.LAYOUT_FLAG, "ERROR", "app", Msg("chk.layout_cols", pages="12"))]
+    assert check.items(r) == []
+    r2 = check.apply(r, [], {})
+    assert any(f.code == check.LAYOUT_FLAG for f in r2.flags)
+    # negative: without the flag the review screen is unchanged
+    r.flags = []
+    assert [i.field for i in check.items(r)] == ["long_term_debt"]

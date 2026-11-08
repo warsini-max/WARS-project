@@ -338,3 +338,49 @@ def test_current_maturity_heading_sharing_a_line_with_the_first_item():
                     "Pembiayaan 127 125 Financing")
     r = run(instance(base={"OtherPayablesThirdParties": (127, 125)}), [bs, PL, NOTE])
     assert [x for x in r["face_findings"] if x.get("kind") == "catch-all"]
+
+
+# ---------------------------------------------------------------- stage 6 finding A (SOHO 2022): wrapped heading
+BS_WRAP = BS.replace("Utang pajak 15 12", "LIABILITAS JANGKA PENDEK\nUtang pajak 15 12").replace(
+    "Pinjaman bank jangka panjang 30 20 Current portion of bank loans",
+    "Bagian liabilitas jangka panjang\nyang jatuh tempo dalam satu tahun: Current portion\n"
+    "Pinjaman bank jangka panjang 30 20 Current portion of bank loans\nLiabilitas sewa 127 125 Lease liabilities")
+
+
+def test_wrapped_current_maturities_heading_is_not_the_non_current_heading():
+    r = run(instance(base={"OtherCurrentNonFinancialLiabilities": (127, 125)}), [BS_WRAP, PL, NOTE])
+    f = [x for x in r["face_findings"] if x["family"] == "debt"]
+    assert f and all(x["section"] == "c" for x in f)
+    assert r["fields"]["t"]["current_maturities_long_term_debt"].status == "REVIEW"
+    assert r["fields"]["t"]["long_term_debt"].status == "FOUND"
+
+
+def test_real_non_current_heading_still_opens_the_non_current_section():
+    # negative: 'LIABILITAS JANGKA PANJANG' as a heading, and a total line, keep their meaning
+    bs = BS.replace("Pinjaman bank jangka panjang 150 160", "LIABILITAS JANGKA PANJANG\nLiabilitas sewa 109 111 Lease liabilities\n"
+                    "Pinjaman bank jangka panjang 150 160")
+    r = run(instance(base={"OtherNonCurrentFinancialLiabilities": (109, 111)}), [bs, PL, NOTE])
+    f = [x for x in r["face_findings"] if x["family"] == "debt"]
+    assert f and f[0]["section"] == "nc"
+    assert not X.CM_WRAP.match("Jumlah bagian liabilitas jangka panjang")
+    assert X.CM_WRAP.match("Bagian liabilitas jangka panjang")
+
+
+# ---------------------------------------------------------------- stage 6 finding F (IMPC, PTPW): year columns swapped
+def test_year_columns_swapped_on_some_face_lines_are_detected():
+    bs = BS.replace("JUMLAH ASET 1.000 900", "JUMLAH ASET 900 1.000").replace(
+        "Jumlah liabilitas jangka pendek 300 250", "Jumlah liabilitas jangka pendek 250 300")
+    o = run(instance(), [bs, PL, NOTE])["column_order"]
+    assert o["inconsistent"] and {n for _, n in o["reversed"]} >= {"total_assets"}
+
+
+def test_consistent_year_columns_are_not_flagged():
+    # negative: every face line in the same order
+    assert not run(instance(), [BS, PL, NOTE])["column_order"]["inconsistent"]
+
+
+def test_movement_tables_on_note_pages_do_not_count():
+    # negative: a note table printing the opening balance (t-1) before the closing one is not a swapped layout
+    note = NOTE + "\nNilai buku 480 500 Net book value"
+    o = run(instance(), [BS, PL, note])["column_order"]
+    assert not o["inconsistent"]

@@ -116,6 +116,12 @@ def merge_xbrl(pr, xres):
     # (reconciled to the PDF as a printed pair) replaces that reading
     found = {(it.field, it.column) for it in xres.items if it.status == "FOUND"}
     r.flags = _drop_pdf_reading_checks(r.flags, found)
+    order = (xres.xbrl or {}).get("column_order") or {}
+    if order.get("inconsistent"):
+        # XBRL stage 6, finding F; target B (Gail, 8 Nov 2026): an unknown layout withholds the score
+        pages = sorted({p for p, _ in order.get("reversed", [])})
+        r.flags.append(validation.Flag(LAYOUT_FLAG, "ERROR", "app",
+                                       Msg("chk.layout_cols", pages=Raw(", ".join(map(str, pages))))))
     ex.issues = [Msg("issue.xbrl_path")]            # the PDF reader's notes on the face statements no longer apply
     r.xbrl = {"items": xres.items, "found": found,
               "notes": {(it.field, it.column): _xbrl_note(it) for it in xres.items}, "face_findings": (xres.xbrl or {}).get("face_findings", []),
@@ -159,6 +165,7 @@ def _xbrl_note(it) -> str:
 
 # v1.0 target B (Gail, 8 Nov 2026 12.02): the line items that were read wrongly in XBRL stages 4-6 are always
 # verified by the user, whatever their status (FOUND, or a zero counted because nothing was found).
+LAYOUT_FLAG = "x_column_order"     # year columns in inconsistent order on the PDF text layer (stage 6, finding F)
 RISK_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_payable",
                "ppe_depreciation_disclosed", "amortization_intangibles", "depreciation_amortization_non_ppe")
 ZERO_STATUSES = ("ASSUMED", "UNDISCLOSED")
@@ -177,8 +184,8 @@ def _risk_status(r, f):
 def items(r) -> list:
     """Score items to verify, one per field (both years), in the order of CHECK_FIELDS: every REVIEW reading,
     and the risk fields always (target B)."""
-    if r.unreadable:
-        return []
+    if r.unreadable or any(f.code == LAYOUT_FLAG for f in (getattr(r, "flags", None) or [])):
+        return []                      # nothing the user can verify against a text layer in the wrong order
     by = {(v.field, v.column): v for v in r.extraction.values}
     xb = getattr(r, "xbrl", None) or {}
     tech = xb.get("notes") or {}           # XBRL path: the technical note decides the reason, the user reads catalogue text
@@ -337,7 +344,7 @@ def apply(r, checks, answers):
     # the PPE-note / SGA-total checks test the PDF reader's own reading; an amount the user has verified replaces
     # that reading just as an XBRL FOUND amount does (XBRL stage 6, finding E: HITS stayed withheld after checking)
     replaced = set((getattr(r2, "xbrl", None) or {}).get("found", set())) | done
-    r2.flags = _drop_pdf_reading_checks(r2.flags, replaced)
+    r2.flags = _drop_pdf_reading_checks(r2.flags, replaced) + [f for f in (r.flags or []) if f.code == LAYOUT_FLAG]
     r2.user_checked = checked
     return r2
 
@@ -405,10 +412,14 @@ def extract_png(pdf_bytes: bytes, item: CheckItem, scale: float = 4.0):
 
     def hits_on(i, with_labels):
         tp = doc[i].get_textpage()
-        hits = [hh for v in item.numbers for s in _variants(v or 0) for hh in _find(tp, s)]
+        pw, ph = doc[i].get_size()
+        # text outside the visible page (hidden or clipped objects) is never evidence: it once matched an amount
+        # and stretched the extract down to an unrelated sentence (PTBA 2022 p. 90, Gail 8 Nov)
+        on = lambda b: b[2] > 0 and b[0] < pw and b[3] > 0 and b[1] < ph                  # noqa: E731
+        hits = [hh for v in item.numbers for s in _variants(v or 0) for hh in _find(tp, s) if on(hh)]
         n_num = len(hits)
         if with_labels:
-            hits += [hh + ("label",) for lab in item.labels for hh in _find(tp, lab)]
+            hits += [hh + ("label",) for lab in item.labels for hh in _find(tp, lab) if on(hh)]
         return n_num, hits
 
     best = None

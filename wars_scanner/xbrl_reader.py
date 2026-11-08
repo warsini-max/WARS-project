@@ -67,6 +67,9 @@ FAMILY_CONCEPTS = {
 CATCH_ALL = re.compile(r"^Other.*(Payables?|Liabilities|Borrowings?)(ThirdParties|RelatedParties)?$")
 CM_HEAD = re.compile(r"(?i)jatuh tempo dalam (waktu )?(satu|1) tahun|current maturit|bagian lancar|current portion|"
                      r"due within one year")
+# the first line of a current-maturities heading wrapped over two lines: 'Bagian liabilitas jangka panjang' /
+# 'Bagian utang jangka panjang' (the rest, 'yang jatuh tempo dalam satu tahun', follows on the next line)
+CM_WRAP = re.compile(r"(?i)^\s*bagian (liabilitas|utang|pinjaman)\b[^\d]{0,30}\bjangka panjang\b(?![^\d]*\b(jumlah|total)\b)")
 # liabilities that are never interest-bearing debt, whatever their tag (employee benefits, tax, provisions ...)
 NOT_DEBT_LINE = re.compile(r"(?i)imbalan|employee|pajak|tax|provisi|provision|pendapatan diterima|unearned|"
                            r"liabilitas kontrak|contract liabilit|uang muka|advances?|jaminan|deposit|"
@@ -331,7 +334,11 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
     for p, ln, n in lines:
         if p not in pages["bs"] and p not in pages["pl"]:
             continue
+        # a wrapped current-maturities heading ('Bagian liabilitas jangka panjang' / 'yang jatuh tempo dalam satu
+        # tahun' on the next line) is not the non-current heading (XBRL stage 6, finding A: SOHO 2022)
+        wrapped_cm = bool(CM_WRAP.match(ln))
         if re.search(r"(?i)liabilitas jangka panjang|non-?current liabilit|liabilitas tidak lancar", ln) and not \
+                wrapped_cm and not \
                 re.search(r"(?i)jatuh tempo|current maturit|bagian lancar|current portion|^\s*(jumlah|total)", ln):
             section, in_cm = "nc", False
         elif re.search(r"(?i)liabilitas jangka pendek|current liabilit|liabilitas lancar", ln) and not \
@@ -339,7 +346,7 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
             section = "c"
         if p in pages["bs"] and re.search(r"(?i)\bliabilitas\b|\bliabilities\b", ln):
             liab_seen = True       # current maturities of assets (CLPI 'Bagian lancar atas: investasi') are not debt
-        if section != "nc" and liab_seen and p in pages["bs"] and CM_HEAD.search(ln):
+        if section != "nc" and liab_seen and p in pages["bs"] and (CM_HEAD.search(ln) or wrapped_cm):
             in_cm = True           # the heading may share its line with the first item (DEAL 2022)
         if cl_pair and p in pages["bs"] and cl_pair[0] in n and cl_pair[1] in n:
             # the total current liabilities line: what follows is non-current, whatever the headings look like
@@ -417,6 +424,29 @@ def zero_allowed(inst: Instance, family_findings: list, face_lines_found: bool, 
     return bool(face_lines_found and subtotals_ok and not any(f["family"] == family for f in family_findings))
 
 
+def column_order(fields: dict, pages: dict) -> dict:
+    """XBRL stage 6, finding F (IMPC 2022): the PDF text layer can print the year columns of some lines in reverse
+    order while the page image is right. The pair check is blind to order, so a swapped year in XBRL would pass.
+    Compares the order of the (t, t-1) pair on the evidence line of every FOUND item printed on the balance sheet
+    or the P&L. Note pages are left out: movement tables print the opening balance (t-1) before the closing one."""
+    normal, rev = [], []
+    face = set(pages.get("bs", [])) | set(pages.get("pl", []))
+    for name in fields["t"]:
+        ft, f1 = fields["t"][name], fields["t1"][name]
+        if ft.status != "FOUND" or ft.value is None or f1.value is None or "table" in name:
+            continue
+        a, b = round(abs(ft.value)), round(abs(f1.value))
+        if a == b or min(a, b) < 100:
+            continue
+        for p, ln in (ft.evidence or [])[:1]:
+            if p not in face:
+                continue
+            am = _amounts(ln)
+            if a in am and b in am:
+                (normal if am.index(a) < am.index(b) else rev).append((p, name))
+    return {"normal": normal, "reversed": rev, "inconsistent": bool(normal and rev)}
+
+
 def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
     """Full stage: gate, extract, verify, face check, rules. Returns a dict for the harness / later the pipeline."""
     inst = read_instance(instance_source)
@@ -472,7 +502,9 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
         tax.update(t=fields["t"]["taxes_payable_total"].value, t1=fields["t1"]["taxes_payable_total"].value,
                    status="REVIEW", proxy=True)
         tax["notes"].append("PENDEKATAN (D-03g): total taxes payable used because PPh 25/29 was not found")
+    order = column_order(fields, pages)
     return {"gate": gate, "tax": tax, "dei": inst.dei, "scale": inst.scale, "fields": fields, "face_pages": pages,
+            "column_order": order,
             "face_findings": findings, "bank_rule": bank, "internal_checks": internal_checks(inst)}
 
 

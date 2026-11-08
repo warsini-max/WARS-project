@@ -1546,6 +1546,11 @@ CATALOG: dict = {
                        "Claude 8 Nov, mengikuti 3B; menunggu Gail"),
     "chk.err.note": _e("Isi dasar pernyataan nihil untuk {item}.", "Enter the basis for nil for {item}.",
                        "Claude 8 Nov, mengikuti 3B; menunggu Gail"),
+    "chk.layout_cols": _e("Urutan kolom tahun pada lapisan teks PDF tidak konsisten antarbaris (halaman {pages}), "
+                          "sehingga angka XBRL tidak dapat dicocokkan dengan laporan secara andal. Skor tidak dihitung.",
+                          "The order of the year columns in the PDF text layer is inconsistent between lines (page "
+                          "{pages}), so the XBRL amounts cannot be reliably agreed to the report. The score is not "
+                          "calculated.", "Claude 8 Nov, langsung ke guest atas instruksi Gail 16.58; menunggu tinjauan"),
     "chk.r.risk": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris atau "
                      "catatan. Pastikan seluruh komponen, termasuk liabilitas sewa dan aset hak-guna, telah tercakup "
                      "dalam Pembacaan WARS.",

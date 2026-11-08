@@ -164,3 +164,37 @@ Penyusutan dan amortisasi 1,000 900
 Total 6,000 4,900"""
     a = XP.allocation_total(L(txt), PAGES, 6_000, 4_900)
     assert (a["t"], a["t1"]) == (6_000, 4_900)
+
+
+# ---------------------------------------------------------------- stage 6 finding D: amortisation in a sentence
+from wars_scanner import xbrl_pipeline as _XP
+
+_SENT = ("12. ASET TAKBERWUJUD\nPerangkat lunak ... Beban amortisasi untuk tahun yang berakhir pada tanggal\n"
+         "31 Desember 2022 dan 2021 masing-masing sebesar Rp101.100.000 dan Rp103.756.250 dibebankan ke beban umum.")
+
+
+def test_amortisation_read_from_a_sentence_in_the_intangible_note():
+    r = _XP.amortisation_from_sentence(["face", _SENT], [176_925_004, 278_025_004], 1)
+    assert (r["t"], r["t1"], r["page"]) == (101_100_000, 103_756_250, 2)
+    # statements in millions: full-Rupiah amounts in the sentence are converted to the statement unit
+    r = _XP.amortisation_from_sentence(["face", _SENT], [177, 278], 1_000_000)
+    assert (r["t"], r["t1"]) == (101, 104)
+
+
+def test_amortisation_sentence_with_unit_word():
+    txt = "Aset takberwujud. Beban amortisasi tahun 2022 dan 2021 masing-masing sebesar Rp8.207 juta dan Rp7.529 juta."
+    r = _XP.amortisation_from_sentence([txt], [26_542, 25_566], 1_000_000)
+    assert (r["t"], r["t1"]) == (8_207, 7_529)
+
+
+def test_amortisation_sentence_negatives():
+    # not intangible amortisation: transaction costs of a loan
+    loan = "Aset takberwujud ... Amortisasi biaya transaksi pinjaman sebesar Rp5.000.000 dan Rp4.000.000."
+    assert _XP.amortisation_from_sentence([loan], [176_925_004, 278_025_004], 1) is None
+    # a page that is not about intangible assets
+    assert _XP.amortisation_from_sentence([_SENT.replace("ASET TAKBERWUJUD", "ASET TETAP").replace("Perangkat lunak", "Bangunan")],
+                                          [176_925_004, 278_025_004], 1) is None
+    # implausible against the carrying amounts (amortisation larger than twice the intangibles)
+    assert _XP.amortisation_from_sentence([_SENT], [1_000, 2_000], 1) is None
+    # no intangibles on the face: nothing to anchor to
+    assert _XP.amortisation_from_sentence([_SENT], [None, None], 1) is None

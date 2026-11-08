@@ -157,6 +157,55 @@ def amortisation_from_notes(xr, lines, pages):
     return None
 
 
+# XBRL stage 6, finding D (PURI, DIVA): amortisation disclosed only in a sentence of the intangible note,
+# 'Beban amortisasi ... masing-masing sebesar Rp101.100.000 dan Rp103.756.250' / '... amounted to Rp X and Rp Y'
+AMORT_SENT = re.compile(
+    r"(?i)\bamorti[sz]a(?:si|tion)\b(?P<mid>[^.]{0,200}?)(?:sebesar|amounted to|amounting to|of)\s*"
+    r"(?:Rp|IDR|US\$|USD|\$)?\s?(?P<a>\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)\s*(?P<ua>triliun|miliar|juta|ribu|trillion|billion|million|thousand)?"
+    r"\s*(?:dan|and)\s*(?:Rp|IDR|US\$|USD|\$)?\s?(?P<b>\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)\s*"
+    r"(?P<ub>triliun|miliar|juta|ribu|trillion|billion|million|thousand)?")
+AMORT_SENT_NOT = re.compile(r"(?i)akumulasi|accumulated|biaya transaksi|transaction cost|diskonto|discount|premi|premium|"
+                            r"obligasi|bond|ditangguhkan|deferred|sewa|lease|properti|property|biaya perolehan diamortisasi|"
+                            r"amortised cost|amortized cost|pinjaman|loan")
+INTANGIBLE_PAGE = re.compile(r"(?i)aset tak ?berwujud|intangible|perangkat lunak|software")
+UNIT_WORD = {"ribu": 1e3, "thousand": 1e3, "juta": 1e6, "million": 1e6, "miliar": 1e9, "billion": 1e9,
+             "triliun": 1e12, "trillion": 1e12}
+
+
+def _sent_amount(txt, unit):
+    g = re.split(r"[.,]", txt)
+    if len(g) > 1 and all(len(x) == 3 for x in g[1:]):
+        v = float("".join(g))
+    else:
+        v = float(txt.replace(",", "."))
+    return v * UNIT_WORD.get((unit or "").lower(), 1)
+
+
+def amortisation_from_sentence(pages_txt, carrying, scale):
+    """Amortisation (t, t-1) from one sentence on a page about intangible assets. The amounts are in Rupiah (or the
+    unit word that follows); they are converted to the statement unit and kept only if plausible against the
+    intangible carrying amounts (in the statement unit). Two plausible readings, or none, -> None (no guess)."""
+    cap = 2 * sum(abs(c) for c in carrying if c)
+    if not cap:
+        return None
+    for i, t in enumerate(pages_txt):
+        if not INTANGIBLE_PAGE.search(t):
+            continue
+        flat = re.sub(r"\s+", " ", t)
+        for m in AMORT_SENT.finditer(flat):
+            if AMORT_SENT_NOT.search(m.group("mid")):
+                continue
+            a, b = _sent_amount(m.group("a"), m.group("ua")), _sent_amount(m.group("b"), m.group("ub"))
+            if m.group("ua") or m.group("ub"):
+                cands = {(a / scale, b / scale)}
+            else:
+                cands = {(a, b), (a / scale, b / scale)}
+            ok = [c for c in cands if 0 < c[0] <= cap and 0 < c[1] <= cap and c[0] >= 1 and c[1] >= 1]
+            if len(ok) == 1:
+                return {"t": round(ok[0][0]), "t1": round(ok[0][1]), "page": i + 1, "line": m.group(0)[:100]}
+    return None
+
+
 def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     pages_txt = pdf_pages(pdf_path)
     xr = X.read(instance_source, pages_txt, ticker)
@@ -263,14 +312,15 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     for c in ("t", "t1"):
         if p.get(f"amort_status_{c}") in ("UNDISCLOSED", None) or pdf_status.get(("amortization_intangibles", c)) in (
                 "NOT ASSESSED", "UNDISCLOSED", "ASSUMED"):
-            am_x = am_x or amortisation_from_notes(xr, lines, xr["face_pages"])
+            am_x = am_x or amortisation_from_notes(xr, lines, xr["face_pages"]) or amortisation_from_sentence(
+                pages_txt, [inst.plain("IntangibleAssetsOtherThanGoodwill", cc, "i") for cc in ("t", "t1")], inst.scale)
             if am_x:
                 old = p.get(f"amortization_intangibles_{c}") or 0
                 p[f"amortization_intangibles_{c}"] = am_x[c]
                 p[f"amort_status_{c}"] = ""
                 p[f"depreciation_amortization_total_{c}"] = (p.get(f"depreciation_amortization_total_{c}") or 0) - old + am_x[c]
                 items.append(Item("amortization_intangibles", c, am_x[c], "REVIEW",
-                                  f"PDF p{am_x['page']}: {am_x['line']}", "single printed line, note number = intangible note"))
+                                  f"PDF p{am_x['page']}: {am_x['line']}", "single printed line or sentence; one source"))
                 continue
         st = pdf_status.get(("amortization_intangibles", c))
         if p.get(f"amortization_intangibles_{c}") is None or st in ("NOT SEARCHED", "NOT ASSESSED", None):
