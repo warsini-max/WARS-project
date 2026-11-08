@@ -406,6 +406,29 @@ CATALOG: dict = {
                        "Working-capital accruals after depreciation equal {tata} of total assets: non-cash current "
                        "assets changed by {d_ca}, operating current liabilities changed by {d_cl}, depreciation and "
                        "amortisation {da} (p. {p_ca}).", "B r1 §5"),
+    # Part C chosen from the company's figures (Gail 8 Nov 2026 approved the update; wording awaits her review)
+    "c.DSRI_denom": _e("Kenaikan rasio ini berasal dari turunnya penjualan, bukan dari bertambahnya piutang "
+                       "(piutang tidak bertambah).",
+                       "The rise in this ratio comes from lower sales, not from higher receivables (receivables did "
+                       "not increase).", "Claude 8 Nov bagian C, menunggu Gail"),
+    "c.DSRI_both": _e("Kenaikan rasio ini berasal dari dua arah: piutang bertambah sementara penjualan menurun.",
+                      "The rise in this ratio comes from two directions: receivables increased while sales decreased.",
+                      "Claude 8 Nov bagian C, menunggu Gail"),
+    "c.DSRI_numer": _e("Kenaikan rasio ini berasal dari piutang yang tumbuh lebih cepat daripada penjualan.",
+                       "The rise in this ratio comes from receivables growing faster than sales.",
+                       "Claude 8 Nov bagian C, menunggu Gail"),
+    "c.small_base_DSRI": _e("Piutang tahun lalu sangat kecil (kurang dari {lim} penjualan), sehingga perubahan "
+                            "nominal yang kecil sudah menghasilkan indeks yang tinggi. Baca indeks ini bersama "
+                            "nominalnya.",
+                            "Prior-year receivables were very small (less than {lim} of sales), so a small change in "
+                            "amount already produces a high index. Read this index together with the amounts.",
+                            "Claude 8 Nov bagian C, menunggu Gail"),
+    "c.small_base_AQI": _e("Porsi aset tidak lancar selain aset tetap tahun lalu sangat kecil ({aq_t1} dari total "
+                           "aset, kurang dari {lim}), sehingga perubahan nominal yang kecil sudah menghasilkan indeks "
+                           "yang tinggi. Baca indeks ini bersama nominalnya.",
+                           "The prior-year share of non-current assets other than PPE was very small ({aq_t1} of "
+                           "total assets, less than {lim}), so a small change in amount already produces a high "
+                           "index. Read this index together with the amounts.", "Claude 8 Nov bagian C, menunggu Gail"),
     "c.DSRI": _e("perubahan termin kredit; pelanggan besar baru; penjualan musiman di akhir tahun",
                  "a change in credit terms; a large new customer; seasonal sales at the year end", "B r1 §5"),
     "d.DSRI": _e("umur piutang; piutang pihak berelasi; cadangan kerugian kredit; kebijakan pengakuan pendapatan "

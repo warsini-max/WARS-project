@@ -150,3 +150,64 @@ def test_scale_unchanged_for_ordinary_scores():
     assert scale_range(-2.37) == (-3.5, -0.5, "")
     assert scale_range(-3.9) == (-4.0, -0.5, "")
     assert scale_range(None) == (-3.5, -0.5, "")
+
+
+# ---------------------------------------------------------------- part C from the company's figures (Gail, 8 Nov 2026)
+def _dsri(ar_t, ar_t1, rev_t, rev_t1, dsri):
+    r = _result(-1.5, {**NEUTRAL, "DSRI": dsri})
+    r.inputs.update({"accounts_receivable_t": ar_t, "accounts_receivable_t1": ar_t1, "revenue_t": rev_t, "revenue_t1": rev_t1})
+    return r
+
+
+def _keys(r, k):
+    return [s for s, _ in report.c_signals(r, k)]
+
+
+def test_c_dsri_names_the_mechanism():
+    # sales fell 40 %, receivables fell 23 %: the ratio rose because of lower sales
+    assert _keys(_dsri(77, 100, 60, 100, 1.28), "DSRI") == ["c.DSRI_denom"]
+    # sales fell, receivables rose: both directions
+    assert _keys(_dsri(112, 100, 60, 100, 1.87), "DSRI") == ["c.DSRI_both"]
+    # sales rose 8 %, receivables rose 56 %: receivables grew faster
+    assert _keys(_dsri(156, 100, 108, 100, 1.44), "DSRI") == ["c.DSRI_numer"]
+
+
+def test_c_dsri_falling_sales_drops_the_general_reasons():
+    r = _dsri(77, 100, 60, 100, 1.28)
+    for lang in ("id", "en"):
+        c = report.c_part(r, "DSRI", lang)
+        assert c == t("c.DSRI_denom", lang)
+        assert t("c.DSRI", lang) not in c
+    # negative: receivables growing faster keeps the general list after the specific sentence
+    c = report.c_part(_dsri(156, 100, 108, 100, 1.44), "DSRI", "id")
+    assert c.startswith(t("c.DSRI_numer", "id")) and t("c.DSRI", "id") in c
+
+
+def test_c_falls_back_to_the_general_list():
+    # negative: missing or zero figures never produce a specific sentence
+    for r in (_dsri(None, 100, 60, 100, 1.3), _dsri(77, 100, 60, 0, 1.3), _dsri(77, 100, 0, 100, 1.3)):
+        assert report.c_signals(r, "DSRI") == []
+        assert report.c_part(r, "DSRI", "id") == t("drivers.c", "id", items=Msg("c.DSRI"))
+    # negative: indices without a data rule keep the general list
+    r = _dsri(77, 100, 60, 100, 1.28)
+    assert report.c_part(r, "GMI", "en") == t("drivers.c", "en", items=Msg("c.GMI"))
+
+
+def test_c_small_base_only_when_base_tiny_and_index_high():
+    # receivables last year 0.05 % of sales, DSRI 37: small-base sentence
+    assert "c.small_base_DSRI" in _keys(_dsri(2010, 52.8, 120000, 105000, 37.1), "DSRI")
+    # negative: tiny base but ordinary index
+    assert "c.small_base_DSRI" not in _keys(_dsri(1.1, 0.5, 120000, 105000, 1.9), "DSRI")
+    # negative: high index but base not small (receivables 20 % of sales)
+    assert "c.small_base_DSRI" not in _keys(_dsri(80, 20, 50, 100, 8.0), "DSRI")
+
+
+def test_c_small_base_aqi():
+    r = _result(-1.5, {**NEUTRAL, "AQI": 4.9})
+    r.inputs.update({"current_assets_t1": 600.0, "property_plant_equipment_net_t1": 397.0, "total_assets_t1": 1000.0})
+    assert _keys(r, "AQI") == ["c.small_base_AQI"]          # soft assets 0.3 % of total assets
+    r.inputs["property_plant_equipment_net_t1"] = 300.0
+    assert _keys(r, "AQI") == []                             # negative: soft assets 10 %
+    r.inputs["property_plant_equipment_net_t1"] = 397.0
+    r.calc["AQI"] = 1.5
+    assert _keys(r, "AQI") == []                             # negative: index below the limit

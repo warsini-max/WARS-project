@@ -204,6 +204,50 @@ def _chg(a, b):
     return Msg("chg.up" if g >= 0 else "chg.down", pct=Pct(abs(g)))
 
 
+# Part C of a finding chosen from the company's own figures instead of one fixed list for every company
+# (Gail, 8 Nov 2026: "gue setuju lo update ini"). Wording and the two limits below await Gail's review.
+# Only figures already read for the score are used: no new line items, so no new reading risk (rule 7).
+SMALL_BASE_SHARE = 0.01      # prior-year receivables (of sales) or soft assets (of total assets) below this share
+SMALL_BASE_INDEX = 2.0       # ... and the index at least this high
+
+
+def c_signals(r: Result, k: str):
+    """Which data-specific explanations apply to index k: a list of (catalogue key, params)."""
+    g = lambda f, c="t": _val(r, f, c)                                   # noqa: E731
+    idx = r.calc.get(k)
+    idx = idx if isinstance(idx, (int, float)) and not isinstance(idx, bool) else None
+    out = []
+    if k == "DSRI":
+        ar, ar1, rv, rv1 = g("accounts_receivable"), g("accounts_receivable", "t1"), g("revenue"), g("revenue", "t1")
+        if None in (ar, ar1, rv, rv1) or rv1 <= 0 or rv <= 0:
+            return out
+        if rv < rv1:
+            out.append(("c.DSRI_denom" if ar <= ar1 else "c.DSRI_both", {}))
+        elif ar1 > 0 and ar / ar1 > rv / rv1:
+            out.append(("c.DSRI_numer", {}))
+        if idx is not None and idx >= SMALL_BASE_INDEX and 0 <= ar1 < SMALL_BASE_SHARE * rv1:
+            out.append(("c.small_base_DSRI", {"lim": Pct(SMALL_BASE_SHARE)}))
+    elif k == "AQI":
+        ca, ppe, ta = g("current_assets", "t1"), g("property_plant_equipment_net", "t1"), g("total_assets", "t1")
+        if None in (ca, ppe, ta) or ta <= 0:
+            return out
+        soft = 1 - (ca + ppe) / ta
+        if idx is not None and idx >= SMALL_BASE_INDEX and 0 <= soft < SMALL_BASE_SHARE:
+            out.append(("c.small_base_AQI", {"aq_t1": Pct(soft), "lim": Pct(SMALL_BASE_SHARE)}))
+    return out
+
+
+def c_part(r: Result, k: str, lang="id"):
+    """Part C: the data-specific sentence(s) where a pattern applies, else the general list as before.
+    When sales fell, the general reasons (new customer, credit terms) point the wrong way, so they are left out."""
+    sig = c_signals(r, k)
+    keys = [s for s, _ in sig]
+    parts = [t(s, lang, **p) for s, p in sig]
+    if not ({"c.DSRI_denom", "c.DSRI_both"} & set(keys)):
+        parts.append(t("drivers.c", lang, items=Msg(f"c.{k}")))
+    return " ".join(parts)
+
+
 def finding(r: Result, k: str, confirm=None, lang="id"):
     """B r1 §4: A (figures and pages), C (possible explanations), D (areas for examination), and the
     model's rationale for the 'About this index' fold. Returns dict(a, c, d, why, caveats)."""
@@ -257,7 +301,7 @@ def finding(r: Result, k: str, confirm=None, lang="id"):
         if ca is not None:
             a_text += " " + t("drivers.ca_note", lang, p=ca.pages[0])
     p115, p238 = Psak("115", "72", fy, "¶31, ¶38" if k == "DSRI" else "¶114"), Psak("238", "19", fy, "¶54, ¶57, ¶69")
-    c_text = t("drivers.c", lang, items=Msg(f"c.{k}"))
+    c_text = c_part(r, k, lang)
     d_text = t("drivers.d", lang, items=Msg(f"d.{k}", **({"psak115": p115} if k in ("DSRI", "SGI") else
                                                           {"psak238": p238} if k == "AQI" else {})))
     caveats = []
