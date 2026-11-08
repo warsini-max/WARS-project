@@ -1524,6 +1524,18 @@ CATALOG: dict = {
                             "sehingga belum dapat direkonsiliasi.",
                             "The XBRL amount does not appear as a two-year pair on a single line of the PDF statements and "
                             "could not be reconciled.", "Gail 4 Nov 09.07"),
+    "chk.r.risk": _e("Pos ini selalu diperiksa pengguna, karena pada uji sebelumnya pos jenis ini paling sering salah "
+                     "dibaca. Cocokkan angka WARS dengan laporan, termasuk liabilitas sewa, aset hak-guna atau pos "
+                     "terkait yang disajikan terpisah.",
+                     "This line is always checked by the user, because lines of this kind were the ones most often "
+                     "read wrongly in earlier tests. Compare the WARS reading with the report, including lease "
+                     "liabilities, right of use assets or related lines presented separately.",
+                     "Claude 8 Nov target B, menunggu Gail"),
+    "chk.r.risk_zero": _e("WARS tidak menemukan angka ini dan menghitungnya 0. Periksa catatan terkait; bila "
+                          "angkanya diungkapkan, termasuk di dalam kalimat, ganti dengan angka tersebut.",
+                          "WARS did not find this amount and counted it as 0. Check the related note; if the amount "
+                          "is disclosed, including within a sentence, replace it with that amount.",
+                          "Claude 8 Nov target B, menunggu Gail"),
     "chk.r.single": _e("Nilai ini belum dapat direkonsiliasi dengan sumber kedua dalam laporan.",
                        "This amount could not be reconciled to a second source within the report.", "Gail 4 Nov 09.07"),
     "note.assumed_am": _e("Aset takberwujud tidak ditemukan; amortisasi dianggap 0 untuk hasil sementara. Periksa "

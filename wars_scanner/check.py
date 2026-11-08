@@ -156,8 +156,22 @@ def _xbrl_note(it) -> str:
 
 # ----------------------------------------------------------------------------------- items to verify
 
+# v1.0 target B (Gail, 8 Nov 2026 12.02): the line items that were read wrongly in XBRL stages 4-6 are always
+# verified by the user, whatever their status (FOUND, or a zero counted because nothing was found).
+RISK_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_payable",
+               "ppe_depreciation_disclosed", "amortization_intangibles", "depreciation_amortization_non_ppe")
+ZERO_STATUSES = ("ASSUMED", "UNDISCLOSED")
+
+
+def _risk_status(r, f):
+    """Statuses of a risk field (t, t1) that are not REVIEW and not yet checked by the user."""
+    st = {v.column: v.status for v in r.extraction.values if v.field == f and v.column in ("t", "t1")}
+    return {c: s for c, s in st.items() if s not in ("REVIEW", CONFIRMED, AMENDED, "NOT FOUND", "NOT ASSESSED")}
+
+
 def items(r) -> list:
-    """Score items whose reading is REVIEW, one per field (both years), in the order of CHECK_FIELDS."""
+    """Score items to verify, one per field (both years), in the order of CHECK_FIELDS: every REVIEW reading,
+    and the risk fields always (target B)."""
     if r.unreadable:
         return []
     by = {(v.field, v.column): v for v in r.extraction.values}
@@ -169,13 +183,19 @@ def items(r) -> list:
     out = []
     for f in CHECK_FIELDS:
         cols = [c for c in ("t", "t1") if (f, c) in rev]
-        if not cols:
+        risk = _risk_status(r, f) if f in RISK_FIELDS else {}
+        if not cols and not risk:
             continue
         vals = {c: r.inputs.get(f"{f}_{c}") for c in ("t", "t1")}
         if any(v is None for v in vals.values()):
             continue                                   # not found: the score is withheld for another reason
-        note = " ".join(str(rev[(f, c)]) for c in cols)
-        reason, labels = _reason(f, note, findings, r)
+        if cols:
+            note = " ".join(str(rev[(f, c)]) for c in cols)
+            reason, labels = _reason(f, note, findings, r)
+        elif any(s in ZERO_STATUSES for s in risk.values()):
+            reason, labels = Msg("chk.r.risk_zero"), []
+        else:
+            reason, labels = Msg("chk.r.risk"), []
         pages = sorted({p for c in ("t", "t1") for p in ((by.get((f, c)).pages if by.get((f, c)) else []) or [])})
         if not pages or f in FACE_FIELDS:
             pages = sorted(set(pages) | set(_face_pages(r, f)))
@@ -297,7 +317,10 @@ def apply(r, checks, answers):
         r2.flags = validation.check(p, r2.extraction)
     except Exception:                                   # noqa: BLE001
         r2.flags = list(r.flags)
-    r2.flags = _drop_pdf_reading_checks(r2.flags, (getattr(r2, "xbrl", None) or {}).get("found", set()))
+    # the PPE-note / SGA-total checks test the PDF reader's own reading; an amount the user has verified replaces
+    # that reading just as an XBRL FOUND amount does (XBRL stage 6, finding E: HITS stayed withheld after checking)
+    replaced = set((getattr(r2, "xbrl", None) or {}).get("found", set())) | done
+    r2.flags = _drop_pdf_reading_checks(r2.flags, replaced)
     r2.user_checked = checked
     return r2
 
@@ -317,7 +340,7 @@ def _variants(v):
     return [dots, f"{n:,}"]
 
 
-def extract_png(pdf_bytes: bytes, item: CheckItem, scale: float = 2.0):
+def extract_png(pdf_bytes: bytes, item: CheckItem, scale: float = 4.0):
     """PNG of the part of a page that holds the item's amounts (or labels), the hits highlighted.
     Returns (png bytes, page number) or (None, None)."""
     import pypdfium2 as pdfium
@@ -391,7 +414,7 @@ def _find(tp, text):
     return out
 
 
-def second_extract_png(pdf_bytes: bytes, item: CheckItem, skip_page=None, scale: float = 2.0):
+def second_extract_png(pdf_bytes: bytes, item: CheckItem, skip_page=None, scale: float = 4.0):
     """A second extract for the item: the first line, outside the accounting-policy pages, that carries one of
     item.second followed by two amounts (e.g. right-of-use depreciation in the expense note)."""
     if not item.second:
