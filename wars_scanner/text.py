@@ -1530,6 +1530,12 @@ CATALOG: dict = {
                      "This line always requires verification because its presentation is often spread across several "
                      "lines or notes. Confirm that all components, including lease liabilities and right of use "
                      "assets, are captured in the WARS reading.", "Gail 8 Nov 12.50 (1C)"),
+    "chk.r.risk_tax": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris "
+                         "atau catatan. Pastikan seluruh komponen, termasuk Pasal 25 dan Pasal 29, telah tercakup "
+                         "dalam Pembacaan WARS.",
+                         "This line always requires verification because its presentation is often spread across "
+                         "several lines or notes. Confirm that all components, including Article 25 and Article 29, "
+                         "are captured in the WARS reading.", "Gail 8 Nov 16.06 (1C, versi utang pajak)"),
     "chk.r.risk_zero": _e("Nilai ini tidak ditemukan dalam laporan sehingga dihitung nol. Telaah catatan terkait; "
                           "apabila nilai diungkapkan, termasuk dalam uraian naratif, masukkan nilai tersebut.",
                           "This amount was not found in the report and is counted as nil. Review the related note; "

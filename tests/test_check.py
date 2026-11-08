@@ -158,8 +158,10 @@ def test_target_b_found_risk_fields_go_to_the_review_screen():
     its = check.items(r)
     assert [i.field for i in its] == ["long_term_debt", "current_maturities_long_term_debt", "taxes_payable",
                                       "ppe_depreciation_disclosed"]
-    assert all(i.reason.key == "chk.r.risk" for i in its)
-    # negative: a FOUND line outside the risk list (revenue) is not added
+    assert {i.field: i.reason.key for i in its} == {
+        "long_term_debt": "chk.r.risk", "current_maturities_long_term_debt": "chk.r.risk",
+        "taxes_payable": "chk.r.risk_tax", "ppe_depreciation_disclosed": "chk.r.risk"}
+    # negative: a FOUND line outside the risk list (revenue) is not added; tax payable never gets the lease wording
 
 
 def test_target_b_counted_zero_amortisation_goes_to_the_review_screen():

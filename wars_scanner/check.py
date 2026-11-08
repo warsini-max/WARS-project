@@ -194,8 +194,8 @@ def items(r) -> list:
             reason, labels = _reason(f, note, findings, r)
         elif any(s in ZERO_STATUSES for s in risk.values()):
             reason, labels = Msg("chk.r.risk_zero"), []
-        else:
-            reason, labels = Msg("chk.r.risk"), []
+        else:   # the lease / right of use wording fits debt and depreciation, not tax payable (Gail 8 Nov 16.06)
+            reason, labels = Msg("chk.r.risk_tax" if f == "taxes_payable" else "chk.r.risk"), []
         pages = sorted({p for c in ("t", "t1") for p in ((by.get((f, c)).pages if by.get((f, c)) else []) or [])})
         if not pages or f in FACE_FIELDS:
             pages = sorted(set(pages) | set(_face_pages(r, f)))
