@@ -399,3 +399,19 @@ def test_stage7_da_total_shown_is_the_one_used():
     check._sync_da_total(r)
     assert (v.value, v.status) == (99_315, "BUILT FROM DISCLOSED COMPONENTS")
     assert (keep.value, keep.status) == (80_000, "FOUND")                      # negative: same figure, untouched
+
+
+# ---------------------------------------------------------------- issuer from a cut master name or the XBRL code (10 Nov)
+def test_issuer_cut_master_name_and_negatives():
+    from wars_scanner import company
+    who, _ = company.identify("PT ASTRINDO NUSANTARA INFRASTRUKTUR Tbk DAN ENTITAS ANAK LAPORAN POSISI KEUANGAN")
+    assert who and who.ticker == "BIPI"          # master: 'Astrindo Nusantara Infrastrukt' (cut at 30 characters)
+    # negatives: a different last word, a missing word, and a full master name never match by prefix
+    assert company.identify("PT ASTRINDO NUSANTARA ENERGI Tbk")[0] is None
+    assert company.identify("PT ASTRINDO INFRASTRUKTUR Tbk")[0] is None
+    assert company._name_in("Astra Agro Lestari Tbk.", frozenset({"astra", "agro", "lestarian"})) is False
+
+
+def test_issuer_from_xbrl_entity_code():
+    from wars_scanner import company
+    assert company.by_ticker("bipi").ticker == "BIPI" and company.by_ticker("ZZZZ") is None

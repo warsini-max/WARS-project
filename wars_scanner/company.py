@@ -43,10 +43,33 @@ def header_text(statements: dict) -> str:
     return " ".join(ln.text for s in statements.values() for ln in s.lines[:HEADER_LINES])
 
 
+TRUNCATED = 30          # the workbook master cuts names at 30 characters ('Astrindo Nusantara Infrastrukt')
+
+
+def _name_in(name: str, have: frozenset) -> bool:
+    """All words of the master name appear in the header. When the master name was cut at 30 characters, its last
+    word may be cut too, so it only has to begin a header word (BIPI: 'infrastrukt' / 'infrastruktur')."""
+    words = [w for w in re.findall(r"[a-z0-9]+", name.lower()) if w not in DROP]
+    if not words:
+        return False
+    if len(name) >= TRUNCATED and not re.search(r"(?i)\btbk\.?\s*$", name):
+        if "tbk".startswith(words[-1]):            # '... Indonesia Tb': the cut fell inside 'Tbk'
+            return bool(words[:-1]) and set(words[:-1]) <= have
+        if len(words[-1]) >= 3:
+            return set(words[:-1]) <= have and any(h.startswith(words[-1]) for h in have)
+    return set(words) <= have
+
+
+def by_ticker(code: str):
+    """The master entry for a ticker (the XBRL EntityCode), else None."""
+    code = (code or "").strip().upper()
+    return next((i for i in master() if i.ticker == code), None)
+
+
 def identify(text: str):
     """(Issuer or None, candidates). Unique match only."""
     have = _words(text)
-    cands = [i for i in master() if _words(i.name) and _words(i.name) <= have]
+    cands = [i for i in master() if _words(i.name) and _name_in(i.name, have)]
     if not cands:
         return None, []
     top = max(cands, key=lambda i: len(_words(i.name)))

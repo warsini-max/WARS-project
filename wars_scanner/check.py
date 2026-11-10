@@ -17,7 +17,7 @@ import io
 import re
 from dataclasses import dataclass, field
 
-from . import engine, validation
+from . import company, engine, validation
 from .pdf_reader import Value
 from .text import Amt, Msg, Raw
 
@@ -95,6 +95,12 @@ def merge_xbrl(pr, xres):
     r.inputs = dict(xres.inputs)
     r.calc = dict(xres.calc)
     _sync_da_total(r)
+    # the XBRL EntityCode names the issuer (the XBRL gate checks it); the PDF header match must not contradict it
+    x_issuer = company.by_ticker(((xres.xbrl or {}).get("dei") or {}).get("EntityCode", ""))
+    if x_issuer and (r.issuer is None or r.issuer.ticker == x_issuer.ticker):
+        r.issuer = x_issuer
+    elif x_issuer:
+        r.issuer = None                    # PDF header and XBRL name different issuers: not identified (T-1)
     r.review = [(it.field, it.column, it.status, _user_note(it))
                 for it in xres.items if it.status in ("REVIEW", "ASSUMED", "UNDISCLOSED") and it.value is not None]
     r.missing = [(it.field, it.column, it.status, _user_note(it)) for it in xres.items
