@@ -333,3 +333,45 @@ Total 90 85 Total"""
                            "Amortisasi tahun berjalan (1) (1) Amortization\nSaldo akhir 9 9 Ending\nTotal 9 9 Total\n"
                            "13. ASET TIDAK LANCAR LAINNYA")
     assert XP.year_column_charge(L(DEFER[0], dup), [DEFER_PAIR[0] + 9, DEFER_PAIR[1] + 9], PAGES) is None
+
+
+# regression on the development files (10 Nov): two wrong lines that the strict intangible reading must refuse
+INTANG_CLASS_COLS = """11. ASET TAK BERWUJUD
+Assets with indefinite useful life Total
+Tahun yang berakhir pada tanggal 31 Desember 2022/
+Nilai Tercatat/Carrying Amount
+Saldo Awal/Beginning Balance 2.664.767 1.411.540 4.076.307
+Penambahan/Additions - - -
+Saldo Akhir/Ending Balance 2.664.767 1.411.540 4.076.307
+Akumulasi Amortisasi/Rugi Penurunan Nilai/
+Accumulated Amortization/Impairment Loss
+Saldo Awal/Beginning Balance 1.798.714 551.833 2.350.547
+Penambahan/Additions 133.238 - 133.238
+Pengurangan/Deductions - - -
+Saldo Akhir/Ending Balance 1.931.952 551.833 2.483.785
+Nilai Tercatat Neto/Net Carrying Amount 732.815 859.707 1.592.522"""
+INTANG_NO_TOTAL = """12. ASET TAKBERWUJUD
+01/01/2022 Penambahan/Additions Acquisition of a subsidiary 31/12/2022
+Akumulasi amortisasi Accumulated amortisation
+3G upfront fee (1,216,849) - - (1,216,849) 3G upfront fee
+Merk (164,310) - (3,274) (167,584) Brand
+Komisi penjualan* (16,850) (19,174) - (36,024) Sales commission*
+(1,938,455) (19,174) (7,567) (1,965,196)
+Nilai buku bersih 5,712,558 5,988,468 Net book value"""
+INTANG_FIRST_YEAR = """8. ASET TAKBERWUJUD
+1 Jan 2021 Penambahan Pengurangan Reklasifikasi 31 Des 2021
+Akumulasi Amortisasi
+Sub Jumlah - 408.728.362 - - 408.728.362
+Nilai Buku - 3.694.266.049"""
+
+
+def test_regression_strict_intangible_reading_refuses_wrong_lines():
+    # class columns (indefinite-life column + total) are not movement columns: 551.833 is not a charge
+    assert XP.movement_charge(L(INTANG_CLASS_COLS), 1_592_522, PAGES, True) is None
+    # no labelled total row: the category rows are not added up ('3G' in a label is not an amount)
+    assert XP.movement_charge(L(INTANG_NO_TOTAL), 5_988_468, PAGES, True) is None
+    # the whole accumulated balance in the first year (asset first recognised) is not the year's charge
+    assert XP.movement_charge(L(INTANG_FIRST_YEAR), 3_694_266_049, PAGES, True) is None
+    # positive controls: the shapes that are read stay read in strict mode
+    assert XP.movement_charge(L(INTANG_ROW), 21_799_166, PAGES, True) == (3_366_190.0, 3)
+    assert XP.movement_charge(L(INTANG_WRAP), 14_182, PAGES, True) == (2_220.0, 3)

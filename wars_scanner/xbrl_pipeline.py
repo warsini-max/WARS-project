@@ -220,7 +220,7 @@ def amortisation_from_movement(lines, carrying, pages):
     (XBRL stage 7, finding 2: BIPI, SIPD). Both years must be read, else None (no guess)."""
     if not carrying or not all(carrying):
         return None
-    mt, mt1 = movement_charge(lines, carrying[0], pages), movement_charge(lines, carrying[1], pages)
+    mt, mt1 = movement_charge(lines, carrying[0], pages, True), movement_charge(lines, carrying[1], pages, True)
     if mt and mt1:
         return {"t": mt[0], "t1": mt1[0], "page": mt[1], "line": "movement table"}
     yc = year_column_charge(lines, carrying, pages)
@@ -243,7 +243,7 @@ def deferred_charge_amortisation(lines, inst, pages):
             continue
         if not all(pair):
             return None
-        mt, mt1 = movement_charge(lines, pair[0], pages), movement_charge(lines, pair[1], pages)
+        mt, mt1 = movement_charge(lines, pair[0], pages, True), movement_charge(lines, pair[1], pages, True)
         if mt and mt1:
             got = (mt[0], mt1[0], [mt[1]])
         else:
@@ -556,7 +556,7 @@ def year_column_charge(lines, pair, pages):
     return (float(sum(t[1][0] for t in combo)), float(sum(t[1][1] for t in combo)), sorted({t[2] for t in combo}))
 
 
-def movement_charge(lines, carrying, pages):
+def movement_charge(lines, carrying, pages, strict=False):
     """Depreciation/amortisation for the year from a movement table, anchored by the XBRL carrying amount.
 
     The table is the one whose 'nilai buku / nilai tercatat' line ends with the carrying amount. Two layouts:
@@ -601,6 +601,8 @@ def movement_charge(lines, carrying, pages):
         begin, charge, mids, end = nums[0], nums[1], nums[2:-1], nums[-1]
         if not charge:
             return None
+        if strict and not begin and abs(charge - end) <= 1:
+            return None     # the whole balance arrives in one year (asset first recognised or acquired): not a charge
         for signs in product((1, -1), repeat=len(mids)):
             if abs(begin + charge + sum(s * m for s, m in zip(signs, mids)) - end) <= 1:
                 return charge
@@ -629,7 +631,12 @@ def movement_charge(lines, carrying, pages):
                 continue
             block = [r for jj, r in rows if jj > head_j][::-1]
             if not block and len([x for x in X._amounts(pl[head_j]) if x]) >= 2:
-                block = [pl[head_j]]            # the accumulated-amortisation heading is itself the row (BIPI)
+                # the accumulated-amortisation heading is itself the (only, hence total) row (BIPI, ASII)
+                header = " ".join(r for _, r in rows) + " " + " ".join(pl[max(0, j - 12):j + 1])
+                ch = balanced(X._amounts(pl[head_j])) if movement_head.search(header) else None
+                if ch:
+                    return float(abs(ch)), p
+                continue
             # B inside the accumulated block: rows are movements, the last column is the total (ARII mining)
             if any(year_line.search(r) for r in block):
                 ch = transposed(block)
@@ -651,6 +658,10 @@ def movement_charge(lines, carrying, pages):
                 ch = balanced(X._amounts(totals[-1]))
                 if ch:
                     return float(abs(ch)), p
+                continue
+            if strict:
+                # intangibles and deferred charges (XBRL stage 7 regression): adding up the category rows picked
+                # wrong lines (ICBP class columns read as movement columns; EXCL '3G' in a label read as an amount)
                 continue
             valid = [balanced(X._amounts(r)) for r in block if not re.search(r"(?i)penurunan nilai|impairment", r)]
             valid = [x for x in valid if x]
