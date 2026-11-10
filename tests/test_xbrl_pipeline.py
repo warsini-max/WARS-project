@@ -198,3 +198,138 @@ def test_amortisation_sentence_negatives():
     assert _XP.amortisation_from_sentence([_SENT], [1_000, 2_000], 1) is None
     # no intangibles on the face: nothing to anchor to
     assert _XP.amortisation_from_sentence([_SENT], [None, None], 1) is None
+
+
+# XBRL stage 7, finding 1 (TNCA): a bilingual face line interleaves the two languages
+_FACE_MIX = ("Aset takberwujud - setelah dikurangi akumulasi amortisasi sebesar Intangible asset - net of "
+             "Rp1.193.046.259 pada tahun accumulated amortization of 2022 dan Rp635.142.745 Rp1,193,046,259 in 2022")
+_NOTE_OK = ("10. ASET TAKBERWUJUD Amortisasi aset takberwujud dibebankan ke dalam beban umum dan administrasi "
+            "masing-masing sebesar Rp557.903.514 dan Rp318.886.840 pada 31 Desember 2022 dan 2021 (Catatan 24).")
+
+
+def test_amortisation_sentence_skips_face_pages_and_reads_the_note():
+    r = _XP.amortisation_from_sentence([_FACE_MIX, _NOTE_OK], [627_045_917, 245_946_522], 1, {1})
+    assert (r["t"], r["t1"], r["page"]) == (557_903_514, 318_886_840, 2)
+
+
+def test_amortisation_sentence_never_reads_a_year_or_accumulated_wording():
+    # negative: even off the face, the interleaved wording is refused (year-like figure; 'accumulated' before it)
+    assert _XP.amortisation_from_sentence([_FACE_MIX], [627_045_917, 245_946_522], 1) is None
+    year = "Aset takberwujud. Amortisasi tahun berjalan sebesar 2022 dan 2021 tidak material."
+    assert _XP.amortisation_from_sentence([year], [627_045_917, 245_946_522], 1) is None
+    acc = "Aset takberwujud. Akumulasi amortisasi sebesar Rp1.193.046.259 dan Rp635.142.745."
+    assert _XP.amortisation_from_sentence([acc], [627_045_917, 245_946_522], 1) is None
+    # negative: the face page itself is skipped even when its sentence looks fine
+    assert _XP.amortisation_from_sentence([_NOTE_OK], [627_045_917, 245_946_522], 1, {1}) is None
+    # positive control: a year written as an amount with a unit word is still an amount (Rp2.022 juta is not a year)
+    unit = "Aset takberwujud. Beban amortisasi masing-masing sebesar Rp2.022 juta dan Rp1.500 juta."
+    r = _XP.amortisation_from_sentence([unit], [26_542, 25_566], 1_000_000)
+    assert (r["t"], r["t1"]) == (2_022, 1_500)
+
+
+# ---------------------------------------------------------------- XBRL stage 7, finding 2: movement tables
+# BIPI shape: the accumulated-amortisation heading is itself the row (begin | charge | deduction | end)
+INTANG_ROW = """13. ASET TAKBERWUJUD 13. INTANGIBLE ASSETS
+2022
+Saldo awal/ Beginning balance Penambahan/ Additon Pengurangan/ Deduction Saldo akhir/ Ending balance
+Harga perolehan 94.492.421 - - 94.492.421 Acquisition cost
+Akumulasi amortisasi 69.327.065 3.366.190 - 72.693.255 Accumulated amortization
+Jumlah tercatat neto 25.165.356 21.799.166 Net carrying amount"""
+# SIPD shape: the total row of accumulated amortisation wraps its label over two lines
+INTANG_WRAP = """10. ASET TAKBERWUJUD 10. INTANGIBLE ASSETS
+2022
+Saldo awal/ Saldo akhir/
+Beginning Penambahan/ Reklasifikasi/ Ending
+balance Addition Reclassification balance
+Biaya perolehan Acquisition cost
+Merek 23,737 - - 23,737 Brand
+Jumlah biaya perolehan 41,604 2,509 - 44,113 Total acquisition cost
+Akumulasi amortisasi Accumulated amortisation
+Merek (16,089) (1,582) - (17,671) Brand
+Perangkat lunak - (638) - (638) Software
+Jumlah akumulasi Total accumulated
+amortisasi (27,711) (2,220) - (29,931) amortisation
+Nilai buku 13,893 14,182 Book value"""
+
+
+def test_stage7_intangible_movement_row_and_wrapped_total():
+    assert XP.movement_charge(L(INTANG_ROW), 21_799_166, PAGES) == (3_366_190.0, 3)
+    assert XP.movement_charge(L(INTANG_WRAP), 14_182, PAGES) == (2_220.0, 3)
+
+
+def test_stage7_intangible_movement_negatives():
+    # the row does not roll (begin + charge != end) -> nothing
+    assert XP.movement_charge(L(INTANG_ROW.replace("72.693.255", "72.693.355")), 21_799_166, PAGES) is None
+    assert XP.movement_charge(L(INTANG_WRAP.replace("(29,931)", "(29,941)")), 14_182, PAGES) is None
+    # the carrying amount is not the XBRL one -> nothing
+    assert XP.movement_charge(L(INTANG_ROW), 21_799_167, PAGES) is None
+    # both years are needed for the intangible reading (one year only -> no guess)
+    assert XP.amortisation_from_movement(L(INTANG_ROW), [21_799_166, 25_165_356], PAGES) is None
+
+
+# FAST shape: years in columns, movements in rows; two notes add up to the XBRL deferred charges
+DEFER = ["""11. BIAYA RENOVASI BANGUNAN SEWA DITANGGUHKAN, NETO
+31 Desember 2022/ 31 Desember 2021/
+Biaya renovasi Renovation cost
+Saldo awal 481.295.162 468.858.107 Opening balance
+Penambahan tahun berjalan 170.060.316 122.689.377 Current year addition
+Pengurangan tahun berjalan (4.745.528) (3.536.632) Current year deduction
+646.609.950 588.010.852
+Amortisasi tahun berjalan (107.381.342) (106.715.690) Current year amortization
+Saldo akhir 539.228.608 481.295.162 Ending balance
+Biaya restorasi Restoration cost
+Saldo awal 56.449.040 61.481.614 Opening balance
+Penambahan tahun berjalan 16.296.295 25.180.040 Current year addition
+Pengurangan tahun berjalan (325.404) (193.696) Current year deduction
+Amortisasi tahun berjalan (27.063.320) (30.018.918) Current year amortization
+Saldo akhir 45.356.611 56.449.040 Ending balance
+Total 584.585.219 537.744.202 Total
+12. BEBAN DITANGGUHKAN, NETO 12. DEFERRED CHARGES, NET
+Initial fee (Catatan 35) Initial fee (Note 35)
+Saldo awal 126.934.755 143.933.075 Opening balance
+Penambahan tahun berjalan 41.047.274 10.444.653 Current year addition
+Pengurangan tahun berjalan (1.424.094) (1.346.265) Current year deduction
+Amortisasi tahun berjalan (27.251.821) (26.096.708) Current year amortization
+Saldo akhir 139.306.114 126.934.755 Ending balance""",
+         """12. BEBAN DITANGGUHKAN, NETO (lanjutan) 12. DEFERRED CHARGES, NET (continued)
+Aplikasi KFCKu dan lain-lain KFCKu application and others
+Saldo awal 51.110.282 3.576.996 Opening balance
+Penambahan tahun berjalan 11.124.225 49.494.830 Current year addition
+Amortisasi tahun berjalan (8.780.922) (1.961.544) Current year amortization
+Saldo akhir 53.453.585 51.110.282 Ending balance
+Total 192.759.699 178.045.037 Total
+13. ASET TIDAK LANCAR LAINNYA 13. OTHER NON-CURRENT ASSETS
+Uang jaminan 45.046.004 44.486.750 Security deposits
+Total 45.046.004 44.486.750 Total"""]
+DEFER_PAIR = [584_585_219 + 192_759_699, 537_744_202 + 178_045_037]
+
+
+def test_stage7_year_column_charge_two_notes_add_up_to_xbrl():
+    r = XP.year_column_charge(L(*DEFER), DEFER_PAIR, PAGES)
+    assert r[:2] == (107_381_342 + 27_063_320 + 27_251_821 + 8_780_922, 106_715_690 + 30_018_918 + 26_096_708 + 1_961_544)
+    assert r[2] == [3, 4]                                  # the note continues on the next page
+
+
+def test_stage7_year_column_charge_negatives():
+    # a run that does not roll -> that table is out -> the XBRL pair cannot be made -> nothing
+    bad = [DEFER[0].replace("539.228.608 481.295.162", "539.228.618 481.295.162"), DEFER[1]]
+    assert XP.year_column_charge(L(*bad), DEFER_PAIR, PAGES) is None
+    # the tables do not add up to the XBRL pair -> nothing
+    assert XP.year_column_charge(L(*DEFER), [DEFER_PAIR[0] + 1_000, DEFER_PAIR[1]], PAGES) is None
+    # a single table (one year missing from XBRL) -> nothing
+    assert XP.year_column_charge(L(*DEFER), [DEFER_PAIR[0], None], PAGES) is None
+    # accumulated amortisation is a balance, never the charge: a table whose only 'amortisation' row is the
+    # accumulated balance gives no charge
+    acc = """14. BIAYA DITANGGUHKAN
+Saldo awal 100 90 Opening balance
+Akumulasi amortisasi (10) (5) Accumulated amortization
+Saldo akhir 90 85 Ending balance
+Total 90 85 Total"""
+    assert XP.year_column_charge(L(acc), [90, 85], PAGES) is None
+    # two different combinations reach the XBRL pair -> ambiguous -> nothing
+    dup = DEFER[1].replace("13. ASET TIDAK LANCAR LAINNYA", "14. BEBAN DITANGGUHKAN LAIN\nSaldo awal 10 10 Opening\n"
+                           "Amortisasi tahun berjalan (1) (1) Amortization\nSaldo akhir 9 9 Ending\nTotal 9 9 Total\n"
+                           "15. BEBAN DITANGGUHKAN LAIN\nSaldo awal 10 10 Opening\n"
+                           "Amortisasi tahun berjalan (1) (1) Amortization\nSaldo akhir 9 9 Ending\nTotal 9 9 Total\n"
+                           "13. ASET TIDAK LANCAR LAINNYA")
+    assert XP.year_column_charge(L(DEFER[0], dup), [DEFER_PAIR[0] + 9, DEFER_PAIR[1] + 9], PAGES) is None

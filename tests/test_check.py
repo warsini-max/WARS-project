@@ -5,7 +5,7 @@ import pytest
 
 from wars_scanner import check
 from wars_scanner.pdf_reader import Value
-from wars_scanner.text import Msg
+from wars_scanner.text import Msg, render
 
 
 def test_parse_amount_accepts_both_separators_and_brackets():
@@ -42,7 +42,7 @@ def test_items_one_per_field_with_reason():
 def test_apply_records_origin_and_replaces_only_amended_amounts():
     r = _result()
     its = check.items(r)
-    r2 = check.apply(r, its, {"accounts_receivable": {"choice": "edit", "t": "91", "t1": "33"},
+    r2 = check.apply(r, its, {"accounts_receivable": {"choice": "edit", "t": "91", "t1": "33", "page": "12"},
                               "taxes_payable": {"choice": "ok"}})
     assert r2.inputs["accounts_receivable_t"] == 91 and r2.inputs["taxes_payable_t"] == 8
     st = {(f, c): s for f, c, s, _, _ in r2.user_checked}
@@ -57,14 +57,14 @@ def test_apply_refuses_unanswered_and_missing_amounts():
     with pytest.raises(check.AnswerError):
         check.apply(r, its, {"accounts_receivable": {"choice": "ok"}})
     with pytest.raises(check.AnswerError):
-        check.apply(r, its, {"accounts_receivable": {"choice": "edit", "t": "91", "t1": ""},
+        check.apply(r, its, {"accounts_receivable": {"choice": "edit", "t": "91", "t1": "", "page": "12"},
                              "taxes_payable": {"choice": "ok"}})
 
 
 def test_same_amount_entered_counts_as_agreed_not_amended():
     r = _result()
     its = check.items(r)
-    r2 = check.apply(r, its, {"accounts_receivable": {"choice": "edit", "t": "250", "t1": "220"},
+    r2 = check.apply(r, its, {"accounts_receivable": {"choice": "edit", "t": "250", "t1": "220", "page": "12"},
                               "taxes_payable": {"choice": "ok"}})
     assert {s for f, c, s, _, _ in r2.user_checked} == {check.CONFIRMED}
 
@@ -97,7 +97,7 @@ def test_amortisation_in_review_is_shown_and_rebuilds_the_da_total():
     its = check.items(r)
     # stage 6: REVIEW here never reached the user; target B (8 Nov) adds the FOUND depreciation as a risk field
     assert [i.field for i in its] == ["ppe_depreciation_disclosed", "amortization_intangibles"]
-    r2 = check.apply(r, its, {"amortization_intangibles": {"choice": "edit", "t": "101", "t1": "103"},
+    r2 = check.apply(r, its, {"amortization_intangibles": {"choice": "edit", "t": "101", "t1": "103", "page": "12"},
                               "ppe_depreciation_disclosed": {"choice": "ok"}})
     assert (r2.inputs["depreciation_amortization_total_t"], r2.inputs["depreciation_amortization_total_t1"]) == (151, 143)
 
@@ -160,7 +160,7 @@ def test_target_b_found_risk_fields_go_to_the_review_screen():
     assert [i.field for i in its] == ["long_term_debt", "current_maturities_long_term_debt", "taxes_payable",
                                       "ppe_depreciation_disclosed"]
     assert {i.field: i.reason.key for i in its} == {
-        "long_term_debt": "chk.r.risk", "current_maturities_long_term_debt": "chk.r.risk",
+        "long_term_debt": "chk.r.risk_debt", "current_maturities_long_term_debt": "chk.r.risk_debt",
         "taxes_payable": "chk.r.risk_tax", "ppe_depreciation_disclosed": "chk.r.risk"}
     # negative: a FOUND line outside the risk list (revenue) is not added; tax payable never gets the lease wording
 
@@ -202,7 +202,7 @@ def test_user_checked_ppe_drops_the_pdf_reading_check(monkeypatch):
     import wars_scanner.validation as V
     r, fl = _ppe_flag_result()
     monkeypatch.setattr(V, "check", lambda p, ex: [fl])
-    r2 = check.apply(r, check.items(r), {"property_plant_equipment_net": {"choice": "edit", "t": "131", "t1": "153"},
+    r2 = check.apply(r, check.items(r), {"property_plant_equipment_net": {"choice": "edit", "t": "131", "t1": "153", "page": "12"},
                                          "revenue": {"choice": "ok"}})
     assert all(f.code != "a_ppe_note" for f in r2.flags)
 
@@ -310,3 +310,92 @@ def test_layout_flag_empties_the_review_screen_and_survives_apply():
     # negative: without the flag the review screen is unchanged
     r.flags = []
     assert [i.field for i in check.items(r)] == ["long_term_debt"]
+
+
+# ---------------------------------------------------------------- amended amount needs its source page (Gail 10 Nov)
+def _edit_case():
+    r = _result()
+    return r, check.items(r)
+
+
+def test_edit_without_page_is_refused():
+    r, its = _edit_case()
+    f = its[0].field
+    ans = {it.field: {"choice": "ok"} for it in its}
+    for bad in ("", " ", "0", "p12", "-3", "1.5"):
+        ans[f] = {"choice": "edit", "t": "91", "t1": "33", "page": bad}
+        with pytest.raises(check.AnswerError) as e:
+            check.apply(r, its, ans)
+        assert e.value.args[0].key == "chk.err.page"
+
+
+def test_edit_with_page_replaces_wars_page_and_notes_it():
+    r, its = _edit_case()
+    f = its[0].field
+    ans = {it.field: {"choice": "ok"} for it in its}
+    old_t1 = its[0].values["t1"]
+    ans[f] = {"choice": "edit", "t": "91", "t1": str(old_t1), "page": "068"}
+    r2 = check.apply(r, its, ans)
+    by = {(v.field, v.column): v for v in r2.extraction.values}
+    assert by[(f, "t")].pages == [68]                      # the user's page, as a PDF-file page number
+    assert by[(f, "t")].note.key == "chk.prov.amended"
+    assert "68" in render(by[(f, "t")].note, "id") and "250" in render(by[(f, "t")].note, "id")
+    old_pages = [v.pages for v in r.extraction.values if v.field == f and v.column == "t1"]
+    assert by[(f, "t1")].pages == old_pages[0]            # unchanged amount keeps WARS's page
+    rev = {(x[0], x[1]): x for x in r2.review}
+    assert rev[(f, "t")][3].key == "chk.prov.amended"
+
+
+def test_ok_needs_no_page():
+    r, its = _edit_case()
+    r2 = check.apply(r, its, {it.field: {"choice": "ok"} for it in its})
+    assert all(s == check.CONFIRMED for _, _, s, _, _ in r2.user_checked)
+
+
+# ---------------------------------------------------------------- XBRL stage 7, findings 4, 5, 6 (synthetic)
+def test_stage7_located_kind_only_when_one_kind():
+    from wars_scanner.pdf_reader import _located_kind
+    chosen = {"position": [13, 14], "profit_loss": [15], "cash_flow": [17, 18], "notes_start": 19}
+    assert _located_kind(chosen, 13) == "position"
+    # negatives: a page outside the located statements, no location at all, a page claimed by two kinds
+    assert _located_kind(chosen, 16) is None and _located_kind(None, 13) is None
+    assert _located_kind({"position": [13], "profit_loss": [13]}, 13) is None
+
+
+def _np_result(status, value):
+    vals = [Value("depreciation_amortization_non_ppe", c, value, status) for c in ("t", "t1")]
+    ex = SimpleNamespace(values=vals, fiscal_year=2022, statements={}, fs_location={})
+    p = {"depreciation_amortization_non_ppe_t": value, "depreciation_amortization_non_ppe_t1": value}
+    miss = [("depreciation_amortization_non_ppe", c, status, "") for c in ("t", "t1")] if value is None else []
+    return SimpleNamespace(extraction=ex, inputs=p, calc={}, flags=[], missing=miss, unreadable="", review=[])
+
+
+def test_stage7_not_assessed_line_can_be_completed():
+    r = _np_result("NOT ASSESSED", None)
+    its = [i for i in check.items(r) if i.field == "depreciation_amortization_non_ppe"]
+    assert its and its[0].mode == "missing"
+    r2 = check.apply(r, its, {"depreciation_amortization_non_ppe": {"choice": "nil", "note": "9. Properti investasi"}})
+    assert r2.inputs["non_ppe_status_t"] == "NONE_PRESENT" and r2.inputs["depreciation_amortization_non_ppe_t"] == 0
+    r3 = check.apply(r, its, {"depreciation_amortization_non_ppe": {"choice": "enter", "t": "5", "t1": "4", "page": "50"}})
+    assert r3.inputs["non_ppe_status_t"] == "PARTIAL_UNDISCLOSED"          # M-14: an entered amount is never ALL_DISCLOSED
+
+
+def test_stage7_assumed_with_an_amount_is_not_called_zero():
+    it = SimpleNamespace(status="ASSUMED", value=83_597_601_132)
+    assert check._user_note(it).key == "chk.note.assumed_part"
+    assert check._user_note(SimpleNamespace(status="ASSUMED", value=0)).key == "chk.note.assumed"   # negative
+    r = _np_result("ASSUMED", 83_597_601_132)
+    its = [i for i in check.items(r) if i.field == "depreciation_amortization_non_ppe"]
+    assert its[0].reason.key == "chk.r.risk"
+    r0 = _np_result("ASSUMED", 0)                                             # negative: a real zero keeps 2A
+    assert [i for i in check.items(r0) if i.field == "depreciation_amortization_non_ppe"][0].reason.key == "chk.r.risk_zero"
+
+
+def test_stage7_da_total_shown_is_the_one_used():
+    v = Value("depreciation_amortization_total", "t", 89_819, "FOUND")
+    keep = Value("depreciation_amortization_total", "t1", 80_000, "FOUND")
+    r = SimpleNamespace(extraction=SimpleNamespace(values=[v, keep]),
+                        inputs={"depreciation_amortization_total_t": 99_315, "depreciation_amortization_total_t1": 80_000})
+    check._sync_da_total(r)
+    assert (v.value, v.status) == (99_315, "BUILT FROM DISCLOSED COMPONENTS")
+    assert (keep.value, keep.status) == (80_000, "FOUND")                      # negative: same figure, untouched

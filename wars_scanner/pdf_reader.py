@@ -369,6 +369,12 @@ EXCLUDE_TITLES = [r"PERUBAHAN EKUITAS", r"CHANGES IN EQUITY", r"CATATAN ATAS", r
                   r"TABLE OF CONTENTS", r"SURAT PERNYATAAN", r"LAPORAN AUDITOR"]
 
 
+def _located_kind(chosen, page):
+    """The statement kind the locator assigned to this page (one kind only), else None."""
+    hits = [k for k in ("position", "profit_loss", "cash_flow") if page in ((chosen or {}).get(k) or [])]
+    return hits[0] if len(hits) == 1 else None
+
+
 def _classify(page_lines, height):
     head = " ".join(ln.text for ln in page_lines if ln.top < height * 0.30).upper()
     tight = re.sub(r"\s+", "", head)          # titles with glued words ("LAPORANPOSISIKEUANGAN", ERAA 2021)
@@ -1305,7 +1311,10 @@ def read(pdf_path) -> Extraction:
 
     kinds = {}
     for i, (lines, h) in pages.items():
-        k = _classify(lines, h)
+        # the locator's page index already found the statement title and the notes column on this page; the word
+        # lines can split a bilingual title ('LAPORAN POSISI CONSOLIDATED STATEMENTS / KEUANGAN KONSOLIDASIAN OF
+        # FINANCIAL POSITION', XBRL stage 7, finding 4: EXCL), so the locator's kind stands when the lines give none
+        k = _classify(lines, h) or _located_kind(chosen, i)
         if k:
             kinds.setdefault(k, []).append(i)
 

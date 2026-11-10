@@ -94,6 +94,7 @@ def merge_xbrl(pr, xres):
             v.quotes = []
     r.inputs = dict(xres.inputs)
     r.calc = dict(xres.calc)
+    _sync_da_total(r)
     r.review = [(it.field, it.column, it.status, _user_note(it))
                 for it in xres.items if it.status in ("REVIEW", "ASSUMED", "UNDISCLOSED") and it.value is not None]
     r.missing = [(it.field, it.column, it.status, _user_note(it)) for it in xres.items
@@ -129,6 +130,17 @@ def merge_xbrl(pr, xres):
     return r
 
 
+def _sync_da_total(r):
+    """The D&A total the engine uses is built from its parts; the figure shown in the reading and the checklist
+    must be that same figure (XBRL stage 7, finding 6: SIPD showed the PDF reader's 89,819 while 99,315 was used)."""
+    for c in ("t", "t1"):
+        new = r.inputs.get(f"depreciation_amortization_total_{c}")
+        v = next((x for x in r.extraction.values if x.field == "depreciation_amortization_total" and x.column == c), None)
+        if new is None or v is None or (v.value is not None and abs(v.value - new) <= 1):
+            continue
+        v.value, v.status, v.note, v.quotes = new, "BUILT FROM DISCLOSED COMPONENTS", Msg("note.dat_built"), []
+
+
 def _drop_pdf_reading_checks(flags, found):
     return [fl for fl in flags if not (fl.code in PDF_READING_CHECKS and fl.fields
                                        and all((x, fl.column) in found for x in fl.fields))]
@@ -140,7 +152,8 @@ def _user_note(it):
     if it.status == "FOUND":
         return ""
     if it.status in ("ASSUMED", "UNDISCLOSED"):
-        return Msg("chk.note.assumed")
+        # a read amount with unread parts counted 0 is not 'counted as 0' (XBRL stage 7, finding 6: RDTX 83.6 bn)
+        return Msg("chk.note.assumed_part") if it.value else Msg("chk.note.assumed")
     if it.status in ("NOT FOUND", "NOT ASSESSED"):
         return Msg("chk.note.not_found")
     return Msg("chk.note.single")
@@ -175,6 +188,10 @@ NIL_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_paya
               "depreciation_amortization_non_ppe")
 
 
+RISK_REASON = {"taxes_payable": "chk.r.risk_tax", "long_term_debt": "chk.r.risk_debt",
+               "current_maturities_long_term_debt": "chk.r.risk_debt"}
+
+
 def _risk_status(r, f):
     """Statuses of a risk field (t, t1) that are not REVIEW and not yet checked by the user."""
     st = {v.column: v.status for v in r.extraction.values if v.field == f and v.column in ("t", "t1")}
@@ -193,7 +210,8 @@ def items(r) -> list:
     findings = xb.get("face_findings", [])
     face_text = " ".join(f.get("line", "") for f in findings)
     out = []
-    missing = {f for f, c, s, _ in (getattr(r, "missing", None) or []) if s == "NOT FOUND"}
+    # NOT ASSESSED too (XBRL stage 7, finding 5: CTTH investment property with no depreciation read, P8)
+    missing = {f for f, c, s, _ in (getattr(r, "missing", None) or []) if s in ("NOT FOUND", "NOT ASSESSED")}
     for f in CHECK_FIELDS:
         vals = {c: r.inputs.get(f"{f}_{c}") for c in ("t", "t1")}
         if f in missing and any(v is None for v in vals.values()):
@@ -210,10 +228,11 @@ def items(r) -> list:
         if cols:
             note = " ".join(str(rev[(f, c)]) for c in cols)
             reason, labels = _reason(f, note, findings, r)
-        elif any(s in ZERO_STATUSES for s in risk.values()):
+        elif any(s in ZERO_STATUSES and not vals.get(c) for c, s in risk.items()):
             reason, labels = Msg("chk.r.risk_zero"), []
-        else:   # the lease / right of use wording fits debt and depreciation, not tax payable (Gail 8 Nov 16.06)
-            reason, labels = Msg("chk.r.risk_tax" if f == "taxes_payable" else "chk.r.risk"), []
+        else:   # the lease / right of use wording fits debt and depreciation, not tax payable (Gail 8 Nov 16.06);
+            # debt also names interest-bearing related-party loans (XBRL stage 7, finding 3: CTTH)
+            reason, labels = Msg(RISK_REASON.get(f, "chk.r.risk")), []
         pages = sorted({p for c in ("t", "t1") for p in ((by.get((f, c)).pages if by.get((f, c)) else []) or [])})
         if not pages or f in FACE_FIELDS:
             pages = sorted(set(pages) | set(_face_pages(r, f)))
@@ -301,14 +320,20 @@ def apply(r, checks, answers):
     p = r2.inputs
     checked = []
     filled = set()
+    notes = {}
     for it in checks:
         a = answers.get(it.field) or {}
         if it.mode == "missing":
-            checked += _apply_missing(r2, by, p, it, a)
+            got = _apply_missing(r2, by, p, it, a)
+            checked += [x[:5] for x in got]
+            notes.update({(x[0], x[1]): x[5] for x in got})
             filled.add(it.field)
             continue
         if a.get("choice") not in ("ok", "edit"):
             raise AnswerError(Msg("chk.err.pending", item=Msg(f"label.{it.field}")))
+        page = None
+        if a["choice"] == "edit":                       # an amended amount needs its source page (Gail 10 Nov)
+            page = _page(a, Msg(f"label.{it.field}"))
         for c in ("t", "t1"):
             old = it.values[c]
             if a["choice"] == "edit":
@@ -322,17 +347,21 @@ def apply(r, checks, answers):
             status = AMENDED if (a["choice"] == "edit" and new != old) else CONFIRMED
             p[f"{it.field}_{c}"] = new
             v = by.get((it.field, c))
+            note = Msg("chk.prov.amended", old=Amt(old), p=Raw(page)) if status == AMENDED else ""
             if v is not None:
-                v.value, v.status = new, status
-                v.note = Msg("chk.prov.note", old=Amt(old)) if status == AMENDED else ""
+                v.value, v.status, v.note = new, status, note
+                if status == AMENDED:                   # the user's page replaces WARS's page for this amount
+                    v.pages = [int(page)]
+            notes[(it.field, c)] = note
             checked.append((it.field, c, status, old, new))
     # the D&A total is built from its components (workbook: depreciation_expense = D&A - amortisation - non-PPE)
     for c in ("t", "t1"):
         if any(f in DA_PARTS and cc == c and s == AMENDED for f, cc, s, _, _ in checked):
             p[f"depreciation_amortization_total_{c}"] = sum(p.get(f"{f}_{c}") or 0 for f in DA_PARTS)
+    _sync_da_total(r2)
     done = {(f, c) for f, c, *_ in checked}
     r2.review = [x for x in r2.review if (x[0], x[1]) not in done] + \
-        [(f, c, s, Msg("chk.prov.note", old=Amt(o)) if s == AMENDED else "") for f, c, s, o, _ in checked]
+        [(f, c, s, notes.get((f, c), "")) for f, c, s, o, _ in checked]
     r2.missing = [x for x in (getattr(r2, "missing", None) or []) if x[0] not in filled]
     r2.calc = engine.calculate(p)
     if getattr(r, "calc", {}).get("m_score_B") == "" and r2.missing:
@@ -356,9 +385,7 @@ def _apply_missing(r2, by, p, it, a):
     if choice not in ("enter", "nil") or (choice == "nil" and it.field not in NIL_FIELDS):
         raise AnswerError(Msg("chk.err.pending", item=item))
     if choice == "enter":
-        page = str(a.get("page") or "").strip()
-        if not page.isdigit() or int(page) < 1:
-            raise AnswerError(Msg("chk.err.page", item=item))
+        page = _page(a, item)
         note = Msg("chk.prov.entered", p=Raw(page))
     else:
         checked_notes = str(a.get("note") or "").strip()
@@ -378,11 +405,26 @@ def _apply_missing(r2, by, p, it, a):
                 raise AnswerError(Msg("chk.err.negative", item=item))
         status = CONFIRMED if (old is not None and new == old) else AMENDED
         p[f"{it.field}_{c}"] = new
+        if it.field == "depreciation_amortization_non_ppe":
+            # M-06/M-14: nil with the notes examined = none present; an entered amount is never 'all disclosed'
+            p[f"non_ppe_status_{c}"] = "NONE_PRESENT" if choice == "nil" else "PARTIAL_UNDISCLOSED"
+        if it.field == "amortization_intangibles":
+            p[f"amort_status_{c}"] = ""
         v = by.get((it.field, c))
         if v is not None:
             v.value, v.status, v.note = new, status, note
-        out.append((it.field, c, status, old, new))
+            if choice == "enter":
+                v.pages = [int(page)]
+        out.append((it.field, c, status, old, new, note))
     return out
+
+
+def _page(a, item):
+    """The source page the user gave: a page number of the PDF file (1 = the first page of the file)."""
+    page = str(a.get("page") or "").strip()
+    if not page.isdigit() or int(page) < 1:
+        raise AnswerError(Msg("chk.err.page", item=item))
+    return str(int(page))
 
 
 def _year(r, c):

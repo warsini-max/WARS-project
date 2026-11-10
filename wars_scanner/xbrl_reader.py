@@ -46,9 +46,10 @@ AR = ["TradeReceivablesThirdParties", "TradeReceivablesRelatedParties"]
 
 # concept families for the face-completeness check (rule 2). Only score items.
 FAMILY_LABEL = {
-    "debt": re.compile(r"\b(pinjaman|utang bank|utang pembiayaan|liabilitas sewa|sewa guna|sewa pembiayaan|"
+    # 'Utang sewa / Lease payables' (TNCA) and 'Loans from related parties' (CTTH): XBRL stage 7, finding 3
+    "debt": re.compile(r"\b(pinjaman|utang bank|utang pembiayaan|liabilitas sewa|utang sewa|sewa guna|sewa pembiayaan|"
                        r"utang obligasi|obligasi|sukuk|wesel bayar|medium term notes?|bank loans?|borrowings?|"
-                       r"lease liabilit|financing payables?|bonds payable)\b", re.I),
+                       r"lease liabilit|lease payables?|loans? from|financing payables?|bonds payable)\b", re.I),
     "rou": re.compile(r"\b(hak[- ]guna|right[- ]of[- ]use)\b", re.I),
     "receivable": re.compile(r"\b(piutang usaha|trade receivables?)\b", re.I),
     "sga": re.compile(r"\b(beban penjualan|beban umum|beban usaha|beban pemasaran|selling expenses|"
@@ -69,7 +70,9 @@ CM_HEAD = re.compile(r"(?i)jatuh tempo dalam (waktu )?(satu|1) tahun|current mat
                      r"due within one year")
 # the first line of a current-maturities heading wrapped over two lines: 'Bagian liabilitas jangka panjang' /
 # 'Bagian utang jangka panjang' (the rest, 'yang jatuh tempo dalam satu tahun', follows on the next line)
-CM_WRAP = re.compile(r"(?i)^\s*bagian (liabilitas|utang|pinjaman)\b[^\d]{0,30}\bjangka panjang\b(?![^\d]*\b(jumlah|total)\b)")
+CM_WRAP = re.compile(r"(?i)^\s*bagian (liabilitas|utang|pinjaman)\b[^\d]{0,30}\bjangka panjang\b(?![^\d]*\b(jumlah|total)\b)|"
+                     # 'Liabilitas Jangka Panjang - Bagian' / 'Jatuh Tempo dalam Satu Tahun:' (RDTX, XBRL stage 7)
+                     r"^\s*(liabilitas|utang|pinjaman) jangka panjang\s*-\s*bagian\b(?![^\d]*\b(jumlah|total)\b)")
 # liabilities that are never interest-bearing debt, whatever their tag (employee benefits, tax, provisions ...)
 NOT_DEBT_LINE = re.compile(r"(?i)imbalan|employee|pajak|tax|provisi|provision|pendapatan diterima|unearned|"
                            r"liabilitas kontrak|contract liabilit|uang muka|advances?|jaminan|deposit|"
@@ -78,7 +81,7 @@ NOT_DEBT_LINE = re.compile(r"(?i)imbalan|employee|pajak|tax|provisi|provision|pe
 NOT_FAMILY = {
     "debt": re.compile(r"\b(biaya pinjaman|beban bunga|pembayaran|penerimaan|proceeds|payments?|repayment|"
                        r"uang muka|advances?|piutang|investasi|investments?|laba|rugi|keuntungan|kerugian|gain|loss|selisih kurs|"
-                       r"kepada|loans? to)\b", re.I),
+                       r"(?<!utang )kepada|loans? to)\b", re.I),   # 'pinjaman kepada' is an asset; 'utang kepada' a liability
     "rou": re.compile(r"\b(sertifikat|hak guna bangunan|hgb|building rights|liabilitas|liabilities|sewa|lease|uang muka|advances?)\b", re.I),
     "receivable": re.compile(r"\b(penyisihan|allowance|lain-lain|other)\b", re.I),
     "sga": re.compile(r"\b(laba|rugi|profit|loss|income|lain|lainnya|other)\b", re.I),
@@ -315,6 +318,20 @@ def face_pages(fields: dict, lines: list) -> dict:
     return {k: sorted(v) for k, v in out.items()}
 
 
+# a '-' amount (nil), not a list bullet before a label: '- Liabilitas Sewa 2 173.279.599 - - Lease Liabilities' has
+# one nil amount and two bullets (XBRL stage 7, finding 7: RDTX current maturities were taken as FOUND 0)
+NIL_DASH = re.compile(r"(?<!\S)-(?!\S)")
+_BULLET = re.compile(r"(?<!\S)-(?=\s+[A-Za-z(])")
+
+
+def nil_dashes(ln: str) -> int:
+    """Number of nil amounts ('-') on a line. When the line itself starts with a bullet ('- Liabilitas Sewa'), a dash
+    before a label is a bullet too; otherwise every free-standing dash counts ('Utang bank 1.500 - - Bank loans')."""
+    if re.match(r"\s*-\s+[A-Za-z(]", ln):
+        return len(NIL_DASH.findall(ln)) - len(_BULLET.findall(ln))
+    return len(NIL_DASH.findall(ln))
+
+
 def face_check(inst: Instance, lines: list, pages: dict) -> list:
     """Rule 2: a face line naming a score item must pair with a fact of that family. Returns REVIEW findings."""
     facts = {}
@@ -381,7 +398,7 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
                 continue
             if fam == "debt" and _subset_sum_match(facts, FAMILY_CONCEPTS["debt"], nums):
                 continue
-            if sum(x >= 100 for x in nums) == 1 and len(re.findall(r"(?<!\S)-(?!\S)", ln)) >= 2:
+            if sum(x >= 100 for x in nums) == 1 and nil_dashes(ln) >= 2:
                 continue   # third column only (e.g. 1 January of the comparative year); t and t-1 are '-'
 
             if not any(c in FAMILY_CONCEPTS[fam] for c in hits):
