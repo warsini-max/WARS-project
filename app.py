@@ -22,7 +22,7 @@ import streamlit as st
 
 from wars_scanner import check, pipeline, report, report_pdf, report_xlsx, xbrl_pipeline
 from wars_scanner.report import NEUTRAL_M, THRESHOLD, dec
-from wars_scanner.text import Msg, Num, Raw, fmt_number, render, t, unit_msg
+from wars_scanner.text import CATALOG, Msg, Num, Raw, fmt_number, render, t, unit_msg
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 LINKEDIN = "https://www.linkedin.com/in/warsiniak"
@@ -450,7 +450,7 @@ def _answer_state(checks):
 def _complete(a):
     filled = lambda k: bool(str(a.get(k, "")).strip())                        # noqa: E731
     c = a.get("choice")
-    return c == "ok" or (c in ("edit", "enter") and filled("t") and filled("t1") and (c == "edit" or filled("page"))) \
+    return c == "ok" or (c in ("edit", "enter") and filled("t") and filled("t1") and filled("page")) \
         or (c == "nil" and filled("note"))
 
 
@@ -496,7 +496,9 @@ def page_check():
                 st.markdown(f'<div class="ck-top"><div><div class="ck-of">{E(T("chk.item_of", i=i, n=n))}</div>'
                             f'<div class="ck-h">{E(T("chk.f." + it.field))}</div></div>'
                             f'<span class="ck-b {state}">{E(badge)}</span></div>'
-                            f'<p class="ck-why">{E(R(it.reason))}</p>', unsafe_allow_html=True)
+                            f'<p class="ck-why">{E(R(it.reason))}</p>'
+                            + (f'<p class="ck-why" style="color:#3A3F46">{E(T("chk.h." + it.field))}</p>'
+                               if ("chk.h." + it.field) in CATALOG else ""), unsafe_allow_html=True)
                 png, pg = extract_img(pdf["sha"], it.field, pdf["data"], it)
                 if png:
                     st.markdown(f'<div class="ck-cap">{E(T("chk.extract", p=pg))}</div>', unsafe_allow_html=True)
@@ -528,11 +530,11 @@ def page_check():
                     if k not in ss and stored.get("note"):
                         ss[k] = stored["note"]
                     st.text_input(T("chk.miss.note"), key=k)
-                if ss.get(f"ck_{it.field}") == "enter":
+                if ss.get(f"ck_{it.field}") in ("enter", "edit"):     # source page required (Gail 10 Nov)
                     k = f"ck_{it.field}_page"
                     if k not in ss and stored.get("page"):
                         ss[k] = stored["page"]
-                    st.text_input(T("chk.miss.page"), key=k, max_chars=4)
+                    st.text_input(T("chk.miss.page"), key=k, max_chars=4, help=T("chk.page_help"))
                 if ss.get(f"ck_{it.field}") in ("edit", "enter"):
                     c1, c2 = st.columns(2)
                     for col, c, y in ((c1, "t", yt), (c2, "t1", yt1)):

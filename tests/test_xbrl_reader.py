@@ -384,3 +384,37 @@ def test_movement_tables_on_note_pages_do_not_count():
     note = NOTE + "\nNilai buku 480 500 Net book value"
     o = run(instance(), [BS, PL, note])["column_order"]
     assert not o["inconsistent"]
+
+
+# ---------------------------------------------------------------- XBRL stage 7, findings 3 and 7 (synthetic)
+def test_stage7_debt_labels_lease_payables_and_loans_from_related_parties():
+    rx, no = X.FAMILY_LABEL["debt"], X.NOT_FAMILY["debt"]
+    for ln in ("Utang sewa 98.950.627 2m,15,24 627.171.962 Lease payables",
+               "Utang kepada pihak berelasi 126.641.220.018 20,31 118.719.269.018 Loans from related parties"):
+        assert rx.search(ln) and not no.search(ln), ln
+    # negatives: a payable to a related party without the word 'loan' (no interest can be seen on the face),
+    # a loan given (asset), and the cash-flow payment line
+    assert not rx.search("Utang pihak berelasi - 2f,2h,8d 156.013.596 Due to related party")
+    assert no.search("Pinjaman kepada karyawan 1.000 900 Loans to employees")
+    assert no.search("Pembayaran utang sewa (577.792.960) 15 (1.106.974.950) Payment of lease payables")
+
+
+def test_stage7_rule2_untagged_lease_payables_line_makes_debt_review():
+    bs = BS.replace("Jumlah liabilitas jangka pendek", "Utang sewa 900 700 Lease payables\nJumlah liabilitas jangka pendek")
+    r = run(instance(), [bs, PL, NOTE])
+    assert any(f["family"] == "debt" and "Utang sewa" in f["line"] for f in r["face_findings"])
+    assert r["fields"]["t"]["current_maturities_long_term_debt"].status == "REVIEW"
+
+
+def test_stage7_nil_dash_is_not_a_bullet():
+    assert X.nil_dashes("- Liabilitas Sewa 2 173.279.599 - - Lease Liabilities") == 1
+    assert X.nil_dashes("- Pembiayaan Konsumen - 71.931.020 - Consumer Financing") == 1
+    # negative: a real three-column line (1 January column) without bullets still has two nil amounts
+    assert X.nil_dashes("Utang bank 1.500 - - Bank loans") == 2
+
+
+def test_stage7_reversed_wrapped_current_maturities_heading():
+    assert X.CM_WRAP.match(" Liabilitas Jangka Panjang - Bagian Long-term Liabilities - Current")
+    # negatives: the non-current section heading and its total are not a current-maturities heading
+    assert not X.CM_WRAP.match("LIABILITAS JANGKA PANJANG NON-CURRENT LIABILITIES")
+    assert not X.CM_WRAP.match("Liabilitas jangka panjang - bagian tidak lancar jumlah 500 400")

@@ -181,19 +181,28 @@ def _sent_amount(txt, unit):
     return v * UNIT_WORD.get((unit or "").lower(), 1)
 
 
-def amortisation_from_sentence(pages_txt, carrying, scale):
+YEAR_LIKE = re.compile(r"(?:19|20)\d\d")
+
+
+def amortisation_from_sentence(pages_txt, carrying, scale, skip_pages=()):
     """Amortisation (t, t-1) from one sentence on a page about intangible assets. The amounts are in Rupiah (or the
     unit word that follows); they are converted to the statement unit and kept only if plausible against the
-    intangible carrying amounts (in the statement unit). Two plausible readings, or none, -> None (no guess)."""
+    intangible carrying amounts (in the statement unit). Two plausible readings, or none, -> None (no guess).
+    Never on the face pages (skip_pages, 1-based): a bilingual face line interleaves the two languages and once gave
+    'accumulated amortization of 2022 dan Rp635.142.745' (XBRL stage 7, TNCA). A year-like figure (2022) is never
+    an amount, and 'akumulasi/accumulated' just before 'amortisasi' marks the carrying-amount wording."""
     cap = 2 * sum(abs(c) for c in carrying if c)
     if not cap:
         return None
+    skip = set(skip_pages or ())
     for i, t in enumerate(pages_txt):
-        if not INTANGIBLE_PAGE.search(t):
+        if i + 1 in skip or not INTANGIBLE_PAGE.search(t):
             continue
         flat = re.sub(r"\s+", " ", t)
         for m in AMORT_SENT.finditer(flat):
-            if AMORT_SENT_NOT.search(m.group("mid")):
+            if AMORT_SENT_NOT.search(m.group("mid")) or AMORT_SENT_NOT.search(flat[max(0, m.start() - 25):m.start()]):
+                continue
+            if any(YEAR_LIKE.fullmatch(m.group(g)) and not m.group("u" + g) for g in ("a", "b")):
                 continue
             a, b = _sent_amount(m.group("a"), m.group("ua")), _sent_amount(m.group("b"), m.group("ub"))
             if m.group("ua") or m.group("ub"):
@@ -204,6 +213,49 @@ def amortisation_from_sentence(pages_txt, carrying, scale):
             if len(ok) == 1:
                 return {"t": round(ok[0][0]), "t1": round(ok[0][1]), "page": i + 1, "line": m.group(0)[:100]}
     return None
+
+
+def amortisation_from_movement(lines, carrying, pages):
+    """Intangible amortisation (t, t-1) from the intangible movement tables, anchored by the XBRL carrying amounts
+    (XBRL stage 7, finding 2: BIPI, SIPD). Both years must be read, else None (no guess)."""
+    if not carrying or not all(carrying):
+        return None
+    mt, mt1 = movement_charge(lines, carrying[0], pages, True), movement_charge(lines, carrying[1], pages, True)
+    if mt and mt1:
+        return {"t": mt[0], "t1": mt1[0], "page": mt[1], "line": "movement table"}
+    yc = year_column_charge(lines, carrying, pages)
+    if yc:
+        return {"t": yc[0], "t1": yc[1], "page": yc[2][0], "line": "movement table"}
+    return None
+
+
+DEFERRED_CONCEPTS = ("OtherDeferredCharges", "DeferredChargesOnLandrights")
+
+
+def deferred_charge_amortisation(lines, inst, pages):
+    """Amortisation (t, t-1) of deferred charges / land rights on the XBRL face (workbook M-06 group 3, long-term
+    costs) from their movement tables (XBRL stage 7, finding 2: FAST). Every class present must be read, both
+    years; else None and the provisional rule stays. Returns dict(t, t1, pages, classes) or None."""
+    out = {"t": 0.0, "t1": 0.0, "pages": [], "classes": []}
+    for cn in DEFERRED_CONCEPTS:
+        pair = [inst.plain(cn, c, "i") for c in ("t", "t1")]
+        if not any(pair):
+            continue
+        if not all(pair):
+            return None
+        mt, mt1 = movement_charge(lines, pair[0], pages, True), movement_charge(lines, pair[1], pages, True)
+        if mt and mt1:
+            got = (mt[0], mt1[0], [mt[1]])
+        else:
+            yc = year_column_charge(lines, pair, pages)
+            if not yc:
+                return None
+            got = yc
+        out["t"] += got[0]
+        out["t1"] += got[1]
+        out["pages"] = sorted(set(out["pages"]) | set(got[2]))
+        out["classes"].append(cn)
+    return out if out["classes"] else None
 
 
 def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
@@ -313,7 +365,10 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
         if p.get(f"amort_status_{c}") in ("UNDISCLOSED", None) or pdf_status.get(("amortization_intangibles", c)) in (
                 "NOT ASSESSED", "UNDISCLOSED", "ASSUMED"):
             am_x = am_x or amortisation_from_notes(xr, lines, xr["face_pages"]) or amortisation_from_sentence(
-                pages_txt, [inst.plain("IntangibleAssetsOtherThanGoodwill", cc, "i") for cc in ("t", "t1")], inst.scale)
+                pages_txt, [inst.plain("IntangibleAssetsOtherThanGoodwill", cc, "i") for cc in ("t", "t1")], inst.scale,
+                set(xr["face_pages"].get("bs", [])) | set(xr["face_pages"].get("pl", []))) or \
+                amortisation_from_movement(lines, [inst.plain("IntangibleAssetsOtherThanGoodwill", cc, "i")
+                                                   for cc in ("t", "t1")], xr["face_pages"])
             if am_x:
                 old = p.get(f"amortization_intangibles_{c}") or 0
                 p[f"amortization_intangibles_{c}"] = am_x[c]
@@ -342,6 +397,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     fv = _ip_fair_value(lines)
     classes = {cn: [inst.plain(cn, c, "i") for c in ("t", "t1")] for cn in NON_PPE_CONCEPTS}
     classes = {cn: v for cn, v in classes.items() if any(v)}
+    dc = deferred_charge_amortisation(lines, inst, xr["face_pages"]) if not classes else None
     for i, c in enumerate(("t", "t1")):
         total, unread, srcs = 0.0, [], []
         for cn, vals in classes.items():
@@ -359,7 +415,14 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
                 srcs.append(f"{label} {mv[0]:,.0f} (movement table p{mv[1]})")
             else:
                 unread.append(label)
-        if not classes:
+        if not classes and dc and not pdf_read.get(c):
+            # deferred charges read from their movement tables; other classes not on the XBRL face (REVIEW)
+            amt = dc[c]
+            p[f"depreciation_amortization_non_ppe_{c}"], p[f"non_ppe_status_{c}"] = amt, "PARTIAL_UNDISCLOSED"
+            items.append(Item("depreciation_amortization_non_ppe", c, amt, "REVIEW",
+                              f"deferred charges {amt:,.0f} (movement table p{', p'.join(map(str, dc['pages']))})",
+                              "single source"))
+        elif not classes:
             amt = pdf_read.get(c, 0.0)
             p[f"depreciation_amortization_non_ppe_{c}"], p[f"non_ppe_status_{c}"] = amt, "PARTIAL_UNDISCLOSED"
             items.append(Item("depreciation_amortization_non_ppe", c, amt, "ASSUMED",
@@ -408,7 +471,92 @@ def _ip_fair_value(lines) -> bool:
     return bool(IP_FV.search(text)) or bool(re.search(r"(?i)properti investasi.{0,600}?perubahan nilai wajar", text))
 
 
-def movement_charge(lines, carrying, pages):
+_SIGNED = re.compile(r"\(\s*\d{1,3}(?:[.,]\d{3})+\s*\)|\(\s*\d+\s*\)|-?\d{1,3}(?:[.,]\d{3})+|(?<![\w.,])\d+(?![\w.,])|(?<!\S)-(?!\S)")
+YC_END = re.compile(r"(?i)^\s*(total|jumlah|nilai tercatat|carrying amount)\b")
+YC_STOP = re.compile(r"^\s*\d{1,2}\.\s+[A-Z](?!.*\((?i:lanjutan|continued)\))")  # the next numbered note, not its continuation
+YC_CHARGE = re.compile(r"(?i)amorti[sz]a(si|tion)|beban tahun berjalan|current year expense")
+YC_NOT = re.compile(r"(?i)akumulasi|accumulated|penurunan nilai|impairment|biaya transaksi|transaction cost|diskonto|discount")
+
+
+def _signed_pair(ln):
+    """The last two amounts of a line, signed ('(4.745.528)' is negative); None if fewer than two."""
+    lab = re.sub(r"(?i)\(\s*(catatan|note)\s*\d{1,2}[a-z]?\s*\)", " ", ln)
+    toks = [m.group(0) for m in _SIGNED.finditer(lab)]
+    vals = [0 if t.strip() == "-" else (-1 if t.startswith("(") else 1) * int(re.sub(r"[^\d]", "", t)) for t in toks]
+    return vals[-2:] if len(vals) >= 2 else None
+
+
+def _labelled(ln):
+    return bool(re.search(r"[A-Za-z]{3}", _SIGNED.sub(" ", ln)))
+
+
+def year_column_charge(lines, pair, pages):
+    """Amortisation (t, t-1) of a class whose movement tables put the two years in columns and the movements in
+    rows ('Saldo awal / Penambahan / Pengurangan / Amortisasi tahun berjalan / Saldo akhir', FAST deferred charges).
+    pair: the XBRL carrying amounts (t, t-1). A table counts only when (1) every 'Saldo awal ... Saldo akhir' run
+    rolls in both columns from its labelled rows, (2) its run ends add up to its 'Total' line and (3) the 'Total'
+    lines of the tables used add up to the XBRL pair, one way only. Charge rows are labelled amortisation, never
+    accumulated amortisation or impairment. Returns (t, t1, pages) or None. Single source: REVIEW."""
+    from itertools import combinations
+    if not pair or any(v is None for v in pair):
+        return None
+    target = [round(abs(pair[0])), round(abs(pair[1]))]
+    seq = [(p, ln) for p, ln, _ in lines if p not in pages["bs"] and p not in pages["pl"]]
+    tables = []
+    for k, (p, ln) in enumerate(seq):
+        tot = _signed_pair(ln) if YC_END.search(ln) else None
+        if not tot or not any(tot):
+            continue
+        j, block = k - 1, []
+        while j >= 0 and k - j <= 60 and not YC_STOP.search(seq[j][1]) and not (
+                YC_END.search(seq[j][1]) and _signed_pair(seq[j][1])):
+            block.append(seq[j][1])
+            j -= 1
+        block = block[::-1]
+        runs, cur, ok = [], None, True
+        for r in block:
+            if re.match(r"(?i)\s*(saldo awal|opening balance|beginning balance)", r):
+                cur = {"begin": _signed_pair(r), "rows": [], "charge": [0, 0]}
+                ok = ok and cur["begin"] is not None
+                continue
+            if cur is None:
+                continue
+            if re.match(r"(?i)\s*(saldo akhir|ending balance|closing balance)", r):
+                end = _signed_pair(r)
+                if not end or not cur["begin"]:
+                    ok = False
+                    break
+                rolled = [cur["begin"][c] + sum(x[c] for x in cur["rows"]) for c in (0, 1)]
+                if any(abs(rolled[c] - end[c]) > 1 for c in (0, 1)):
+                    ok = False
+                    break
+                runs.append((end, cur["charge"]))
+                cur = None
+                continue
+            v = _signed_pair(r)
+            if v is None or not _labelled(r):
+                continue                    # unlabelled subtotal ('646.609.950 588.010.852') or a label-only line
+            cur["rows"].append(v)
+            if YC_CHARGE.search(r) and not YC_NOT.search(r):
+                cur["charge"] = [cur["charge"][c] + abs(v[c]) for c in (0, 1)]
+        if not ok or not runs or cur is not None or not any(any(ch) for _, ch in runs):
+            continue
+        ends = [sum(e[c] for e, _ in runs) for c in (0, 1)]
+        if any(abs(abs(ends[c]) - abs(tot[c])) > 1 for c in (0, 1)):
+            continue
+        tables.append(((abs(tot[0]), abs(tot[1])), [sum(ch[c] for _, ch in runs) for c in (0, 1)], p))
+    hits = []
+    for n in range(1, min(3, len(tables)) + 1):
+        for combo in combinations(tables, n):
+            if all(abs(sum(t[0][c] for t in combo) - target[c]) <= 1 for c in (0, 1)):
+                hits.append(combo)
+    if len(hits) != 1:
+        return None
+    combo = hits[0]
+    return (float(sum(t[1][0] for t in combo)), float(sum(t[1][1] for t in combo)), sorted({t[2] for t in combo}))
+
+
+def movement_charge(lines, carrying, pages, strict=False):
     """Depreciation/amortisation for the year from a movement table, anchored by the XBRL carrying amount.
 
     The table is the one whose 'nilai buku / nilai tercatat' line ends with the carrying amount. Two layouts:
@@ -453,6 +601,8 @@ def movement_charge(lines, carrying, pages):
         begin, charge, mids, end = nums[0], nums[1], nums[2:-1], nums[-1]
         if not charge:
             return None
+        if strict and not begin and abs(charge - end) <= 1:
+            return None     # the whole balance arrives in one year (asset first recognised or acquired): not a charge
         for signs in product((1, -1), repeat=len(mids)):
             if abs(begin + charge + sum(s * m for s, m in zip(signs, mids)) - end) <= 1:
                 return charge
@@ -480,20 +630,38 @@ def movement_charge(lines, carrying, pages):
                     return ch, p
                 continue
             block = [r for jj, r in rows if jj > head_j][::-1]
+            if not block and len([x for x in X._amounts(pl[head_j]) if x]) >= 2:
+                # the accumulated-amortisation heading is itself the (only, hence total) row (BIPI, ASII)
+                header = " ".join(r for _, r in rows) + " " + " ".join(pl[max(0, j - 12):j + 1])
+                ch = balanced(X._amounts(pl[head_j])) if movement_head.search(header) else None
+                if ch:
+                    return float(abs(ch)), p
+                continue
             # B inside the accumulated block: rows are movements, the last column is the total (ARII mining)
             if any(year_line.search(r) for r in block):
                 ch = transposed(block)
                 if ch:
                     return ch, p
-                continue
+                # 'amortisasi (27,711) (2,220) - (29,931)' as the wrapped tail of a label-only 'Jumlah akumulasi' row
+                # (SIPD) is not a 'for the year' line: only then fall through to the movement-column layout
+                tails = [k for k, r in enumerate(block) if year_line.search(r)]
+                if not all(k > 0 and re.match(r"(?i)\s*(jumlah|total)", block[k - 1])
+                           and not [x for x in X._amounts(block[k - 1]) if x] for k in tails):
+                    continue
             header = " ".join(r for _, r in rows) + " " + " ".join(pl[max(0, j - 12):j + 1])
             if not movement_head.search(header):
                 continue
-            totals = [r for r in block if re.match(r"(?i)\s*(jumlah|total|sub)", r)]
+            # a total row whose label wraps ('Jumlah akumulasi' / 'amortisasi (27,711) (2,220) - (29,931)', SIPD)
+            totals = [r if [x for x in X._amounts(r) if x] else (block[k + 1] if k + 1 < len(block) else r)
+                      for k, r in enumerate(block) if re.match(r"(?i)\s*(jumlah|total|sub)", r)]
             if totals:
                 ch = balanced(X._amounts(totals[-1]))
                 if ch:
-                    return float(ch), p
+                    return float(abs(ch)), p
+                continue
+            if strict:
+                # intangibles and deferred charges (XBRL stage 7 regression): adding up the category rows picked
+                # wrong lines (ICBP class columns read as movement columns; EXCL '3G' in a label read as an amount)
                 continue
             valid = [balanced(X._amounts(r)) for r in block if not re.search(r"(?i)penurunan nilai|impairment", r)]
             valid = [x for x in valid if x]
