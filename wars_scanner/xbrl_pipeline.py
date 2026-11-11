@@ -313,7 +313,8 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
         if tax.get(c) is not None:
             p[f"taxes_payable_{c}"] = tax[c]
             items.append(Item("taxes_payable", c, tax[c], tax["status"],
-                              "D-03g PENDEKATAN (total taxes payable)" if tax.get("proxy") else f"tax note p{tax.get('page')}",
+                              "D-03g PENDEKATAN (total taxes payable)" if tax.get("proxy") else
+                              f"{'face' if tax.get('face') else 'tax note'} p{tax.get('page')}",
                               "; ".join(tax["notes"])))
         else:
             p.pop(f"taxes_payable_{c}", None)

@@ -575,6 +575,7 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
             face["notes"] = tax["notes"] + face["notes"]
             tax = face
             tax["proxy"] = False
+            tax["face"] = True
     if tax["status"] == "NOT FOUND" and fields["t"]["taxes_payable_total"].value is not None \
             and fields["t1"]["taxes_payable_total"].value is not None:
         # D-03g (Gail, 31 Oct 2026 09.28): PPh 25/29 not found -> total taxes payable on the face, marked
