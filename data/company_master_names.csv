@@ -1,6 +1,6 @@
 # Full names for master entries cut at 30 characters in WARS_TrackB workbook sheet Company_Master.
 # Source: Gail, 11 Nov 2026 10.32 (Sheet 'WARS - Nama company master terpotong', revision 90).
-# Held back pending Gail's confirmation: DSFI, SMAR, SHID.
+# DSFI, SMAR, SHID confirmed by Gail 11 Nov 2026 10.45.
 ticker,company_name
 AMIN,Ateliers Mecaniques D Indonesie
 AMMN,Amman Mineral Internasional Tbk.
@@ -81,3 +81,6 @@ UNSP,Bakrie Sumatera Plantations Tbk
 WEGE,Wijaya Karya Bangunan Gedung Tbk
 WEHA,WEHA Transportasi Indonesia Tbk
 WICO,Wicaksana Overseas International Tbk
+DSFI,Dharma Samudera Fishing Industries Tbk.
+SMAR,Sinar Mas Agro Resources & Technology Tbk.
+SHID,Hotel Sahid Jaya International Tbk

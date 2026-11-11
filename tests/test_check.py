@@ -423,7 +423,7 @@ def test_issuer_name_from_xbrl_entity_name():
     x_issuer = company.by_ticker("BIPI")
     # the workbook master cuts the name at 30 characters; Gail's full names (11 Nov) replace the cut ones
     assert x_issuer.name == "Astrindo Nusantara Infrastruktur Tbk."
-    assert company.by_ticker("DSFI").name == "Dharma Samudera Fishing Indust"     # held back: not confirmed yet
+    assert company.by_ticker("DSFI").name == "Dharma Samudera Fishing Industries Tbk."   # confirmed by Gail 11 Nov 10.45
     import re as _re
     name = _re.sub(r"^\s*PT\.?\s+", "", "PT Astrindo Nusantara Infrastruktur Tbk.").strip()
     assert name == "Astrindo Nusantara Infrastruktur Tbk."
