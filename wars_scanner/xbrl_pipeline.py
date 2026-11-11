@@ -395,8 +395,9 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
         xr["dep_parts"] = {"own": (parts["t"][0], parts["t1"][0]), "rou": (parts["t"][1], parts["t1"][1]),
                            "own_page": alloc["page"], "rou_page": rp}
         if rp:
+            # "ROU", not "right-of-use": that wording selects chk.r.dep_rou (right-of-use assets not tagged in XBRL)
             items[:] = [Item(i.field, i.column, i.value, i.status, i.source, (i.note + "; " if i.note else "")
-                             + f"right-of-use depreciation p{rp}") if i.field == "ppe_depreciation_disclosed" else i
+                             + f"ROU depreciation p{rp}") if i.field == "ppe_depreciation_disclosed" else i
                         for i in items]
 
     # ---- intangible amortisation: XBRL says intangibles exist, PDF reader did not read the amount

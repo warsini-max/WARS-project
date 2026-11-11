@@ -255,8 +255,10 @@ def items(r) -> list:
                                       for k, c in enumerate(("t", "t1"))):
             # the reading is a sum of two printed components on two pages: say so and show both pages (LRNA 2025,
             # Gail 11 Nov 13.11). Shown only when the components add up to the reading in both years.
-            reason = Msg("chk.r.dep_parts", own_t=Amt(dp["own"][0]), rou_t=Amt(dp["rou"][0]), own_t1=Amt(dp["own"][1]),
-                         rou_t1=Amt(dp["rou"][1]), p1=Raw(str(dp["own_page"])), p2=Raw(str(dp["rou_page"])))
+            # a conflict between the notes and the XBRL movement keeps its own warning (CPRO, JRPT)
+            if getattr(reason, "key", "") in ("chk.r.single", "chk.r.risk"):
+                reason = Msg("chk.r.dep_parts", own_t=Amt(dp["own"][0]), rou_t=Amt(dp["rou"][0]), own_t1=Amt(dp["own"][1]),
+                             rou_t1=Amt(dp["rou"][1]), p1=Raw(str(dp["own_page"])), p2=Raw(str(dp["rou_page"])))
             pages = [dp["own_page"]] + [x for x in pages if x != dp["own_page"]]
             numbers, second_ref = list(dp["own"]), (dp["rou_page"], list(dp["rou"]))
         out.append(CheckItem(f, vals, reason, pages, numbers, labels + LABELS.get(f, []), second, "review", second_ref))
