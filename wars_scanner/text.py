@@ -1434,7 +1434,7 @@ CATALOG: dict = {
                       "The review step was skipped. No score is calculated; the items that require verification are listed "
                       "in the report checklist.", "Gail 4 Nov 09.07"),
     "chk.back": _e("Ubah verifikasi", "Change verification", "Gail 4 Nov 09.07"),
-    "chk.gate": _e("File XBRL tidak dapat digunakan: {why}", "The XBRL file cannot be used: {why}", "new"),
+    "chk.gate": _e("File XBRL tidak dapat digunakan: {why}", "The XBRL file cannot be used: {why}", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.err.format": _e("Nilai tidak valid. Masukkan angka tanpa desimal, misalnya 91.300.000.000.",
                          "Invalid amount. Enter a whole number, for example 91,300,000,000.", "Gail 4 Nov 09.07"),
     "chk.err.pending": _e("{item} belum diverifikasi.", "{item} has not been verified.", "Gail 4 Nov 09.07"),
@@ -1444,13 +1444,13 @@ CATALOG: dict = {
                          "Gail 4 Nov 09.07"),
     "chk.prov.note": _e("Pembacaan WARS: {old}", "WARS reading: {old}", "Gail 4 Nov 09.07"),
     "chk.note.assumed": _e("Tidak terbaca dalam laporan; dihitung 0 sesuai asumsi sementara.",
-                           "Not read from the report; counted as 0 under the provisional assumption.", "new"),
+                           "Not read from the report; counted as 0 under the provisional assumption.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.note.assumed_part": _e("Sebagian dibaca dari laporan; bagian yang tidak terbaca dihitung 0 sesuai asumsi sementara.",
                                 "Partly read from the report; the parts not read are counted as 0 under the provisional "
-                                "assumption.", "Claude 10 Nov (temuan 6 Tahap 7); menunggu Gail"),
-    "chk.note.not_found": _e("Tidak ditemukan dalam laporan.", "Not found in the report.", "new"),
+                                "assumption.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
+    "chk.note.not_found": _e("Tidak ditemukan dalam laporan.", "Not found in the report.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.note.single": _e("Dibaca dari satu sumber dalam laporan; belum direkonsiliasi dengan sumber kedua.",
-                          "Read from a single source within the report; not reconciled to a second source.", "new"),
+                          "Read from a single source within the report; not reconciled to a second source.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.res.origin": _e("ASAL NILAI", "ORIGIN OF AMOUNTS", "Gail 4 Nov 09.07"),
     "chk.res.auto": _e("Selesai pembacaan automated", "Automated reading completed", "Gail 4 Nov 09.07"),
     "chk.res.agreed": _e("Diverifikasi sesuai oleh pengguna", "Agreed by the user", "Gail 4 Nov 09.07"),
@@ -1485,11 +1485,11 @@ CATALOG: dict = {
     "chk.f.ppe_depreciation_disclosed": _e("Beban penyusutan aset tetap dan aset hak-guna",
                                            "Depreciation of fixed assets and right-of-use assets", "Gail 4 Nov 09.07"),
     "chk.f.amortization_intangibles": _e("Amortisasi aset takberwujud", "Amortisation of intangible assets",
-                                         "Claude 4 Nov opsi 1 (label r0 8), menunggu Gail"),
+                                         "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.f.depreciation_amortization_non_ppe": _e(
         "Penyusutan dan amortisasi lain (properti investasi, aset tidak digunakan, biaya jangka panjang)",
         "Other depreciation and amortisation (investment property, assets not in use, long-term costs)",
-        "Claude 10 Nov (nama pos diperjelas, temuan uji BIPI Gail; sebelumnya label r1 C7); menunggu Gail"),
+        "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.f.net_income": _e("Laba tahun berjalan", "Profit for the year", "Gail 4 Nov 09.07"),
     "chk.f.cash_flow_from_operations": _e("Arus kas dari aktivitas operasi", "Cash flows from operating activities", "Gail 4 Nov 09.07"),
     "chk.r.tax_proxy": _e("Utang PPh badan (Pasal 25 dan 29) tidak dapat direkonsiliasi dengan total utang pajak, sehingga "
@@ -1547,11 +1547,11 @@ CATALOG: dict = {
                        "Stated as nil by the user based on a review of: {note}.", "Gail 8 Nov 16.32"),
     "chk.prov.amended": _e("Diganti oleh pengguna; rujukan halaman {p}. Pembacaan WARS: {old}.",
                            "Amended by the user; page reference {p}. WARS reading: {old}.",
-                           "Claude 10 Nov, mengikuti keputusan Gail 10 Nov 21.00 (halaman wajib); menunggu Gail"),
+                           "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.page_help": _e("Nomor halaman menurut urutan file PDF (halaman pertama file = 1), bukan nomor halaman yang "
                         "tercetak di laporan.",
                         "Page number in the order of the PDF file (first page of the file = 1), not the page number "
-                        "printed on the report.", "Claude 10 Nov (temuan uji BIPI Gail); menunggu Gail"),
+                        "printed on the report.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.h.depreciation_amortization_non_ppe": _e(
         "Pos ini hanya mencakup penyusutan properti investasi (model biaya), penyusutan aset yang tidak digunakan "
         "atau dihentikan penggunaannya, dan amortisasi biaya jangka panjang (biaya ditangguhkan, hak atas tanah). "
@@ -1563,16 +1563,16 @@ CATALOG: dict = {
         "PPE and right of use assets and amortisation of intangible assets are recorded under their own items. Do not "
         "use the total depreciation and amortisation from the segment information, as that total already includes "
         "those items. If there is none, the amount is nil.",
-        "Claude 10 Nov (temuan uji BIPI Gail; kelompok M-06); menunggu Gail"),
+        "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.err.page": _e("Isi halaman sumber untuk {item}.", "Enter the source page for {item}.",
-                       "Claude 8 Nov, mengikuti 3B; menunggu Gail"),
+                       "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.err.note": _e("Isi dasar pernyataan nihil untuk {item}.", "Enter the basis for nil for {item}.",
-                       "Claude 8 Nov, mengikuti 3B; menunggu Gail"),
+                       "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.layout_cols": _e("Urutan kolom tahun pada lapisan teks PDF tidak konsisten antarbaris (halaman {pages}), "
                           "sehingga angka XBRL tidak dapat dicocokkan dengan laporan secara andal. Skor tidak dihitung.",
                           "The order of the year columns in the PDF text layer is inconsistent between lines (page "
                           "{pages}), so the XBRL amounts cannot be reliably agreed to the report. The score is not "
-                          "calculated.", "Claude 8 Nov, langsung ke guest atas instruksi Gail 16.58; menunggu tinjauan"),
+                          "calculated.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.r.risk": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris atau "
                      "catatan. Pastikan seluruh komponen, termasuk liabilitas sewa dan aset hak-guna, telah tercakup "
                      "dalam Pembacaan WARS.",
@@ -1585,7 +1585,7 @@ CATALOG: dict = {
                           "This line always requires verification because its presentation is often spread across "
                           "several lines or notes. Confirm that all components, including lease liabilities and "
                           "interest-bearing loans from related parties, are captured in the WARS reading.",
-                          "Claude 10 Nov (1C, versi utang; temuan 3 Tahap 7); menunggu Gail"),
+                          "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.r.risk_tax": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris "
                          "atau catatan. Pastikan seluruh komponen, termasuk Pasal 25 dan Pasal 29, telah tercakup "
                          "dalam Pembacaan WARS.",
