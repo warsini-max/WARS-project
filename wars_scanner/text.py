@@ -287,8 +287,9 @@ CATALOG: dict = {
         "review.",
         "WARS is a red-flag detection system; its results do not constitute a conclusion of fraud and require further "
         "review.", "Gail 4 Nov 09.07 (EN di kedua versi)"),
-    "app.beta": _e("Versi beta untuk uji coba. Hasil dapat berubah seiring perbaikan pembaca.",
-                   "Beta version for testing. Results may change as the reader is improved.", "Gail 28 Okt A1"),
+    "app.beta": _e("WARS v0.1 Beta untuk uji coba. Hasil dapat berubah seiring perbaikan pembaca.",
+                   "WARS v0.1 Beta for testing. Results may change as the reader is improved.",
+                   "Gail 28 Okt A1; label v0.1 Beta Gail 11 Nov 12.37"),
     "app.get_lk.title": _e("Cara mendapatkan PDF laporan keuangan", "How to get the financial statements PDF",
                            "Gail 28 Okt A2"),
     "app.get_lk": _e("LK teraudit dapat diunduh dari situs perusahaan atau situs BEI (idx.co.id).",
@@ -1881,18 +1882,17 @@ CATALOG: dict = {
                          'Figures are taken automatically from the XBRL file when it is uploaded, or extracted from the digital PDF. Each figure is recorded with its source page and line in the PDF. Figures that are not found are left blank; figures provisionally assumed to be zero are listed in the checklist.',
                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "beta.limits": _e(
-        "Versi Beta. Pada pengujian terakhir atas 10 emiten BEI (laporan keuangan FY2022, per 4 November 2026), 2 dari "
-        "261 angka yang telah dicocokkan tidak tepat. Pembacaan otomatis belum optimal apabila: (a) nama pos tercetak "
-        "terpotong dalam beberapa baris; (b) halaman laporan berupa gambar; (c) urutan kolom tahun pada lapisan teks PDF "
-        "tidak konsisten; atau (d) amortisasi hanya diungkapkan dalam narasi catatan, sehingga dicatat nihil. Tanpa "
-        "berkas XBRL, skor lebih sering tidak dapat dihitung. Pengguna perlu menelusuri setiap angka dalam daftar "
-        "periksa ke halaman sumbernya sebelum menggunakan hasil ini.",
-        "Beta version. In the latest test of 10 IDX companies (FY2022 financial statements, as at 4 November 2026), 2 of "
-        "261 reconciled figures were incorrect. Automated reading is not yet reliable where: (a) line item captions wrap "
-        "over several lines; (b) statement pages are images; (c) the year columns in the PDF text layer are out of order; "
-        "or (d) amortisation is disclosed only in the narrative notes, in which case it is recorded as nil. Without the "
-        "XBRL file, the score is more often not calculated. Each figure in the checklist is to be traced to its "
-        "source page before the result is relied upon.", "Gail 4 Nov 17.07 (arah); teks disetujui Gail 4 Nov 18.40"),
+        "WARS v0.1 Beta telah melalui dua pengujian blind terhadap 20 emiten FY2022 dan FY2025 pada November 2026. "
+        "Pengujian belum menunjukkan kesalahan pembacaan pada angka berstatus “Terbaca dan tercocokkan” untuk pos "
+        "non-berisiko dalam sampel tersebut. Namun, sistem masih memiliki keterbatasan ekstraksi, belum diuji oleh "
+        "pengguna independen, dan belum menjamin akurasi seluruh hasil. Pengguna wajib memverifikasi setiap angka "
+        "melalui halaman sumber laporan keuangan sebelum menggunakan hasil analisis.",
+        "WARS v0.1 Beta has been through two blind tests covering 20 IDX companies (FY2022 and FY2025) in November "
+        "2026. The tests found no reading errors in figures with the status “Read and reconciled” for non-risk items in "
+        "that sample. However, the system still has extraction limitations, has not been tested by independent users, "
+        "and does not guarantee the accuracy of all results. Users must verify every figure against the source page of "
+        "the financial statements before using the results of the analysis.",
+        "Gail 11 Nov 12.37 (teks ID dari Gail); EN terjemahan Claude, menunggu Gail"),
     "rep.method.p4": _e(
                          'Laporan ini merupakan hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur audit atau pemeriksaan lainnya, dan bukan bukti adanya kecurangan maupun salah saji.',
                          'This report presents the results of an automated screening process. It is not an audit opinion, does not replace audit or other examination procedures, and does not constitute evidence of fraud or misstatement.',

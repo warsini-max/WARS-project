@@ -224,7 +224,7 @@ def _keep_lang():
 def header(signed_in: bool):
     left, right = st.columns([3, 2], vertical_alignment="center")
     with left:
-        st.markdown(f'<div class="w-top"><img src="{WORDMARK}" alt="WARS"><span class="w-chip">BETA</span></div>',
+        st.markdown(f'<div class="w-top"><img src="{WORDMARK}" alt="WARS"><span class="w-chip">v0.1 BETA</span></div>',
                     unsafe_allow_html=True)
     with right:
         with st.container(horizontal=True, horizontal_alignment="right", vertical_alignment="center", gap="small"):

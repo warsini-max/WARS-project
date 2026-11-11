@@ -135,7 +135,7 @@ def _decorate(c, page, pages, info):
     c.drawString(18 * mm, 18 * mm, "WARS")
     c.setFont("Sans", 6.8)
     c.setFillColor(SOFT)
-    c.drawString(18 * mm, 14.8 * mm, "Window-dressing Accounting Red-Flag Scanner · Beta")
+    c.drawString(18 * mm, 14.8 * mm, "Window-dressing Accounting Red-Flag Scanner · v0.1 Beta")
     c.setFillColor(MUTED)
     c.drawString(18 * mm, 11.6 * mm, t("rep.page", lang, n=page, m=pages) + " · " + info["date"])
     c._annotationCount = info.setdefault("annots", 0)      # the two-pass canvas restores the page state; keep

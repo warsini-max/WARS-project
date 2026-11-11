@@ -1,5 +1,10 @@
 # Phase status and evidence
 
+> **11 Nov 2026: v0.1 Beta.** The table below is the state of 28 Oct 2026 and is kept as a record. Since then:
+> the guest app is online; the XBRL path was added; blind stages 7 (FY2022) and 8 (FY2025) met the targets
+> redefined before stage 7; the engine matches workbook v0.7 r1 (same formulas as v0.6). Independent-user testing
+> has not been done. Current status and limitations: README.
+
 Updated 28 Oct 2026. Phase definitions and completion criteria: `docs/WARS_App_Plan_r0.md` §4.
 A phase is DONE only when its completion criterion is met, not when the code exists.
 
