@@ -1571,6 +1571,14 @@ CATALOG: dict = {
                         "The line \u201c{line}\u201d in the statement of financial position is not classified in XBRL. "
                         "The fixed asset amount used must include right-of-use assets; check whether this line is "
                         "already included in the amount above.", "Gail 4 Nov 09.07; diubah Claude 4 Nov opsi 1, menunggu Gail"),
+    "chk.r.dep_parts": _e(
+        "Pembacaan WARS adalah jumlah dua komponen: penyusutan aset tetap milik (tabel alokasi, hal. {p1}) dan "
+        "penyusutan aset hak-guna (hal. {p2}). Tahun berjalan: {own_t} + {rou_t}; tahun pembanding: {own_t1} + {rou_t1}. "
+        "Periksa kedua halaman di bawah ini.",
+        "The WARS reading is the sum of two components: depreciation of owned PPE (allocation table, p. {p1}) and "
+        "depreciation of right-of-use assets (p. {p2}). Current year: {own_t} + {rou_t}; comparative year: {own_t1} + "
+        "{rou_t1}. Check both pages below.",
+        "Claude 11 Nov (LRNA 2025, Gail 11 Nov 13.11); menunggu Gail"),
     "chk.r.dep_rou": _e("Aset hak-guna disajikan terpisah dan tidak diklasifikasikan dalam XBRL. Beban penyusutan yang "
                         "digunakan harus mencakup penyusutan aset hak-guna.",
                         "Right-of-use assets are presented separately and are not classified in XBRL. The depreciation "

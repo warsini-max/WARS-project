@@ -418,3 +418,19 @@ def test_stage8_mining_cost_tables_negatives():
     assert XP.movement_charge(L(bad), 199_532, PAGES, True) is None
     # the accumulated row does not roll -> nothing
     assert XP.movement_charge(L(STRIP.replace("(746,682)", "(746,692)")), 290_165, PAGES, True) is None
+
+
+def test_rou_depreciation_page_lrna_2025():
+    # LRNA 2025: the ROU depreciation is the 'Akumulasi depresiasi' addition in note 11 (p. 59), both years on one page
+    from wars_scanner.xbrl_pipeline import rou_dep_page
+    pages = {"bs": [14], "pl": [16]}
+    lines = [(59, "11. ASET HAK GUNA DAN LIABILITAS SEWA", set()),
+             (59, "Bangunan 5.126.354.999 2.562.198.610 609.775.888 7.078.777.721", {5126354999, 2562198610, 609775888, 7078777721}),
+             (59, "Bangunan 3.482.315.000 2.038.790.000 394.750.000 5.126.354.999", {3482315000, 2038790000, 394750000, 5126354999})]
+    assert rou_dep_page(lines, pages, 2562198610, 2038790000) == 59
+    # must NOT match: the amounts on a page that does not name right-of-use assets; only one year printed; face pages
+    other = [(70, "Beban lain 2.562.198.610 2.038.790.000", {2562198610, 2038790000})]
+    assert rou_dep_page(other, pages, 2562198610, 2038790000) is None
+    assert rou_dep_page(lines[:2], pages, 2562198610, 2038790000) is None
+    face = [(14, "Aset hak guna 2.562.198.610 2.038.790.000", {2562198610, 2038790000})]
+    assert rou_dep_page(face, pages, 2562198610, 2038790000) is None

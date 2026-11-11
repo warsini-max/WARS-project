@@ -132,6 +132,26 @@ AMORT_LINE = re.compile(r"(?i)^\s*(beban\s+)?amorti[sz]a(si|tion)\b(?!.*(akumula
                         r"diskonto|discount|premi|premium|ditangguhkan|deferred|sewa|lease|properti|biaya perolehan diamortisasi|amortised cost))")
 
 
+ROU_WORDS = re.compile(r"(?i)hak[\s-]*guna|right[\s-]*of[\s-]*use")
+
+
+def rou_dep_page(lines, pages, rou_t, rou_t1):
+    """The notes page that prints both right-of-use depreciation amounts, on a page that names right-of-use assets.
+    None when the amounts are not printed together on one such page."""
+    face = set(pages.get("bs") or []) | set(pages.get("pl") or [])
+    by_page = {}
+    for p, ln, n in lines:
+        if p not in face:
+            by_page.setdefault(p, []).append((ln, n))
+    for p in sorted(by_page):
+        rows = by_page[p]
+        if not any(ROU_WORDS.search(ln) for ln, _ in rows):
+            continue
+        if any(round(rou_t) in n for _, n in rows) and any(round(rou_t1) in n for _, n in rows):
+            return p
+    return None
+
+
 def _note_ref(lines, pages, value_t, value_t1):
     """Note number printed on the face line of an item (e.g. 'Aset takberwujud - neto 12,28 16.015 14.229')."""
     for p, ln, n in lines:
@@ -325,6 +345,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     own = {c: xr["fields"][c]["ppe_depreciation_owned"].value for c in ("t", "t1")}
     xall = {c: _xbrl_dep(xr, c) for c in ("t", "t1")}
     alloc = allocation_total(lines, xr["face_pages"], own["t"], own["t1"], xall["t"], xall["t1"])
+    parts = {}
     for c in ("t", "t1"):
         pdf_dep = pr.inputs.get(f"ppe_depreciation_disclosed_{c}")
         x_dep = _xbrl_dep(xr, c)
@@ -332,6 +353,8 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             tot_c = alloc["total"][0 if c == "t" else 1]
             with_rou = abs(tot_c - x_dep) < abs(tot_c - own[c])   # the table covers owned + ROU (ASII, ARII)
             a_dep = alloc[c] if with_rou else x_dep - own[c] + alloc[c]
+            if not with_rou and abs(x_dep - own[c]) > 1:
+                parts[c] = (alloc[c], x_dep - own[c])     # owned (allocation table) + ROU (XBRL movement)
             same = abs(tot_c - (x_dep if with_rou else own[c])) <= 1
             fxv = alloc["fx_" + c]
             if pdf_dep is not None and abs(pdf_dep - a_dep) <= 1 and (same or abs(pdf_dep - x_dep) <= 1):
@@ -365,6 +388,16 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
         if st == "FOUND" and rou_untagged:
             st, note = "REVIEW", "right-of-use assets on the face are not tagged in XBRL; their depreciation may be missing"
         items.append(Item("ppe_depreciation_disclosed", c, pdf_dep, st, src, note))
+    # the two components and their pages, so that the review step shows both (LRNA 2025, Gail 11 Nov 13.11: the
+    # extract showed only the allocation table, and the sum looked different from the PDF)
+    if alloc and set(parts) == {"t", "t1"}:
+        rp = rou_dep_page(lines, xr["face_pages"], parts["t"][1], parts["t1"][1])
+        xr["dep_parts"] = {"own": (parts["t"][0], parts["t1"][0]), "rou": (parts["t"][1], parts["t1"][1]),
+                           "own_page": alloc["page"], "rou_page": rp}
+        if rp:
+            items[:] = [Item(i.field, i.column, i.value, i.status, i.source, (i.note + "; " if i.note else "")
+                             + f"right-of-use depreciation p{rp}") if i.field == "ppe_depreciation_disclosed" else i
+                        for i in items]
 
     # ---- intangible amortisation: XBRL says intangibles exist, PDF reader did not read the amount
     am_x = None

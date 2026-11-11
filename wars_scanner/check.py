@@ -63,6 +63,7 @@ class CheckItem:
     labels: list = field(default_factory=list)    # labels to highlight when the amount is not printed
     second: list = field(default_factory=list)    # labels for a second extract (e.g. right-of-use depreciation)
     mode: str = "review"                          # "review": Agree / Amend; "missing": Enter amount / Nil
+    second_ref: tuple = None                      # (page, amounts) of the second extract, when known
 
 
 # ----------------------------------------------------------------------------------- XBRL + PDF merge
@@ -136,7 +137,8 @@ def merge_xbrl(pr, xres):
     ex.issues = [Msg("issue.xbrl_path")]            # the PDF reader's notes on the face statements no longer apply
     r.xbrl = {"items": xres.items, "found": found,
               "notes": {(it.field, it.column): _xbrl_note(it) for it in xres.items}, "face_findings": (xres.xbrl or {}).get("face_findings", []),
-              "face_pages": (xres.xbrl or {}).get("face_pages", {}), "tax": xres.tax, "warnings": xres.warnings}
+              "face_pages": (xres.xbrl or {}).get("face_pages", {}), "tax": xres.tax, "warnings": xres.warnings,
+              "dep_parts": (xres.xbrl or {}).get("dep_parts") or {}}
     return r
 
 
@@ -247,7 +249,17 @@ def items(r) -> list:
         if not pages or f in FACE_FIELDS:
             pages = sorted(set(pages) | set(_face_pages(r, f)))
         second = ROU_DEP_LABELS if f == "ppe_depreciation_disclosed" else []
-        out.append(CheckItem(f, vals, reason, pages, [vals["t"], vals["t1"]], labels + LABELS.get(f, []), second))
+        numbers, second_ref = [vals["t"], vals["t1"]], None
+        dp = ((getattr(r, "xbrl", None) or {}).get("dep_parts") or {}) if f == "ppe_depreciation_disclosed" else {}
+        if dp.get("rou_page") and all(vals[c] is not None and abs(vals[c] - dp["own"][k] - dp["rou"][k]) <= 1
+                                      for k, c in enumerate(("t", "t1"))):
+            # the reading is a sum of two printed components on two pages: say so and show both pages (LRNA 2025,
+            # Gail 11 Nov 13.11). Shown only when the components add up to the reading in both years.
+            reason = Msg("chk.r.dep_parts", own_t=Amt(dp["own"][0]), rou_t=Amt(dp["rou"][0]), own_t1=Amt(dp["own"][1]),
+                         rou_t1=Amt(dp["rou"][1]), p1=Raw(str(dp["own_page"])), p2=Raw(str(dp["rou_page"])))
+            pages = [dp["own_page"]] + [x for x in pages if x != dp["own_page"]]
+            numbers, second_ref = list(dp["own"]), (dp["rou_page"], list(dp["rou"]))
+        out.append(CheckItem(f, vals, reason, pages, numbers, labels + LABELS.get(f, []), second, "review", second_ref))
     return out
 
 
@@ -533,6 +545,9 @@ def _find(tp, text):
 def second_extract_png(pdf_bytes: bytes, item: CheckItem, skip_page=None, scale: float = 4.0):
     """A second extract for the item: the first line, outside the accounting-policy pages, that carries one of
     item.second followed by two amounts (e.g. right-of-use depreciation in the expense note)."""
+    if item.second_ref:
+        page, nums = item.second_ref
+        return extract_png(pdf_bytes, CheckItem(item.field, {}, item.reason, [page], nums, []), scale)
     if not item.second:
         return None, None
     import pypdfium2 as pdfium
