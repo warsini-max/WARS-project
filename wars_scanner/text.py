@@ -1887,12 +1887,13 @@ CATALOG: dict = {
         "non-berisiko dalam sampel tersebut. Namun, sistem masih memiliki keterbatasan ekstraksi, belum diuji oleh "
         "pengguna independen, dan belum menjamin akurasi seluruh hasil. Pengguna wajib memverifikasi setiap angka "
         "melalui halaman sumber laporan keuangan sebelum menggunakan hasil analisis.",
-        "WARS v0.1 Beta has been through two blind tests covering 20 IDX companies (FY2022 and FY2025) in November "
-        "2026. The tests found no reading errors in figures with the status “Read and reconciled” for non-risk items in "
-        "that sample. However, the system still has extraction limitations, has not been tested by independent users, "
-        "and does not guarantee the accuracy of all results. Users must verify every figure against the source page of "
-        "the financial statements before using the results of the analysis.",
-        "Gail 11 Nov 12.37 (teks ID dari Gail); EN terjemahan Claude, menunggu Gail"),
+        "WARS v0.1 Beta has undergone two blind tests involving 20 IDX-listed companies for FY2022 and FY2025, "
+        "conducted in November 2026. No reading errors were identified among figures classified as “Read and "
+        "reconciled” for non-risk items within the test samples. However, the system has limitations in automated "
+        "data extraction and has not yet been independently evaluated by external users. The results are not "
+        "guaranteed to be error-free. Users must verify each figure against its corresponding source page in the "
+        "financial statements before relying on the analysis.",
+        "Gail 11 Nov 12.37 (ID) dan 12.51 (EN), dua bahasa dari Gail"),
     "rep.method.p4": _e(
                          'Laporan ini merupakan hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur audit atau pemeriksaan lainnya, dan bukan bukti adanya kecurangan maupun salah saji.',
                          'This report presents the results of an automated screening process. It is not an audit opinion, does not replace audit or other examination procedures, and does not constitute evidence of fraud or misstatement.',
