@@ -375,3 +375,46 @@ def test_regression_strict_intangible_reading_refuses_wrong_lines():
     # positive controls: the shapes that are read stay read in strict mode
     assert XP.movement_charge(L(INTANG_ROW), 21_799_166, PAGES, True) == (3_366_190.0, 3)
     assert XP.movement_charge(L(INTANG_WRAP), 14_182, PAGES, True) == (2_220.0, 3)
+
+
+# ---------------------------------------------------------------- XBRL stage 8, mining long-term costs (ITMG shape)
+STRIP = """12. DEFERRED STRIPPING COSTS
+ 31 Desember/December 2025
+ Saldo awal/ Saldo akhir/
+ Opening Penambahan/ Pengurangan/ Ending
+balance Additions Disposals balance
+
+ Harga perolehan 881,340 155,507 - 1,036,847 Acquisition cost
+ Accumulated
+ Akumulasi amortisasi (704,894) (41,788) - (746,682) amortisation
+
+ Nilai buku bersih 176,446 290,165 Net book value"""
+EXPLO = """13. DEFERRED EXPLORATION AND DEVELOPMENT
+ Saldo awal/ reklasifikasi/ financial Saldo akhir/
+ Opening Penambahan/ Pengurangan/ Transfer/ statements Ending
+Nilai perolehan Acquisition cost
+ eksplorasi 1,100 611 - - - 1,711 exploration
+ berproduksi 350,138 36,334 - 25,231 (928) 410,775 production
+ 403,091 40,731 (347) - (2,034) 441,441
+
+Akumulasi Accumulated
+ amortisasi amortisation
+
+ Tambang yang Mines in
+ berproduksi 233,425 8,540 - - (56) 241,909 production
+
+ 233,425 8,540 - - (56) 241,909
+Nilai buku bersih 169,666 199,532 Net book value"""
+
+
+def test_stage8_mining_cost_tables_strict():
+    assert XP.movement_charge(L(STRIP), 290_165, PAGES, True) == (41_788.0, 3)
+    assert XP.movement_charge(L(EXPLO), 199_532, PAGES, True) == (8_540.0, 3)
+
+
+def test_stage8_mining_cost_tables_negatives():
+    # an unlabelled last row that is not the sum of the labelled rows above it is no total
+    bad = EXPLO.replace(" 233,425 8,540 - - (56) 241,909\nNilai", " 233,425 8,540 - - (56) 241,909\n 1 1 - - - 2\nNilai")
+    assert XP.movement_charge(L(bad), 199_532, PAGES, True) is None
+    # the accumulated row does not roll -> nothing
+    assert XP.movement_charge(L(STRIP.replace("(746,682)", "(746,692)")), 290_165, PAGES, True) is None

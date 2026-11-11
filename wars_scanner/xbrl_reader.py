@@ -265,6 +265,32 @@ def _pair_lines(lines, a, b):
     return [(p, ln) for p, ln, n in lines if A in n and B in n and (A or B)]
 
 
+ROUND_TOL, ROUND_MIN = 10, 100_000_000
+
+
+def _near(v, n):
+    """The one figure on the line within ROUND_TOL of v (a rounding difference), else None. Only for figures of at
+    least ROUND_MIN units, so that a tolerance of a few units is a rounding and never another figure."""
+    V = round(abs(v))
+    if V < ROUND_MIN:
+        return None
+    near = [x for x in n if abs(x - V) <= ROUND_TOL]
+    return near[0] if len(near) == 1 else None
+
+
+def _pair_lines_rounded(lines, a, b):
+    """Gail 11 Nov 2026 (XBRL stage 8 finding, SBMA 2025): the XBRL figure differs from the printed one by a few units
+    of rounding. A line that prints both years, each within ROUND_TOL of XBRL (at least one year not exact, both of
+    at least ROUND_MIN), is the same pair. Returns [(p, line, printed t, printed t-1)] when exactly one such pair
+    exists on the pages, else []."""
+    hits = []
+    for p, ln, n in lines:
+        x, y = _near(a, n), _near(b, n)
+        if x is not None and y is not None and (x, y) != (round(abs(a)), round(abs(b))):
+            hits.append((p, ln, x, y))
+    return hits if len({(h[2], h[3]) for h in hits}) == 1 else []
+
+
 def verify(inst: Instance, fields: dict, lines: list) -> None:
     """Rule 7 for XBRL: FOUND only if the pair (t, t-1) is printed on one PDF line, or every component pair is."""
     for name in fields["t"]:
@@ -273,9 +299,15 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
             continue
         concepts = sorted(set(ft.concepts) | set(f1.concepts))
         ok, ev = False, []
+        rounded = []
         if ft.value is not None and f1.value is not None:
             ev = _pair_lines(lines, ft.value, f1.value)
             ok = bool(ev)
+            if not ok and len(concepts) == 1:
+                hit = _pair_lines_rounded(lines, ft.value, f1.value)
+                if hit:
+                    ok, ev = True, [(h[0], h[1]) for h in hit]
+                    rounded = [(ft, hit[0][2]), (f1, hit[0][3])]
         if not ok and name.startswith(("ppe_depreciation", "ppe_table", "rou_table")):
             dep = re.compile(r"penyusutan|depreciation|jumlah|total|sub", re.I)
             hits = [[(p, ln) for p, ln, n in lines if v is not None and round(abs(v)) in n and dep.search(ln)]
@@ -285,10 +317,17 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
         if not ok and len(concepts) > 1:
             kind = "d" if name == "selling_general_administrative_expenses" else "i"
             ok, ev = True, []
+            delta = [0, 0]
             for cname in concepts:
                 a, b = inst.plain(cname, "t", kind), inst.plain(cname, "t1", kind)
                 if a and b:
                     hit = _pair_lines(lines, a, b)
+                    if not hit:
+                        rh = _pair_lines_rounded(lines, a, b)
+                        if rh:
+                            hit = [(h[0], h[1]) for h in rh]
+                            delta[0] += rh[0][2] - round(abs(a))
+                            delta[1] += rh[0][3] - round(abs(b))
                 else:
                     one = a or b
                     hit = [(p, ln) for p, ln, n in lines if one and round(abs(one)) in n]
@@ -296,6 +335,8 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
                     ok = False
                     break
                 ev += hit[:1]
+            if ok and any(delta):
+                rounded = [(ft, round(abs(ft.value)) + delta[0]), (f1, round(abs(f1.value)) + delta[1])]
         # P5 (Gail, 28 Oct 2026): with expenses by nature there is no cost of sales on the face; the XBRL template
         # still carries 0 (EXCL 2022). A cost of sales of 0 that the PDF does not print is 'not found', never 0.
         p5 = name == "cost_of_goods_sold" and not ok and all(not f.value for f in (ft, f1) if f.value is not None) \
@@ -309,6 +350,11 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
                 f.status = "FOUND" if ok else "REVIEW"
                 if not ok:
                     f.notes.append("XBRL value not found as a (t, t-1) pair in the PDF")
+        for f, printed in rounded:                 # the printed (audited) figure is used, never the XBRL one
+            if f.value is not None and round(abs(f.value)) != printed:
+                f.notes.append(f"XBRL {round(abs(f.value)):,} differs from the printed {printed:,} by rounding; "
+                               f"the printed figure is used")
+                f.value = float(printed if f.value >= 0 else -printed)
 
 
 COST_OF_SALES_FACE = re.compile(r"(?i)\b(beban|harga) pokok\b|\bcost of (sales|revenues?|goods sold)\b|"
@@ -523,6 +569,12 @@ def read(instance_source, pdf_pages: list, ticker: str | None = None) -> dict:
         gate.append("financial institution: " + "; ".join(f"{k} p{p} {lab}" for k, p, lab in fi))
     tax = corporate_tax_payable(inst, lines, pages)
     tax["proxy"] = False
+    if tax["status"] == "NOT FOUND":
+        face = corporate_tax_on_face(inst, lines, pages)
+        if face:
+            face["notes"] = tax["notes"] + face["notes"]
+            tax = face
+            tax["proxy"] = False
     if tax["status"] == "NOT FOUND" and fields["t"]["taxes_payable_total"].value is not None \
             and fields["t1"]["taxes_payable_total"].value is not None:
         # D-03g (Gail, 31 Oct 2026 09.28): PPh 25/29 not found -> total taxes payable on the face, marked
@@ -588,6 +640,56 @@ DATE = re.compile(r"(?i)\b(januari|january|februari|february|maret|march|april|m
 
 def _is_year_header(am: list, line: str = "") -> bool:
     return (len(am) >= 2 and all(1990 <= x <= 2035 for x in am[-2:])) or bool(DATE.search(line))
+
+
+def corporate_tax_payable_face_lines(block: list) -> tuple:
+    """The lines of a taxes-payable block on the face: (corporate, other) as [(line, t, t1)]."""
+    corp, other = [], []
+    for ln in block:
+        # list bullets ('- Pajak penghasilan badan 12,466 22,763 Corporate income tax -') are not nil amounts
+        clean = re.sub(r"(?<!\S)-(?=\s+[A-Za-z(])|(?<=[A-Za-z])\s+-\s*$", " ", ln.strip())
+        am = [x for x in _amounts(clean) if x is not None]
+        if len(am) < 2 or not re.search(r"[A-Za-z]{3}", ln):
+            return None, None                      # an unlabelled or one-column line ends the block unread
+        row = (ln, am[-2], am[-1])
+        if CORPORATE.search(ln) and not NOT_CORPORATE.search(ln.split("Corporate")[0].split("corporate")[0]):
+            corp.append(row)
+        elif NOT_CORPORATE.search(ln):
+            other.append(row)
+        else:
+            return None, None                      # a line that is neither: no reading
+    return corp, other
+
+
+def corporate_tax_on_face(inst: Instance, lines: list, pages: dict):
+    """D-03 from the face (XBRL stage 8 finding, ITMG 2025): a 'Utang pajak / Taxes payable' heading on the balance
+    sheet followed by '- Pajak penghasilan badan' and '- Pajak lain-lain' lines. Read only when (1) every line under
+    the heading is either corporate income tax or another named tax, (2) there is one corporate line, and (3) all the
+    lines add up to the XBRL TaxesPayable pair in both years. Single source: REVIEW. Else None."""
+    a, b = inst.plain("TaxesPayable", "t", "i"), inst.plain("TaxesPayable", "t1", "i")
+    if a is None or b is None:
+        return None
+    A, B = round(abs(a)), round(abs(b))
+    bs = [(p, ln) for p, ln, _ in lines if p in pages["bs"]]
+    for k, (p, ln) in enumerate(bs):
+        if not (TAX_HEAD.search(ln) and len([x for x in _amounts(ln) if x]) < 2):
+            continue
+        for size in (2, 3, 4, 5):                  # the block runs until its lines add up to the XBRL pair
+            block = [x for q, x in bs[k + 1:k + 1 + size] if q == p]
+            if len(block) < size:
+                break
+            corp, other = corporate_tax_payable_face_lines(block)
+            if corp is None:
+                break
+            rows = corp + other
+            if sum(r[1] for r in rows) == A and sum(r[2] for r in rows) == B:
+                if len(corp) != 1:
+                    return None
+                return {"t": float(corp[0][1]), "t1": float(corp[0][2]), "status": "REVIEW", "page": p,
+                        "lines": [r[0][:80] for r in rows],
+                        "notes": [f"face p{p}: corporate income tax line under 'taxes payable'; the lines add up to "
+                                  f"the XBRL total {A}/{B}"]}
+    return None
 
 
 def corporate_tax_payable(inst: Instance, lines: list, pages: dict) -> dict:

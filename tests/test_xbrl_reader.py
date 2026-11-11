@@ -428,3 +428,57 @@ def test_p5_cost_of_sales_face_words():
     for ln in ("Beban penyusutan (10,569,622) 7 (9,956,227) Depreciation expenses",
                "Beban infrastruktur (7,733,947) 24a (7,989,540) Infrastructure expenses"):
         assert not X.COST_OF_SALES_FACE.search(ln), ln
+
+
+# ---------------------------------------------------------------- XBRL stage 8 findings (synthetic)
+class _Inst:
+    def __init__(self, v):
+        self.v = v
+
+    def plain(self, concept, col, kind):
+        return self.v.get((concept, col))
+
+
+def _lines(page, text):
+    return [(page, ln, set(X._amounts(ln))) for ln in text.split("\n")]
+
+
+_FACE_TAX = """Utang usaha - pihak ketiga 14 157,850 132,939 Trade payables - third parties
+Utang pajak Taxes payable
+ - Pajak penghasilan badan 7b 12,466 22,763 Corporate income tax -
+ - Pajak lain-lain 7b 4,651 6,723 Other taxes -
+Beban yang masih harus dibayar 15 114,346 110,661 Accrued expenses"""
+
+
+def test_stage8_corporate_tax_from_the_face():
+    inst = _Inst({("TaxesPayable", "t"): 17117, ("TaxesPayable", "t1"): 29486})
+    r = X.corporate_tax_on_face(inst, _lines(11, _FACE_TAX), {"bs": [11], "pl": []})
+    assert (r["t"], r["t1"], r["status"], r["page"]) == (12466.0, 22763.0, "REVIEW", 11)
+
+
+def test_stage8_corporate_tax_from_the_face_negatives():
+    pages = {"bs": [11], "pl": []}
+    # the lines do not add up to the XBRL total -> nothing
+    bad = _Inst({("TaxesPayable", "t"): 17118, ("TaxesPayable", "t1"): 29486})
+    assert X.corporate_tax_on_face(bad, _lines(11, _FACE_TAX), pages) is None
+    inst = _Inst({("TaxesPayable", "t"): 17117, ("TaxesPayable", "t1"): 29486})
+    # an unnamed line in the block -> nothing (no guess what it is)
+    odd = _FACE_TAX.replace(" - Pajak lain-lain 7b 4,651 6,723 Other taxes -", " - Bunga 7b 4,651 6,723 Interest -")
+    assert X.corporate_tax_on_face(inst, _lines(11, odd), pages) is None
+    # not on the balance sheet pages -> nothing
+    assert X.corporate_tax_on_face(inst, _lines(75, _FACE_TAX), pages) is None
+    # two corporate lines -> nothing
+    two = _FACE_TAX.replace(" - Pajak lain-lain 7b 4,651 6,723 Other taxes -", " - PPh pasal 29 7b 4,651 6,723 Article 29 -")
+    assert X.corporate_tax_on_face(inst, _lines(11, two), pages) is None
+
+
+def test_stage8_rounding_difference_uses_the_printed_figure():
+    ln = [(9, "TOTAL ASET 290.273.064.686 289.976.056.809 TOTAL ASSETS", {290273064686, 289976056809})]
+    assert X._pair_lines_rounded(ln, 290273064683, 289976056809) == [(9, ln[0][1], 290273064686, 289976056809)]
+    # negatives: more than 10 units apart, a small figure, two different nearby pairs, and an exact pair
+    assert X._pair_lines_rounded(ln, 290273064670, 289976056809) == []
+    small = [(9, "Kas 5.394.569 10.422.997", {5394569, 10422997})]
+    assert X._pair_lines_rounded(small, 5394566, 10422997) == []
+    two = ln + [(10, "JUMLAH 290.273.064.680 289.976.056.809", {290273064680, 289976056809})]
+    assert X._pair_lines_rounded(two, 290273064683, 289976056809) == []
+    assert X._pair_lines_rounded(ln, 290273064686, 289976056809) == []      # exact: the normal path handles it

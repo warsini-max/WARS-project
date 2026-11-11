@@ -35,7 +35,11 @@ FACE_MAP = {  # engine field -> xbrl_reader field
     "cash_flow_from_operations": "cash_flow_from_operations",
 }
 NON_PPE_CONCEPTS = {"InvestmentProperties": "investment property", "PlantationAssetsMature": "bearer plants",
-                    "MiningProperties": "mining properties", "TollRoadConcessionRights": "concession rights"}
+                    "MiningProperties": "mining properties", "TollRoadConcessionRights": "concession rights",
+                    # mining long-term costs, workbook M-06 group 3 (XBRL stage 8 finding, ITMG 2025)
+                    "NonCurrentDeferredStrippingCosts": "deferred stripping costs",
+                    "DeferredChargesOnExplorationAndDevelopmentExpenditures": "deferred exploration and development"}
+STRICT_CLASSES = ("NonCurrentDeferredStrippingCosts", "DeferredChargesOnExplorationAndDevelopmentExpenditures")
 
 
 @dataclass
@@ -296,7 +300,9 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             p[f"rou_assets_net_{c}"] = rou.value if rou.value is not None else pr.inputs.get(f"rou_assets_net_{c}", 0)
             st = "FOUND" if ppe.status == "FOUND" and rou.status in ("FOUND", "NOT FOUND") and rou.value is not None else "REVIEW"
             items.append(Item("property_plant_equipment_net", c, p[f"property_plant_equipment_net_{c}"], st,
-                              "XBRL PPE" + (" + ROU" if rou.value else ""), "; ".join(ppe.notes + rou.notes)))
+                              "XBRL PPE" + (" + ROU" if rou.value else ""),
+                              # the ROU notes are about the ROU line, not the PPE line (XBRL stage 8 finding, TRIN)
+                              "; ".join(ppe.notes + [f"right-of-use assets: {n}" for n in rou.notes])))
         else:
             p.pop(f"property_plant_equipment_net_{c}", None)
             items.append(Item("property_plant_equipment_net", c, None, "NOT FOUND", ""))
@@ -409,7 +415,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
                 total += pdf_read[c]
                 srcs.append(f"investment property {pdf_read[c]:,.0f} (PDF reader)")
                 continue
-            mv = movement_charge(lines, vals[i], xr["face_pages"])
+            mv = movement_charge(lines, vals[i], xr["face_pages"], cn in STRICT_CLASSES)
             if mv is not None:
                 total += mv[0]
                 srcs.append(f"{label} {mv[0]:,.0f} (movement table p{mv[1]})")
@@ -571,7 +577,9 @@ def movement_charge(lines, carrying, pages, strict=False):
         return None
     v = round(abs(carrying))
     book = re.compile(r"(?i)nilai (buku|tercatat)|jumlah tercatat|carrying|book value")
-    acc = re.compile(r"(?i)akumulasi\s+(penyusutan|amortisasi)|accumulated\s+(depreciation|amorti[sz]ation)")
+    # 'Akumulasi Accumulated / amortisasi amortisation': a bilingual heading wrapped over two lines (ITMG)
+    acc = re.compile(r"(?i)akumulasi\s+(accumulated\s+)?(penyusutan|amortisasi)|"
+                     r"accumulated\s+(akumulasi\s+)?(depreciation|amorti[sz]ation)")
     movement_head = re.compile(r"(?i)penambahan|additions?")
     year_line = re.compile(r"(?i)(penyusutan|amortisasi|beban penyusutan|beban amortisasi)\b.{0,40}(tahun|periode) berjalan|"
                            r"(depreciation|amorti[sz]ation) (during|for) the (year|period)|^\s*(penyusutan|amortisasi)\s*\(")
@@ -629,7 +637,7 @@ def movement_charge(lines, carrying, pages, strict=False):
                 if ch:
                     return ch, p
                 continue
-            block = [r for jj, r in rows if jj > head_j][::-1]
+            block = [r for jj, r in rows if jj > head_j and r.strip()][::-1]     # blank lines are no rows (ITMG)
             if not block and len([x for x in X._amounts(pl[head_j]) if x]) >= 2:
                 # the accumulated-amortisation heading is itself the (only, hence total) row (BIPI, ASII)
                 header = " ".join(r for _, r in rows) + " " + " ".join(pl[max(0, j - 12):j + 1])
@@ -661,7 +669,18 @@ def movement_charge(lines, carrying, pages, strict=False):
                 continue
             if strict:
                 # intangibles and deferred charges (XBRL stage 7 regression): adding up the category rows picked
-                # wrong lines (ICBP class columns read as movement columns; EXCL '3G' in a label read as an amount)
+                # wrong lines (ICBP class columns read as movement columns; EXCL '3G' in a label read as an amount).
+                # One exception (XBRL stage 8, ITMG exploration): an unlabelled last row that rolls and equals, column
+                # by column, the sum of the labelled rows above it is the total row.
+                last = block[-1] if block else ""
+                cats = [r for r in block[:-1] if re.search(r"[A-Za-z]{3}", r) and X._amounts(r)]
+                tot = X._amounts(last)
+                if block and not re.search(r"[A-Za-z]{3}", last) and cats and \
+                        all(len(X._amounts(r)) == len(tot) for r in cats) and \
+                        all(sum(X._amounts(r)[q] for r in cats) == tot[q] for q in range(len(tot))):
+                    ch = balanced(tot)
+                    if ch:
+                        return float(abs(ch)), p
                 continue
             valid = [balanced(X._amounts(r)) for r in block if not re.search(r"(?i)penurunan nilai|impairment", r)]
             valid = [x for x in valid if x]
