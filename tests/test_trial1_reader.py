@@ -108,6 +108,20 @@ def test_direct_costs_count_as_cost_of_sales_only_when_gross_profit_reconciles()
     assert _direct_cost_line(no_gp, rev) is None
 
 
+def test_direct_revenue_costs_label_lrna_2025():
+    # "BEBAN PENDAPATAN / LANGSUNG" wrapped over two lines, followed by "LABA (RUGI) KOTOR" (a gross loss in 2025)
+    from wars_scanner.pdf_reader import _direct_cost_line
+    rev = _fl("Pendapatan", 59520969532, 80930286372)
+    good = [rev, _fl("Beban pendapatan langsung", -60782961398, -77209806753),
+            _fl("Laba (rugi) kotor", -1261991866, 3720479619)]
+    assert _direct_cost_line(good, rev) is good[1]
+    # must NOT match: no gross-profit line; the gross profit does not reconcile; a revenue line
+    assert _direct_cost_line([rev, good[1], _fl("Beban umum dan administrasi", 1, 1)], rev) is None
+    assert _direct_cost_line([rev, good[1], _fl("Laba (rugi) kotor", -1261991000, 3720479619)], rev) is None
+    other = [rev, _fl("Pendapatan langsung", -60782961398, -77209806753), good[2]]
+    assert _direct_cost_line(other, rev) is None
+
+
 def test_operating_expenses_count_as_sga_only_between_gross_and_operating_profit():
     from wars_scanner.pdf_reader import _operating_expenses_line
     ok = [_fl("Laba bruto", 5, 4), _fl("Beban usaha", -2, -1), _fl("Laba usaha", 3, 3)]

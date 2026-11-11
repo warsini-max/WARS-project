@@ -631,7 +631,8 @@ def _revenue_line(lines, pattern):
     return None
 
 
-DIRECT_COST = re.compile(r"^(beban|biaya) langsung$|^(beban|biaya) pokok (jasa|pendapatan jasa)$")
+# "Beban pendapatan langsung / Direct costs" (LRNA FY2025, Gail 11 Nov 12.53): same P5 guard
+DIRECT_COST = re.compile(r"^(beban|biaya) (pendapatan )?langsung$|^(beban|biaya) pokok (jasa|pendapatan jasa)$")
 GROSS_PROFIT = re.compile(r"^laba (bruto|kotor)$|^laba \(rugi\) (bruto|kotor)$|^rugi (bruto|kotor)$")
 
 
