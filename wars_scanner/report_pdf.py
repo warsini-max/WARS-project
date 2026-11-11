@@ -371,7 +371,9 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
             if x["index"] in drv:
                 extra.append(("BACKGROUND", (0, i), (-1, i), RED_BG))
         story.append(_table(rows, [12 * mm, 36 * mm, 14 * mm, 14 * mm, 16 * mm, 25 * mm, W - 117 * mm], S,
-                            extra=extra + [("VALIGN", (5, 1), (5, -1), "MIDDLE")]))
+                            extra=extra + [("VALIGN", (5, 1), (5, -1), "MIDDLE"),
+                                         # the header spans the bar column: "CONTRIBUTION" wraps in 16 mm
+                                         ("SPAN", (4, 0), (5, 0))]))
         story.append(Spacer(1, 3 * mm))
         story.append(Paragraph(_x(t("rep.sum_line", lang, n=Num(NEUTRAL_M, 3), p=Num(m - NEUTRAL_M, 3, True), m=Num(m, 3),
                                     thr=Num(THRESHOLD, 2))),

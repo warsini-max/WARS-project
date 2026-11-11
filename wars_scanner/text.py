@@ -497,7 +497,10 @@ CATALOG: dict = {
     "idx.col.value": _e("Nilai", "Value", "Gail 28 Okt impl"),
     "idx.col.coef": _e("Koefisien", "Coefficient", "Gail 28 Okt impl"),
     "idx.col.contribution": _e("Kontribusi ke M", "Contribution to M", "Gail 28 Okt impl"),
-    "idx.col.push": _e("Dorongan vs netral", "Push vs neutral", "Gail 28 Okt impl"),
+    "idx.col.push": _e(
+                        'Kontribusi vs netral',
+                        'Contribution vs neutral',
+                        'Gail 11 Nov 12.12 (Dorongan diganti Kontribusi)'),
     "idx.col.note": _e("Penjelasan", "Explanation", "Gail 28 Okt impl"),
     "idx.caption": _e("Perusahaan netral: semua indeks 1 dan TATA 0. M = {const} + Σ koefisien × indeks.",
                       "Neutral company: all indices 1 and TATA 0. M = {const} + Σ coefficient × index.", "Gail 28 Okt impl"),
@@ -647,9 +650,10 @@ CATALOG: dict = {
     "np.found": _e("{label}: ditemukan {n} kali", "{label}: found {n} time(s)", "Gail 28 Okt impl"),
     "np.not_found": _e("{label}: tidak ditemukan oleh pencarian mesin.", "{label}: not found by the machine search.", "Gail 28 Okt impl"),
     "np.amounts": _e("Jumlah yang terbaca: {list} ({source})", "Amounts read: {list} ({source})", "Gail 28 Okt impl"),
-    "np.source_cross": _e("hal. {p}: {text}; angka tahun berjalan tercetak lagi di catatan properti investasi hal. {q}",
-                          "p. {p}: {text}; the current-year figure is printed again in the investment property note, "
-                          "p. {q}", "new"),
+    "np.source_cross": _e(
+                           'Hal. {p}: {text}. Angka tahun berjalan juga tercantum dalam catatan properti investasi pada hal. {q}.',
+                           'P. {p}: {text}. The current-year figure is also presented in the investment property note on p. {q}.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "np.source": _e("hal. {p}: {text}", "p. {p}: {text}", "Gail 28 Okt impl"),
     "np.err_notes": _e("Belum diterapkan: pilih catatan yang Anda periksa untuk 'Tidak ada'.",
                        "Not applied: select the notes you examined for 'None'.", "Gail 28 Okt impl"),
@@ -743,7 +747,10 @@ CATALOG: dict = {
     "unit.Billions": _e("miliar Rupiah", "billions of Rupiah", "Gail 28 Okt impl"),
     "unit.unknown": _e("tidak diketahui", "unknown", "Gail 28 Okt impl"),
     "stype.Consolidated": _e("konsolidasian", "consolidated", "Gail 28 Okt impl"),
-    "stype.Parent-only": _e("bukan konsolidasian", "not consolidated", "new"),
+    "stype.Parent-only": _e(
+                             'bukan konsolidasian',
+                             'not consolidated',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "stype.unknown": _e("jenis laporan tidak diketahui", "statement type unknown", "Gail 28 Okt impl"),
     "stmt.position": _e("Laporan posisi keuangan", "Statement of financial position", "r0 1.1"),
     "stmt.profit_loss": _e("Laporan laba rugi", "Statement of profit or loss", "r0 1.2"),
@@ -828,8 +835,10 @@ CATALOG: dict = {
                    "dimasukkan",
                    "Corporate income tax (Articles 25 and 29) of the group; withholding taxes, VAT, final and other "
                    "taxes excluded", "r0 3.9", "D-03"),
-    "note.tax_foreign": _e("baris pajak luar negeri tidak dimasukkan (lihat catatan pembacaan)",
-                           "foreign tax line(s) excluded (see reading notes)", "M-05 (r0 3.10)", "D-03"),
+    "note.tax_foreign": _e(
+                            'Baris pajak luar negeri dikecualikan (lihat catatan pembacaan).',
+                            'Foreign tax line item(s) excluded (see reading notes).',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "D-03"),
     "note.tax_none": _e("Tabel utang pajak dengan baris Pasal 25/29 tidak ditemukan di CALK",
                         "No taxes-payable table with Article 25/29 lines found in the notes", "Gail 28 Okt impl", "D-03"),
     "note.alloc_ppe_ok": _e("Aset tetap milik: total tabel alokasi beban penyusutan; dicocokkan dengan beban penyusutan "
@@ -989,10 +998,10 @@ CATALOG: dict = {
                                  "{lines}. Pastikan tidak ada bagian lancar pinjaman jangka panjang di dalamnya",
                                  "Short-term bank loans excluded from the current portion of long-term debt: {lines}. "
                                  "Confirm that none is a current portion of a long-term loan", "r0 4.3", "D-02"),
-    "issue.tax_foreign": _e("Pajak luar negeri tidak dimasukkan ke utang PPh badan: CALK tidak menyebutkan apakah pajak "
-                            "ini dihitung dari laba ({line})",
-                            "Foreign tax excluded from corporate income tax payable: the notes do not state whether it "
-                            "is a tax on profit ({line})", "M-05 (r0 4.4)", "D-03"),
+    "issue.tax_foreign": _e(
+                             'Pajak luar negeri tidak dimasukkan dalam utang PPh badan karena catatan atas laporan keuangan tidak menjelaskan apakah pajak tersebut merupakan pajak atas laba ({line}).',
+                             'Foreign taxes are excluded from corporate income tax payable because the notes to the financial statements do not specify whether they are taxes on profit ({line}).',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "D-03"),
     "issue.tax_unclassified": _e("Baris catatan pajak yang tidak terklasifikasi, tidak dimasukkan (perlu diperiksa): "
                                  "{lines}",
                                  "Tax-note lines not classified and left out (needs review): {lines}", "Gail 28 Okt impl", "D-03"),
@@ -1118,24 +1127,26 @@ CATALOG: dict = {
                             "dengan kas akhir tahun di arus kas untuk tahun yang lain). Periksa di PDF",
                             "Figures as read: the year columns may be swapped (balance-sheet cash equals the other "
                             "year's closing cash in the statement of cash flows). Check in the PDF", "r1 6.13", "M-12"),
-    "flag.year_missing": _e("Angka yang dibaca: label tahun di judul kolom tidak terbaca pada {stmts}, sehingga kolom "
-                            "tahun berjalan dan pembanding tidak dapat dipastikan. Skor ditahan; periksa di PDF",
-                            "Figures as read: the year labels in the column headings could not be read in {stmts}, so "
-                            "the current and comparative columns cannot be confirmed. The score is withheld; check in "
-                            "the PDF", "new", "P0-2"),
-    "flag.year_mismatch": _e("Angka yang dibaca: tahun di judul kolom berbeda antar laporan ({list}). Skor ditahan; "
-                             "periksa di PDF",
-                             "Figures as read: the year in the column headings differs between statements ({list}). The "
-                             "score is withheld; check in the PDF", "new", "P0-2"),
-    "flag.year_item": _e("{stmt} {y}, hal. {p}", "{stmt} {y}, p. {p}", "new"),
-    "check.year_labels": _e("Label tahun di judul kolom sama di ketiga laporan utama: {list}",
-                            "The year labels in the column headings agree across the primary statements: {list}",
-                            "new", "P0-2"),
+    "flag.year_missing": _e(
+                             'Angka hasil ekstraksi: label tahun pada judul kolom tidak dapat dibaca pada {stmts}. Dengan demikian, kolom tahun berjalan dan tahun pembanding belum dapat dipastikan. Skor ditahan; periksa di PDF.',
+                             'Extracted figures: the year labels in the column headings could not be read in {stmts}. Therefore, the current-year and comparative-year columns cannot be confirmed. The score is withheld; check the PDF.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "P0-2"),
+    "flag.year_mismatch": _e(
+                              'Angka hasil ekstraksi: tahun pada judul kolom berbeda antar laporan ({list}). Skor ditahan; periksa di PDF.',
+                              'Extracted figures: the year labels in the column headings differ across the statements ({list}). The score is withheld; check the PDF.',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "P0-2"),
+    "flag.year_item": _e(
+                          '{stmt} {y}, hal. {p}',
+                          '{stmt} {y}, p. {p}',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.year_labels": _e(
+                             'Label tahun pada judul kolom konsisten di ketiga laporan utama: {list}.',
+                             'The year labels in the column headings are consistent across the three primary financial statements: {list}.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "P0-2"),
     "issue.financial_institution": _e(
-        "Laporan ini memuat pos khas bank, asuransi atau lembaga pembiayaan ({items}). Model Beneish tidak berlaku "
-        "untuk lembaga keuangan, sehingga M-score tidak dihitung.",
-        "This report contains line items typical of a bank, insurer or finance company ({items}). The Beneish model "
-        "does not apply to financial institutions, so the M-score is not calculated.", "new"),
+                                       'Laporan ini memuat pos-pos yang lazim ditemukan pada bank, perusahaan asuransi, atau lembaga pembiayaan ({items}). Model Beneish tidak dirancang untuk menilai lembaga keuangan; karena itu, M-score tidak dihitung.',
+                                       'This report contains line items commonly found in banks, insurance companies, or finance companies ({items}). The Beneish model was not designed to assess financial institutions; therefore, the M-score is not calculated.',
+                                       'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "flag.cash_unavailable": _e("Saldo kas akhir tahun di laporan arus kas tidak ditemukan, sehingga pemeriksaan kolom "
                                 "tertukar tidak dapat dilakukan",
                                 "Closing cash in the statement of cash flows not found; the swapped-column check could "
@@ -1186,12 +1197,22 @@ CATALOG: dict = {
     "ui.proc.checks": _e("Pemeriksaan silang", "Cross-checks", "Gail 28 Okt desain"),
     "ui.proc.checks_detail": _e("{ok} lolos · {err} gagal", "{ok} passed · {err} failed", "Gail 28 Okt desain"),
     "ui.proc.calc": _e("Menghitung 8 indeks Beneish…", "Calculating the 8 Beneish indices…", "Gail 28 Okt desain"),
-    "ui.proc.summary": _e("Ringkasan pembacaan", "Reading summary", "new"),
-    "ui.proc.xbrl": _e("XBRL dicocokkan dengan PDF", "XBRL reconciled to the PDF", "new"),
-    "ui.proc.xbrl_detail": _e("{ok} dari {n} angka laporan utama tercetak sebagai pasangan dua tahun; {rev} perlu diverifikasi",
-                              "{ok} of {n} primary statement amounts printed as a two-year pair; {rev} require verification",
-                              "new"),
-    "ui.proc.checks_x": _e("{err} gagal · {rev} perlu diperiksa", "{err} failed · {rev} need review", "new"),
+    "ui.proc.summary": _e(
+                           'Ringkasan pembacaan',
+                           'Reading summary',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.proc.xbrl": _e(
+                        'Data XBRL dicocokkan dengan laporan PDF',
+                        'XBRL data reconciled to the PDF financial statements',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.proc.xbrl_detail": _e(
+                               '{ok} dari {n} angka pada laporan utama tercetak sebagai pasangan komparatif dua tahun; {rev} perlu diverifikasi',
+                               '{ok} of {n} primary-statement figures were identified as two-year comparative pairs; {rev} require verification',
+                               'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.proc.checks_x": _e(
+                            '{err} gagal · {rev} perlu diperiksa',
+                            '{err} failed · {rev} require review',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "issue.xbrl_path": _e("Angka pada laporan posisi keuangan, laporan laba rugi dan laporan arus kas bersumber dari "
                           "berkas XBRL yang diunggah dan telah dicocokkan dengan PDF. Oleh karena itu, catatan pembacaan "
                           "PDF atas ketiga laporan tersebut tidak disajikan.",
@@ -1205,69 +1226,86 @@ CATALOG: dict = {
     "unit.USD.Thousands": _e("ribuan Dolar AS", "thousands of US dollars", "Gail 28 Okt P4"),
     "unit.USD.Millions": _e("jutaan Dolar AS", "millions of US dollars", "Gail 28 Okt P4"),
     "unit.USD.Billions": _e("miliaran Dolar AS", "billions of US dollars", "Gail 28 Okt P4"),
-    "check.section_ca": _e("Baris aset lancar dijumlahkan sama dengan jumlah aset lancar",
-                           "Current asset lines add up to total current assets", "new"),
-    "check.section_cl": _e("Baris liabilitas jangka pendek dijumlahkan sama dengan jumlah liabilitas jangka pendek",
-                           "Current liability lines add up to total current liabilities", "new"),
-    "check.ta_tle": _e("Total aset sama dengan total liabilitas dan ekuitas",
-                       "Total assets agree with total liabilities and equity", "new"),
-    "check.tl_parts": _e("Liabilitas jangka pendek ditambah liabilitas jangka panjang sama dengan total liabilitas",
-                         "Current plus non-current liabilities agree with total liabilities", "new"),
-    "check.net_income": _e("Laba sebelum pajak dan baris di bawahnya sama dengan laba tahun berjalan",
-                           "Profit before tax and the lines below it agree with profit for the year", "new"),
-    "check.cfo": _e("Arus kas operasi, investasi dan pendanaan dijumlahkan sama dengan kenaikan (penurunan) kas",
-                    "Operating, investing and financing cash flows add up to the net change in cash", "new"),
-    "check.cash_cf": _e("Kas dan setara kas sama dengan saldo di laporan arus kas",
-                        "Cash and cash equivalents agree with the balance in the statement of cash flows", "new"),
-    "check.sga_total": _e("Beban penjualan dan beban umum dijumlahkan sama dengan total beban usaha yang tercetak",
-                          "Selling and general expenses add up to the printed total operating expenses", "new"),
-    "check.in_notes": _e("{item}: angka yang sama ditemukan lagi di catatan (hal. {p})",
-                         "{item}: the same figures were found again in the notes (p. {p})", "new"),
-    "note.no_crosscheck": _e("Angka ini belum bisa dicocokkan dengan tempat kedua di laporan; periksa di PDF",
-                             "This figure could not be matched to a second place in the report; check in the PDF", "new"),
-    "issue.sga_missed": _e("Baris yang tampak sebagai beban penjualan atau beban umum tidak terbaca sebagai bagiannya: "
-                           "{lines}. Skor ditahan sampai barisnya diperiksa",
-                           "A line that looks like selling or general expenses was not read as part of them: {lines}. "
-                           "The score is withheld until the line is checked", "new"),
-    "issue.sga_other": _e("Total beban usaha juga memuat pos lain yang tidak dihitung sebagai beban penjualan dan umum: "
-                          "{lines}. Periksa di PDF",
-                          "Total operating expenses also holds other items not counted as selling and general expenses: "
-                          "{lines}. Check in the PDF", "new"),
-    "flag.sga_total": _e("Angka yang dibaca: beban penjualan dan beban umum ({a}) tidak sama dengan total beban usaha yang "
-                         "tercetak, dan selisihnya bukan pos lain yang berdiri sendiri. Kemungkinan ada baris yang terlewat; "
-                         "periksa di PDF",
-                         "Figures as read: selling and general expenses ({a}) do not agree with the printed total operating "
-                         "expenses, and the difference is not another item on its own line. A line may have been missed; "
-                         "check in the PDF", "new"),
-    "check.section_nca": _e("Baris aset tidak lancar dijumlahkan sama dengan jumlah aset tidak lancar",
-                            "Non-current asset lines add up to total non-current assets", "new"),
-    "issue.section_sum": _e("{sec}: tidak cocok untuk kolom {col} ({a} terbaca, {b} tercetak, hal. {p}). Ada baris yang "
-                            "terlewat, terbaca ganda atau berupa subjumlah; periksa di PDF",
-                            "{sec}: does not agree for column {col} ({a} read, {b} printed, p. {p}). A line was missed, "
-                            "read twice or is a subtotal; check in the PDF", "new"),
-    "issue.ambiguous": _e("Lebih dari satu baris dengan angka berbeda cocok untuk {item}: {lines}. Baris pertama dipakai "
-                          "dan ditandai untuk diperiksa",
-                          "More than one line with different figures matches {item}: {lines}. The first line is used "
-                          "and marked for review", "new"),
-    "note.tax_no_face_match": _e("Tabel pajak dengan PPh Pasal 25/29 ditemukan, tetapi jumlahnya tidak cocok dengan utang "
-                                 "pajak di laporan posisi keuangan; angkanya tidak dipakai",
-                                 "A tax table with Articles 25/29 was found, but its total does not agree with taxes "
-                                 "payable on the statement of financial position; its figures are not used", "new", "D-03"),
-    "note.tax_zero_evidence": _e("Tabel utang pajak di catatan (hal. {p}) cocok dengan laporan posisi keuangan dan tidak "
-                                 "memuat PPh badan Pasal 25/29 (misalnya pajak final atau lebih bayar); utang PPh badan "
-                                 "= 0. Periksa di PDF",
-                                 "The taxes-payable table in the notes (p. {p}) agrees with the statement of financial "
-                                 "position and holds no corporate income tax (Articles 25/29), e.g. final tax or an "
-                                 "overpayment; corporate income tax payable = 0. Check in the PDF", "new", "D-03"),
-    "flag.ppe_note": _e("Angka yang dibaca: aset tetap di laporan posisi keuangan tidak ditemukan sebagai nilai tercatat "
-                        "di catatan aset tetap (yang terbaca di catatan: {seen}). Kemungkinan baris yang salah terambil; "
-                        "periksa di PDF",
-                        "Figures as read: the fixed assets on the statement of financial position were not found as a "
-                        "carrying amount in the fixed-asset note (read in the note: {seen}). The wrong line may have been "
-                        "taken; check in the PDF", "new"),
-    "check.ppe_note": _e("Aset tetap di laporan posisi keuangan sama dengan nilai tercatat di catatan aset tetap (hal. {p})",
-                         "Fixed assets on the statement of financial position agree with the carrying amount in the "
-                         "fixed-asset note (p. {p})", "new"),
+    "check.section_ca": _e(
+                            'Jumlah seluruh pos aset lancar sama dengan total aset lancar.',
+                            'The current asset line items sum to total current assets.',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.section_cl": _e(
+                            'Jumlah seluruh pos liabilitas jangka pendek sama dengan total liabilitas jangka pendek.',
+                            'The current liability line items sum to total current liabilities.',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.ta_tle": _e(
+                        'Total aset sama dengan jumlah total liabilitas dan ekuitas.',
+                        'Total assets equal total liabilities and equity.',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.tl_parts": _e(
+                          'Jumlah liabilitas jangka pendek dan liabilitas jangka panjang sama dengan total liabilitas.',
+                          'Current and non-current liabilities sum to total liabilities.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.net_income": _e(
+                            'Laba sebelum pajak dan pos-pos setelahnya menghasilkan laba tahun berjalan yang sama dengan yang dilaporkan.',
+                            'Profit before tax and the subsequent line items reconcile to the reported profit for the year.',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.cfo": _e(
+                     'Jumlah arus kas dari aktivitas operasi, investasi, dan pendanaan sama dengan kenaikan (penurunan) bersih kas.',
+                     'Operating, investing, and financing cash flows sum to the net increase (decrease) in cash.',
+                     'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.cash_cf": _e(
+                         'Saldo kas dan setara kas cocok dengan saldo pada laporan arus kas.',
+                         'Cash and cash equivalents agree with the balance reported in the statement of cash flows.',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.sga_total": _e(
+                           'Jumlah beban penjualan dan beban umum sama dengan total beban usaha yang tercantum dalam laporan.',
+                           'Selling and general expenses sum to the total operating expenses reported in the financial statements.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.in_notes": _e(
+                          '{item}: angka yang sama ditemukan kembali dalam catatan (hal. {p}).',
+                          '{item}: the same figure was also identified in the notes (p. {p}).',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.no_crosscheck": _e(
+                              'Angka ini belum dapat dikonfirmasi melalui sumber kedua dalam laporan. Periksa di PDF.',
+                              'This figure could not be corroborated against a second source within the report. Check the PDF.',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "issue.sga_missed": _e(
+                            'Baris yang tampak sebagai beban penjualan atau beban umum tidak teridentifikasi sebagai bagian dari kelompok beban tersebut: {lines}. Skor ditahan sampai baris-baris ini diperiksa.',
+                            'Lines that appear to represent selling or general expenses were not identified as part of those expense categories: {lines}. Score calculation is withheld pending review of these lines.',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "issue.sga_other": _e(
+                           'Total beban usaha juga mencakup pos lain yang tidak diklasifikasikan sebagai beban penjualan dan beban umum: {lines}. Periksa di PDF.',
+                           'Total operating expenses also include other items that are not classified as selling and general expenses: {lines}. Check the PDF.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "flag.sga_total": _e(
+                          'Angka hasil ekstraksi: jumlah beban penjualan dan beban umum ({a}) tidak sama dengan total beban usaha yang tercantum. Selisihnya juga tidak dijelaskan oleh pos lain yang disajikan secara terpisah. Kemungkinan terdapat baris yang terlewat; periksa di PDF.',
+                          'Extracted figures: selling and general expenses ({a}) do not agree with the reported total operating expenses. The difference is not explained by another separately presented line item. A line item may have been missed; check the PDF.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.section_nca": _e(
+                             'Jumlah seluruh pos aset tidak lancar sama dengan total aset tidak lancar.',
+                             'The non-current asset line items sum to total non-current assets.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "issue.section_sum": _e(
+                             '{sec}: angka pada kolom {col} tidak cocok ({a} terbaca; {b} tercetak; hal. {p}). Kemungkinan terdapat baris yang terlewat, terbaca lebih dari sekali, atau merupakan subtotal. Periksa di PDF.',
+                             '{sec}: the figure in column {col} does not match ({a} extracted; {b} printed; p. {p}). A line may have been missed, read more than once, or treated as a subtotal. Check the PDF.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "issue.ambiguous": _e(
+                           'Lebih dari satu baris dengan angka berbeda cocok dengan {item}: {lines}. Sistem menggunakan baris pertama dan menandai pos tersebut untuk diperiksa.',
+                           'More than one line containing different figures matches {item}: {lines}. The system uses the first matching line and flags the item for review.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.tax_no_face_match": _e(
+                                  'Tabel pajak yang memuat PPh Pasal 25/29 ditemukan, tetapi jumlahnya tidak cocok dengan saldo utang pajak pada laporan posisi keuangan. Angka dari tabel tersebut tidak digunakan.',
+                                  'A tax table containing Articles 25/29 income tax was identified, but its total does not agree with the taxes-payable balance in the statement of financial position. The table figures are not used.',
+                                  'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "D-03"),
+    "note.tax_zero_evidence": _e(
+                                  'Tabel utang pajak dalam catatan (hal. {p}) cocok dengan laporan posisi keuangan, tetapi tidak memuat PPh badan Pasal 25/29 (misalnya hanya memuat pajak final, atau PPh badan sedang dalam posisi lebih bayar). Utang PPh badan dicatat 0. Periksa di PDF.',
+                                  'The taxes-payable table in the notes (p. {p}) agrees with the statement of financial position but does not include Articles 25/29 corporate income tax (for example, it holds only final tax, or corporate income tax is in an overpayment position). Corporate income tax payable is recorded as zero. Check the PDF.',
+                                  'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "D-03"),
+    "flag.ppe_note": _e(
+                         'Angka hasil ekstraksi: nilai aset tetap pada laporan posisi keuangan tidak ditemukan sebagai nilai tercatat dalam catatan aset tetap (angka yang terbaca dalam catatan: {seen}). Kemungkinan baris yang keliru terambil; periksa di PDF.',
+                         'Extracted figures: the PPE amount in the statement of financial position was not identified as a carrying amount in the PPE note (figure identified in the note: {seen}). The wrong line item may have been extracted; check the PDF.',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "check.ppe_note": _e(
+                          'Nilai tercatat aset tetap pada laporan posisi keuangan cocok dengan nilai tercatat dalam catatan aset tetap (hal. {p}).',
+                          'The carrying amount of PPE in the statement of financial position agrees with the carrying amount disclosed in the PPE note (p. {p}).',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "note.cogs_direct": _e("Beban langsung dipakai sebagai beban pokok penjualan: laporan laba rugi menyajikan laba bruto "
                            "sesudahnya dan pendapatan dikurangi beban langsung sama dengan laba bruto di kedua tahun",
                            "Direct costs used as cost of sales: the statement of profit or loss shows gross profit "
@@ -1283,72 +1321,76 @@ CATALOG: dict = {
                           "haknya belum tanpa syarat. Periksa catatannya",
                           "Retention receivables are presented separately (p. {p}); not counted as trade receivables "
                           "because the right is not yet unconditional. Check the note", "Gail 28 Okt P7"),
-    "note.debt_nil_g24": _e("Nihil karena tidak ada baris utang berbunga di bagian ini, neraca seimbang di kedua tahun, "
-                            "dan tidak ada catatan pinjaman jangka panjang, obligasi atau sewa; periksa di PDF",
-                            "Nil because the section has no interest-bearing line, the balance sheet balances in both "
-                            "years, and no note covers long-term borrowings, bonds or leases; check in the PDF",
-                            "new", "G-24"),
-    "note.amort_sentence": _e("Amortisasi aset takberwujud diambil dari kalimat di catatan (tidak ada tabel); periksa angkanya "
-                              "di halaman tersebut",
-                              "Intangible amortisation taken from a sentence in the notes (no table); check the figures on "
-                              "that page", "new"),
-    "note.rou_dep_roll_ok": _e("Penyusutan aset hak-guna diambil dari tabel mutasi aset hak-guna (saldo awal ditambah "
-                               "mutasi sama dengan saldo akhir untuk kedua tahun); angka yang sama tercetak lagi di "
-                               "hlm. {p}",
-                               "Right of use depreciation taken from the movement schedule of the right of use assets "
-                               "(opening balance plus movements equals the closing balance for both years); the same "
-                               "figures are printed again on p. {p}", "new"),
-    "note.rou_dep_roll": _e("Penyusutan aset hak-guna diambil dari tabel mutasi aset hak-guna (saldo awal ditambah mutasi "
-                            "sama dengan saldo akhir untuk kedua tahun); angka ini tidak ditemukan di tempat lain, "
-                            "periksa angkanya di halaman tersebut",
-                            "Right of use depreciation taken from the movement schedule of the right of use assets "
-                            "(opening balance plus movements equals the closing balance for both years); the figures "
-                            "were not found elsewhere, check them on that page", "new"),
-    "note.rou_dep_sentence_ok": _e("Penyusutan aset hak-guna diambil dari kalimat di catatan aset hak-guna; angka kedua "
-                                   "tahun tercetak lagi di tabel mutasi akumulasi penyusutan",
-                                   "Right of use depreciation taken from a sentence in the right of use note; the figures "
-                                   "for both years are printed again in the accumulated depreciation movement schedule",
-                                   "new"),
-    "note.rou_dep_sentence": _e("Penyusutan aset hak-guna diambil dari kalimat di catatan aset hak-guna; angkanya tidak "
-                                "ditemukan di tabel mutasi, periksa angkanya di halaman tersebut",
-                                "Right of use depreciation taken from a sentence in the right of use note; the figures "
-                                "were not found in the movement schedule, check them on that page", "new"),
-    "note.rou_dep_lines_ok": _e("Penyusutan aset hak-guna dijumlahkan dari baris beban di bawah judul 'Beban penyusutan "
-                                "aset hak-guna'; jumlahnya tercetak lagi di tabel mutasi",
-                                "Right of use depreciation added up from the expense lines under the heading 'Depreciation "
-                                "of right of use assets'; the sum is printed again in the movement schedule", "new"),
-    "note.rou_dep_lines": _e("Penyusutan aset hak-guna dijumlahkan dari baris beban di bawah judul 'Beban penyusutan aset "
-                             "hak-guna' (total tabel itu memuat beban lain, jadi tidak dipakai); periksa angkanya",
-                             "Right of use depreciation added up from the expense lines under the heading 'Depreciation of "
-                             "right of use assets' (that table's total holds other expenses and is not used); check the "
-                             "figures", "new"),
-    "note.ppe_dep_sentence": _e("Penyusutan aset tetap milik diambil dari kalimat di catatan aset tetap (tidak ada tabel "
-                                "alokasi); periksa angkanya di halaman tersebut",
-                                "Owned-PPE depreciation taken from a sentence in the fixed-asset note (no allocation "
-                                "table); check the figures on that page", "new"),
-    "np.source_fv": _e("hal. {p}: properti investasi diukur dengan model nilai wajar, sehingga tidak disusutkan: \"{text}\"",
-                       "p. {p}: investment property is measured under the fair value model, so it is not depreciated: "
-                       "\"{text}\"", "new"),
+    "note.debt_nil_g24": _e(
+                             'Nihil sementara: tidak terdapat baris utang berbunga pada bagian ini; laporan posisi keuangan seimbang untuk kedua tahun; dan tidak ditemukan catatan pinjaman jangka panjang, obligasi, atau liabilitas sewa. Tetap periksa di PDF.',
+                             'Provisionally assessed as nil: no interest-bearing line item appears in this section; the statement of financial position balances for both years; and no note on long-term borrowings, bonds, or lease liabilities was identified. Review the PDF before finalising.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "G-24"),
+    "note.amort_sentence": _e(
+                               'Amortisasi aset takberwujud diambil dari narasi dalam catatan (bukan dari tabel). Periksa angka pada halaman tersebut.',
+                               'Intangible-asset amortisation was extracted from narrative disclosure in the notes rather than from a table. Review the figures on that page.',
+                               'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.rou_dep_roll_ok": _e(
+                                'Penyusutan aset hak-guna diambil dari tabel mutasi aset hak-guna. Rekonsiliasi saldo awal, mutasi, dan saldo akhir seimbang untuk kedua tahun; angka yang sama juga tercantum pada hal. {p}.',
+                                'Depreciation of right-of-use assets was extracted from the right-of-use asset movement schedule. The opening balance, movements, and closing balance reconcile for both years; the same figure is also presented on p. {p}.',
+                                'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.rou_dep_roll": _e(
+                             'Penyusutan aset hak-guna diambil dari tabel mutasi aset hak-guna. Rekonsiliasi saldo awal, mutasi, dan saldo akhir seimbang untuk kedua tahun. Angka tersebut belum ditemukan pada sumber lain; periksa halaman terkait.',
+                             'Depreciation of right-of-use assets was extracted from the right-of-use asset movement schedule. The opening balance, movements, and closing balance reconcile for both years. The figure has not been corroborated against another source; review the relevant page.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.rou_dep_sentence_ok": _e(
+                                    'Penyusutan aset hak-guna diambil dari narasi dalam catatan aset hak-guna. Angka untuk kedua tahun juga tercantum dalam tabel mutasi akumulasi penyusutan.',
+                                    'Depreciation of right-of-use assets was extracted from narrative disclosure in the right-of-use asset note. The figures for both years are also presented in the accumulated depreciation movement schedule.',
+                                    'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.rou_dep_sentence": _e(
+                                 'Penyusutan aset hak-guna diambil dari narasi dalam catatan aset hak-guna, tetapi tidak ditemukan dalam tabel mutasi. Periksa angka pada halaman tersebut.',
+                                 'Depreciation of right-of-use assets was extracted from narrative disclosure in the right-of-use asset note but was not identified in the movement schedule. Review the figures on that page.',
+                                 'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.rou_dep_lines_ok": _e(
+                                 'Penyusutan aset hak-guna dijumlahkan dari baris beban di bawah judul “Beban penyusutan aset hak-guna”. Jumlah tersebut juga tercantum dalam tabel mutasi.',
+                                 'Depreciation of right-of-use assets was aggregated from the expense lines under the heading “Depreciation of right-of-use assets”. The same total is also presented in the movement schedule.',
+                                 'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.rou_dep_lines": _e(
+                              'Penyusutan aset hak-guna dijumlahkan dari baris beban di bawah judul “Beban penyusutan aset hak-guna”. Total tabel tidak digunakan karena mencakup beban lain. Periksa angka tersebut.',
+                              'Depreciation of right-of-use assets was aggregated from the expense lines under the heading “Depreciation of right-of-use assets”. The table total was not used because it includes other expenses. Review the figures.',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.ppe_dep_sentence": _e(
+                                 'Penyusutan aset tetap milik sendiri diambil dari narasi dalam catatan aset tetap (tanpa tabel alokasi). Periksa angka pada halaman tersebut.',
+                                 'Depreciation of owned PPE was extracted from narrative disclosure in the fixed-asset note; no allocation table was available. Review the figures on that page.',
+                                 'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "np.source_fv": _e(
+                        'Hal. {p}: properti investasi diukur dengan model nilai wajar sehingga tidak disusutkan: “{text}”.',
+                        'P. {p}: investment property is measured using the fair value model and is therefore not depreciated: “{text}”.',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "v.held_invprop": _e(
-        "Properti investasi ada di laporan posisi keuangan (hal. {p}), tetapi penyusutannya tidak terbaca dari catatan "
-        "atas laporan keuangan untuk {years}. M-score ditahan, karena menganggapnya 0 dapat membuat skor salah.",
-        "Investment property is on the statement of financial position (p. {p}), but its depreciation could not be "
-        "read from the notes for {years}. The M-score is withheld, because taking it as 0 could make the score "
-        "wrong.", "new"),
+                          'Properti investasi tercantum dalam laporan posisi keuangan (hal. {p}), tetapi beban penyusutannya tidak dapat diambil dari catatan atas laporan keuangan untuk {years}. M-score ditahan karena menganggapnya 0 dapat menghasilkan skor yang tidak akurat.',
+                          'Investment property is presented in the statement of financial position (p. {p}), but its depreciation expense could not be extracted from the notes to the financial statements for {years}. M-score calculation is withheld because assuming a value of zero could produce an inaccurate score.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "issue.number_format": _e(
-        "Format angka tidak dapat dipastikan: laporan utama memakai titik dan koma sebagai pemisah ribuan secara "
-        "bercampur. Angka tidak dibaca, karena salah pemisah mengubah nilai seribu kali lipat.",
-        "The number format could not be determined: the primary statements mix dots and commas as thousands "
-        "separators. No figure was read, because a wrong separator changes amounts a thousandfold.", "new"),
-    "ui.res.meta_file": _e("{name} · {pages} halaman", "{name} · {pages} pages", "new"),
+                               'Format angka tidak dapat ditentukan karena laporan utama menggunakan titik dan koma secara tidak konsisten sebagai pemisah ribuan. Angka tidak diekstrak karena kesalahan pemisah dapat mengubah nilainya hingga seribu kali lipat.',
+                               'The number format could not be determined because the primary statements use dots and commas inconsistently as thousands separators. The figures were not extracted because an incorrect separator could change their values by a factor of 1,000.',
+                               'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.res.meta_file": _e(
+                            '{name} · {pages} halaman',
+                            '{name} · {pages} pages',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "ui.res.stype.Consolidated": _e("Laporan keuangan konsolidasian", "Consolidated financial statements",
                                     "Gail 28 Okt 11.01"),
-    "ui.res.stype.Parent-only": _e("Laporan keuangan (bukan konsolidasian)", "Financial statements (not consolidated)",
-                                   "new"),
-    "ui.res.stype.unknown": _e("Laporan keuangan (jenis tidak terbaca)", "Financial statements (type not read)", "new"),
-    "ui.res.issuer_unknown": _e("Emiten tidak teridentifikasi", "Issuer not identified", "new"),
-    "ui.res.issuer_note": _e("Nama dari data master emiten (buku kerja v0.6)", "Name from the issuer master list (workbook v0.6)",
-                             "new"),
+    "ui.res.stype.Parent-only": _e(
+                                    'Laporan keuangan (tidak dikonsolidasikan)',
+                                    'Financial statements (unconsolidated)',
+                                    'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.res.stype.unknown": _e(
+                                'Jenis laporan keuangan tidak dapat dipastikan',
+                                'Financial statement type could not be determined',
+                                'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.res.issuer_unknown": _e(
+                                 'Emiten tidak teridentifikasi',
+                                 'Issuer could not be identified',
+                                 'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.res.issuer_note": _e(
+                              'Nama emiten dari sumber data yang tersedia',
+                              'Issuer name from the available data sources',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "ui.res.chip_below": _e("Tidak melewati batas {thr}*", "Does not cross the {thr} threshold*", "Gail 28 Okt 11.01"),
     "ui.res.chip_note": _e("*Bukan jaminan laporan bebas salah saji.",
                            "*This does not guarantee the statements are free of misstatement.", "Gail 28 Okt 11.01"),
@@ -1359,14 +1401,18 @@ CATALOG: dict = {
     "ui.res.provisional_detail": _e("{n} angka perlu dicocokkan dengan PDF sumber. Daftar periksanya ada di laporan PDF.",
                                     "{n} figures need to be checked against the source PDF. The checklist is in the PDF "
                                     "report.", "Gail 28 Okt desain"),
-    "ui.res.assumed": _e("Termasuk {n} asumsi untuk angka yang tidak ditemukan; rinciannya di daftar periksa.",
-                         "This includes {n} assumptions for figures that were not found; details in the checklist.",
-                         "new"),
+    "ui.res.assumed": _e(
+                          'Termasuk {n} asumsi untuk angka yang tidak ditemukan. Rinciannya tercantum dalam daftar periksa.',
+                          'This includes {n} assumptions for figures that were not found. See the checklist for details.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "ui.idx.title": _e("Kedelapan indeks", "The eight indices", "Gail 28 Okt desain"),
     "ui.idx.col.index": _e("INDEKS", "INDEX", "Gail 28 Okt desain"),
     "ui.idx.col.name": _e("ARTI", "MEANING", "Gail 28 Okt desain"),
     "ui.idx.col.value": _e("NILAI", "VALUE", "Gail 28 Okt desain"),
-    "ui.idx.col.push": _e("DORONGAN", "PUSH", "Gail 28 Okt desain"),
+    "ui.idx.col.push": _e(
+                           'KONTRIBUSI',
+                           'CONTRIBUTION',
+                           'Gail 11 Nov 12.12 (Dorongan diganti Kontribusi)'),
     "ui.idx.minor": _e("DEPI, SGAI dan LVGI tidak signifikan dalam model Beneish (1999); tidak dibahas sebagai temuan.",
                        "DEPI, SGAI and LVGI are not significant in the Beneish (1999) model; they are not discussed as "
                        "findings.", "Gail 28 Okt desain"),
@@ -1387,19 +1433,28 @@ CATALOG: dict = {
     "ui.not_traced": _e("Sistem tidak dapat menelusuri nilai {items}; M-score tidak dapat ditampilkan.",
                         "The system could not trace the value of {items}; the M-score cannot be shown.",
                         "Gail 28 Okt 10.32 (dirapikan Claude)"),
-    "ui.unreadable_title": _e("Laporan tidak dapat dibaca", "The report could not be read", "new"),
+    "ui.unreadable_title": _e(
+                               'Laporan tidak dapat dibaca',
+                               'The report could not be read',
+                               'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "ui.read_details": _e("Detail pembacaan", "Reading details", "Gail 28 Okt impl"),
 
     # ---------------------------------------------------------------- provisional assumptions (Gail 28 Okt 10.41)
-    "status.ASSUMED": _e("Asumsi hasil sementara", "Provisional assumption", "new"),
+    "status.ASSUMED": _e(
+                          'Asumsi hasil sementara',
+                          'Provisional assumption',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
 
     # ---------------------------------------------------------------- verification step in the app (Gail 4 Nov 2026)
     "ui.step.check": _e("Pengecekan", "Review", "Gail 4 Nov 09.07"),
-    "ui.up.xbrl": _e("File XBRL (opsional)", "XBRL file (optional)", "new"),
-    "ui.up.xbrl_sub": _e("instance.zip dari situs BEI, untuk laporan tahun buku 2022 dan seterusnya. Angka laporan utama "
-                         "diambil dari XBRL lalu dicocokkan dengan PDF.",
-                         "instance.zip from the IDX website, for financial years 2022 onwards. Primary statement amounts "
-                         "are taken from XBRL and reconciled to the PDF.", "new"),
+    "ui.up.xbrl": _e(
+                      'File XBRL (opsional)',
+                      'XBRL file (optional)',
+                      'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "ui.up.xbrl_sub": _e(
+                          'Untuk tahun buku 2022 dan seterusnya, unggah instance.zip dari situs BEI. Angka laporan utama diambil dari XBRL, lalu dicocokkan dengan laporan PDF.',
+                          'For financial years 2022 onwards, provide the instance.zip file downloaded from the IDX website. Primary-statement figures are extracted from XBRL and then reconciled to the PDF financial statements.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "chk.title": _e("Skor ditahan: {n} pos memerlukan verifikasi", "Score withheld: {n} items require verification", "Gail 4 Nov 09.07"),
     "chk.sub": _e("Pos lainnya telah selesai pembacaan automated dan rekonsiliasi silang. Pos berikut belum dapat "
                   "direkonsiliasi dengan sumber kedua dalam laporan. Tinjau setiap pos terhadap potongan halaman sumber, "
@@ -1599,25 +1654,33 @@ CATALOG: dict = {
                           "Gail 8 Nov 12.50 (2A)"),
     "chk.r.single": _e("Nilai ini belum dapat direkonsiliasi dengan sumber kedua dalam laporan.",
                        "This amount could not be reconciled to a second source within the report.", "Gail 4 Nov 09.07"),
-    "note.assumed_am": _e("Aset takberwujud tidak ditemukan; amortisasi dianggap 0 untuk hasil sementara. Periksa "
-                          "di catatan atas laporan keuangan apakah memang tidak ada.",
-                          "No intangible assets were found; amortisation is taken as 0 for the provisional result. "
-                          "Check in the notes to the financial statements whether there are none.", "new"),
-    "note.assumed_np": _e("Penyusutan dan amortisasi aset selain aset tetap: dipakai jumlah yang terbaca ({source}); "
-                          "belum dapat dipastikan lengkap.",
-                          "Depreciation and amortisation of assets other than PPE: the amount read is used ({source}); "
-                          "it cannot yet be confirmed as complete.", "new"),
-    "note.assumed_np_zero": _e("Penyusutan dan amortisasi aset selain aset tetap tidak ditemukan; dianggap 0 untuk hasil "
-                               "sementara. Periksa di catatan atas laporan keuangan apakah memang tidak ada.",
-                               "Depreciation and amortisation of assets other than PPE were not found; taken as 0 for "
-                               "the provisional result. Check in the notes to the financial statements whether there "
-                               "are none.", "new"),
+    "note.assumed_am": _e(
+                           'Aset takberwujud tidak ditemukan pada bagian laporan yang dibaca. Untuk hasil sementara, amortisasinya dianggap 0. Periksa catatan atas laporan keuangan sebelum memakai hasil ini.',
+                           'No intangible assets were identified in the sections read. For the provisional result, their amortisation is assumed to be zero. Check the notes to the financial statements before relying on this result.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.assumed_np": _e(
+                           'Penyusutan dan amortisasi aset selain aset tetap: jumlah yang berhasil diekstrak ({source}) digunakan, tetapi kelengkapannya belum dapat dipastikan.',
+                           'Depreciation and amortisation of assets other than PPE: the extracted amount ({source}) is used, but its completeness has not been established.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.assumed_np_zero": _e(
+                                'Penyusutan dan amortisasi aset selain aset tetap tidak ditemukan pada bagian laporan yang dibaca. Untuk hasil sementara, nilainya dianggap 0. Periksa catatan atas laporan keuangan sebelum memakai hasil ini.',
+                                'Depreciation and amortisation of assets other than PPE were not identified in the sections read. For the provisional result, they are assumed to be zero. Check the notes to the financial statements before relying on this result.',
+                                'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
 
     # ---------------------------------------------------------------- PDF report and Excel (new; awaiting review)
     "rep.title": _e("Red-flag Scanner Report", "Red-flag Scanner Report", "Gail 28 Okt report"),
-    "rep.page": _e("Halaman {n} dari {m}", "Page {n} of {m}", "new"),
-    "rep.generated": _e("Dibuat {d}", "Generated {d}", "new"),
-    "rep.version": _e("Bahasa Indonesia", "English", "new"),
+    "rep.page": _e(
+                    'Halaman {n} dari {m}',
+                    'Page {n} of {m}',
+                    'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.generated": _e(
+                         'Dibuat {d}',
+                         'Generated {d}',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.version": _e(
+                       'Bahasa Indonesia',
+                       'English',
+                       'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.footer_disclaimer": _e(
         "WARS is a red-flag detection system; its results do not constitute a conclusion of fraud and require further "
         "review. In case of any discrepancy, the Indonesian version prevails.",
@@ -1626,8 +1689,14 @@ CATALOG: dict = {
     "rep.s1": _e("Ikhtisar", "Overview", "r0 report"),
     "rep.s2": _e("Rincian skor", "Score breakdown", "r0 report"),
     "rep.s3": _e("Temuan", "Findings", "r0 report"),
-    "rep.s4": _e("Daftar periksa", "Checklist", "new"),
-    "rep.s5": _e("Lampiran A · Angka yang dibaca", "Appendix A · Figures read", "new"),
+    "rep.s4": _e(
+                  'Daftar periksa',
+                  'Checklist',
+                  'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.s5": _e(
+                  'Lampiran A · Angka yang dibaca',
+                  'Appendix A · Figures read',
+                  'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.s6": _e("Lampiran B · Pemeriksaan silang", "Appendix B · Cross-checks", "Gail 28 Okt report"),
     "rep.s8": _e("Lampiran C · Catatan pembacaan", "Appendix C · Reading notes", "Gail 28 Okt report"),
     "rep.b_intro": _e("Setiap pemeriksaan mencocokkan angka yang dibaca dengan tempat kedua di laporan. Lolos: angka "
@@ -1673,54 +1742,79 @@ CATALOG: dict = {
     "rep.f.ticker": _e("KODE SAHAM", "TICKER", "r0 report"),
     "rep.f.period": _e("PERIODE DIBANDINGKAN", "PERIODS COMPARED", "r0 report"),
     "rep.f.basis": _e("DASAR", "BASIS", "r0 report"),
-    "rep.f.unit": _e("SATUAN", "UNIT", "new"),
+    "rep.f.unit": _e(
+                      'SATUAN',
+                      'UNIT',
+                      'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.f.source": _e("SUMBER", "SOURCE", "r0 report"),
-    "rep.period": _e("{t} (t) vs {t1} (t−1)", "{t} (t) vs {t1} (t−1)", "new"),
-    "rep.source": _e("{name} · {pages} halaman · SHA-256 {sha}", "{name} · {pages} pages · SHA-256 {sha}", "new"),
+    "rep.period": _e(
+                      '{t} (t) vs {t1} (t−1)',
+                      '{t} (t) vs {t1} (t−1)',
+                      'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.source": _e(
+                      '{name} · {pages} halaman · SHA-256 {sha}',
+                      '{name} · {pages} pages · SHA-256 {sha}',
+                      'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.score_label": _e("BENEISH M-SCORE · MODEL 8 VARIABEL", "BENEISH M-SCORE · 8-VARIABLE MODEL", "r0 report"),
-    "rep.box.figures": _e("ANGKA", "FIGURES", "new"),
-    "rep.box.figures_v": _e("{a} dari {b} angka terbaca dan tercocokkan", "{a} of {b} figures read and reconciled",
-                            "new"),
-    "rep.box.figures_d": _e("{n} perlu dicocokkan; lihat daftar periksa.", "{n} to be checked; see the checklist.", "new"),
+    "rep.box.figures": _e(
+                           'ANGKA',
+                           'FIGURES',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.box.figures_v": _e(
+                             '{a} dari {b} angka berhasil dibaca dan dicocokkan',
+                             '{a} of {b} figures were successfully extracted and reconciled',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.box.figures_d": _e(
+                             '{n} angka perlu diperiksa; lihat daftar periksa.',
+                             '{n} figures require review; see the checklist.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.box.user": _e("KONFIRMASI PENGGUNA", "USER CONFIRMATION", "Gail 23 Okt R-15"),
-    "rep.box.user_v": _e("Belum dilakukan", "Not done yet", "new"),
-    "rep.box.user_done": _e("Dilakukan di layar cek: {a} pos dinyatakan Sesuai, {b} pos diganti dengan rujukan halaman",
-                            "Done on the review screen: {a} items agreed, {b} items amended with a page reference",
-                            "Claude 11 Nov (temuan uji BIPI Gail); menunggu Gail"),
-    "rep.box.user_skipped": _e("Dilewati; skor tidak dihitung", "Skipped; no score computed",
-                               "Claude 11 Nov (temuan uji BIPI Gail); menunggu Gail"),
-    "rep.box.user_done_d": _e("Ini konfirmasi pengguna, bukan verifikasi independen. Status tiap angka ada di Lampiran A.",
-                              "This is the user's confirmation, not an independent verification. The status of each "
-                              "figure is in Appendix A.", "Claude 11 Nov (temuan uji BIPI Gail); menunggu Gail"),
+    "rep.box.user_v": _e(
+                          'Belum diperiksa',
+                          'Not yet reviewed',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.box.user_done": _e(
+                             'Di layar cek: {a} pos dikonfirmasi Sesuai dan {b} pos diganti nilainya dengan rujukan halaman',
+                             'On the review screen: {a} items confirmed as Agree and {b} items amended with a page reference',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.box.user_skipped": _e(
+                                'Dilewati; M-score tidak dihitung',
+                                'Skipped; M-score not calculated',
+                                'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.box.user_done_d": _e(
+                               'Ini merupakan konfirmasi pengguna, bukan verifikasi independen. Status setiap angka tercantum dalam Lampiran A.',
+                               'This is a user confirmation, not an independent verification. The status of each figure is provided in Appendix A.',
+                               'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.box.user_d": _e("Cocokkan angka melalui daftar periksa.", "Agree the figures using the checklist.", "Gail 28 Okt report"),
     "rep.provisional_detail": _e("{n} angka perlu dicocokkan dengan PDF sumber melalui daftar periksa.",
                                  "{n} figures need to be agreed to the source PDF using the checklist.", "Gail 28 Okt report"),
     "rep.summary": _e("Ringkasan", "Summary", "r0 report"),
     "rep.breakdown_intro": _e(
-        "Setiap indeks membandingkan {t} dengan {t1}. Dorongan menunjukkan seberapa jauh suatu indeks menggeser skor "
-        "dari perusahaan netral ({n}). Kolom angka sumber menunjukkan pos dan halaman PDF yang dipakai untuk menghitung "
-        "indeks.",
-        "Each index compares {t} with {t1}. The push shows how far an index moves the score away from a neutral "
-        "company ({n}). The source figures column shows the line items and PDF pages used to calculate the index.",
-        "Gail 28 Okt report"),
+                               'Setiap indeks membandingkan {t} dengan {t1}. Kontribusi menunjukkan seberapa jauh suatu indeks menggeser skor dari perusahaan netral ({n}). Kolom angka sumber menunjukkan pos dan halaman PDF yang dipakai untuk menghitung indeks.',
+                               'Each index compares {t} with {t1}. The contribution shows how far an index moves the score away from a neutral company ({n}). The source figures column shows the line items and PDF pages used to calculate the index.',
+                               'Gail 11 Nov 12.12 (Dorongan diganti Kontribusi)'),
     "rep.col.coef": _e("KOEF.", "COEF.", "r0 report"),
-    "rep.sum_line": _e("Netral {n} + dorongan bersih {p} = M-score {m} · batas {thr}",
-                       "Neutral {n} + net push {p} = M-score {m} · threshold {thr}", "new"),
+    "rep.sum_line": _e(
+                        'Komponen netral {n} + kontribusi bersih {p} = M-score {m} · batas {thr}',
+                        'Neutral component {n} + net contribution {p} = M-score {m} · threshold {thr}',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa); Gail 11 Nov 12.12 (Dorongan diganti Kontribusi)'),
     "rep.formula": _e(
-        "Indeks = rasio tahun berjalan ÷ rasio tahun pembanding; TATA = akrual total ÷ total aset tahun berjalan. "
-        "Dorongan = koefisien × (indeks − nilai netral); nilai netral 1 untuk indeks dan 0 untuk TATA. "
-        "M = {const} + Σ koefisien × indeks.",
-        "Index = current-year ratio ÷ comparative-year ratio; TATA = total accruals ÷ current-year total assets. "
-        "Push = coefficient × (index − neutral value); the neutral value is 1 for the indices and 0 for TATA. "
-        "M = {const} + Σ coefficient × index.", "new"),
-    "rep.no_findings": _e("Tidak ada rasio yang memenuhi kriteria temuan (DSRI, GMI, AQI, SGI atau TATA dengan dorongan "
-                          "di atas 0,005).",
-                          "No ratio meets the criteria for a finding (DSRI, GMI, AQI, SGI or TATA with a push above "
-                          "0.005).", "B r1 §3"),
-    "rep.no_score": _e("M-score tidak dihitung, sehingga tidak ada temuan.",
-                       "The M-score was not calculated, so there are no findings.", "new"),
+                       'Indeks = rasio tahun berjalan ÷ rasio tahun pembanding; TATA = total akrual ÷ total aset tahun berjalan. Kontribusi = koefisien × (indeks − nilai netral); nilai netral adalah 1 untuk indeks dan 0 untuk TATA. M = {const} + Σ (koefisien × indeks).',
+                       'Index = current-year ratio ÷ comparative-year ratio; TATA = total accruals ÷ current-year total assets. Contribution = coefficient × (index − neutral value); the neutral value is 1 for the indices and 0 for TATA. M = {const} + Σ (coefficient × index).',
+                       'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa); Gail 11 Nov 12.12 (Dorongan diganti Kontribusi)'),
+    "rep.no_findings": _e(
+                           'Tidak ada rasio yang memenuhi kriteria temuan (DSRI, GMI, AQI, SGI atau TATA dengan kontribusi di atas 0,005).',
+                           'No ratio meets the criteria for a finding (DSRI, GMI, AQI, SGI or TATA with a contribution above 0.005).',
+                           'Gail 11 Nov 12.12 (Dorongan diganti Kontribusi)'),
+    "rep.no_score": _e(
+                        'M-score tidak dihitung; oleh karena itu, penilaian berbasis M-score tidak tersedia.',
+                        'The M-score was not calculated; therefore, no M-score-based assessment is available.',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.finding": _e("Temuan {n} · {idx}", "Finding {n} · {idx}", "r0 report"),
-    "rep.push_tag": _e("DORONGAN {p}", "PUSH {p}", "Gail 23 Okt R-13"),
+    "rep.push_tag": _e(
+                        'KONTRIBUSI {p}',
+                        'CONTRIBUTION {p}',
+                        'Gail 11 Nov 12.12 (Dorongan diganti Kontribusi)'),
     "rep.a": _e("A · ANGKA", "A · FIGURES", "r0 report"),
     "rep.c": _e("C · KEMUNGKINAN PENJELASAN", "C · POSSIBLE EXPLANATIONS", "B r1 §4"),
     "rep.d": _e("D · AREA UNTUK PEMERIKSAAN LEBIH LANJUT", "D · AREAS FOR FURTHER EXAMINATION", "r0 report"),
@@ -1731,21 +1825,46 @@ CATALOG: dict = {
         "Agree each figure to the PDF page shown, then tick Matches or Does not match. If any figure does not match, "
         "the M-score cannot be relied on yet.", "Gail 28 Okt report"),
     "rep.check.none": _e("Tidak ada angka yang perlu dicocokkan.", "No figure needs checking.", "Gail 28 Okt impl"),
-    "rep.check.col.no": _e("No", "No", "new"),
+    "rep.check.col.no": _e(
+                            'No',
+                            'No',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.check.col.item": _e("Pos", "Line item", "Gail 28 Okt impl"),
-    "rep.check.col.year": _e("Tahun", "Year", "new"),
+    "rep.check.col.year": _e(
+                              'Tahun',
+                              'Year',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.check.col.value": _e("Nilai", "Value", "Gail 28 Okt impl"),
-    "rep.check.col.page": _e("Hal.", "Page", "new"),
-    "rep.check.col.why": _e("Yang perlu dicocokkan", "What to check", "new"),
+    "rep.check.col.page": _e(
+                              'Hal.',
+                              'Page',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.check.col.why": _e(
+                             'Yang perlu dicocokkan',
+                             'What to check',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.check.col.ok": _e("Sesuai", "Matches", "Gail 28 Okt C6 7.18"),
     "rep.check.col.bad": _e("Tidak sesuai", "Does not match", "Gail 28 Okt C6 7.18"),
-    "rep.check.assumed": _e("Asumsi untuk hasil sementara", "Assumptions for the provisional result", "new"),
-    "rep.check.sign": _e("Diperiksa oleh: ____________________    Tanggal: ____________    Paraf: ________",
-                         "Checked by: ____________________    Date: ____________    Initials: ________", "new"),
-    "rep.inputs_intro": _e("Angka dalam satuan laporan ({unit}). Baris sumber dikutip dari PDF.",
-                           "Figures in the report's unit ({unit}). Source lines are quoted from the PDF.", "new"),
-    "rep.checks.passed": _e("Lolos", "Passed", "new"),
-    "rep.checks.failed": _e("Gagal", "Failed", "new"),
+    "rep.check.assumed": _e(
+                             'Asumsi yang digunakan untuk hasil sementara',
+                             'Assumptions used for the provisional result',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.check.sign": _e(
+                          'Diperiksa oleh: ____________________    Tanggal: ____________    Paraf: ________',
+                          'Reviewed by: ____________________    Date: ____________    Initials: ________',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.inputs_intro": _e(
+                            'Angka disajikan dalam satuan yang digunakan pada laporan ({unit}). Baris sumber dikutip dari PDF.',
+                            'Figures are presented in the unit used in the financial statements ({unit}). Source lines are quoted from the PDF.',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.checks.passed": _e(
+                             'Lolos',
+                             'Passed',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "rep.checks.failed": _e(
+                             'Tidak lolos',
+                             'Failed',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.checks.review": _e("Perlu diperiksa", "Needs review", "r1 2.2"),
     "rep.method.p1": _e(
         "Model dikembangkan berdasarkan Beneish (1999). Skor rendah tidak berarti bebas salah saji. Model: Beneish "
@@ -1754,16 +1873,13 @@ CATALOG: dict = {
         "Model: Beneish (1999), 8 variables; the current year and the comparatives come from the same report.",
         "Gail 28 Okt 10.32"),
     "rep.method.p2": _e(
-        "Batas yang ditampilkan hanya −1,78 (Beneish 1999). Skor di atas batas berarti angka terkait perlu diperiksa "
-        "lebih lanjut; skor bukan probabilitas kecurangan.",
-        "The only threshold shown is −1.78 (Beneish 1999). A score above it means the related figures warrant closer "
-        "examination; the score is not a probability of fraud.", "new"),
+                         'Batas yang ditampilkan hanya −1,78 (Beneish, 1999). Skor di atas batas tersebut menunjukkan bahwa angka terkait perlu diperiksa lebih lanjut; skor ini bukan probabilitas terjadinya kecurangan.',
+                         'The only threshold shown is −1.78 (Beneish, 1999). A score above this threshold indicates that the relevant figures warrant further examination; the score is not a probability of fraud.',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.method.p3": _e(
-        "Angka dibaca otomatis dari PDF digital. Setiap angka tercatat dengan halaman dan baris sumbernya. Angka yang "
-        "tidak ditemukan tidak diisi; angka yang dianggap 0 untuk hasil sementara tercantum di daftar periksa.",
-        "Figures are read automatically from the digital PDF. Each figure is recorded with its source page and line. "
-        "Figures that were not found are not filled in; figures taken as 0 for the provisional result are listed in "
-        "the checklist.", "new"),
+                         'Angka diambil otomatis dari file XBRL bila diunggah, atau dibaca dari PDF digital. Setiap angka dicatat beserta halaman dan baris sumbernya di PDF. Angka yang tidak ditemukan dibiarkan kosong; angka yang untuk sementara diasumsikan 0 dicantumkan dalam daftar periksa.',
+                         'Figures are taken automatically from the XBRL file when it is uploaded, or extracted from the digital PDF. Each figure is recorded with its source page and line in the PDF. Figures that are not found are left blank; figures provisionally assumed to be zero are listed in the checklist.',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "beta.limits": _e(
         "Versi Beta. Pada pengujian terakhir atas 10 emiten BEI (laporan keuangan FY2022, per 4 November 2026), 2 dari "
         "261 angka yang telah dicocokkan tidak tepat. Pembacaan otomatis belum optimal apabila: (a) nama pos tercetak "
@@ -1778,62 +1894,157 @@ CATALOG: dict = {
         "XBRL file, the score is more often not calculated. Each figure in the checklist is to be traced to its "
         "source page before the result is relied upon.", "Gail 4 Nov 17.07 (arah); teks disetujui Gail 4 Nov 18.40"),
     "rep.method.p4": _e(
-        "Laporan ini hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur "
-        "pemeriksaan, dan bukan bukti kecurangan atau salah saji.",
-        "This report is an automated screen. It is not an audit opinion, does not replace examination procedures, and "
-        "is not evidence of fraud or misstatement.", "new"),
-    "chart.title.DSRI": _e("Piutang usaha dibanding penjualan", "Trade receivables relative to sales", "new"),
-    "chart.title.GMI": _e("Margin laba kotor", "Gross margin", "new"),
-    "chart.title.AQI": _e("Porsi aset tidak lancar selain aset tetap", "Share of non-current assets other than PPE", "new"),
-    "chart.title.SGI": _e("Penjualan", "Sales", "new"),
-    "chart.title.TATA": _e("Laba tahun berjalan dan arus kas operasi", "Profit for the year and operating cash flow", "new"),
-    "chart.DSRI": _e("Piutang ÷ penjualan", "Receivables ÷ sales", "new"),
-    "chart.GMI": _e("Margin laba kotor", "Gross margin", "new"),
-    "chart.AQI": _e("Porsi dari total aset", "Share of total assets", "new"),
-    "chart.SGI": _e("Penjualan", "Sales", "new"),
-    "chart.TATA_ni": _e("Laba tahun berjalan", "Profit for the year", "new"),
-    "chart.TATA_cfo": _e("Arus kas operasi", "Operating cash flow", "new"),
-    "chart.leg.prev": _e("{y} (tahun pembanding)", "{y} (comparative year)", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.leg.cur": _e("{y} (tahun berjalan)", "{y} (current year)", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.measure": _e("Ukuran: {name}", "Measure: {name}", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.DSRI_ar": _e("Piutang usaha", "Trade receivables", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.DSRI_rev": _e("Penjualan", "Sales", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.GMI_rev": _e("Penjualan", "Sales", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.GMI_gp": _e("Laba kotor", "Gross profit", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.AQI_other": _e("Aset tidak lancar selain aset tetap", "Non-current assets other than PPE", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.AQI_ta": _e("Total aset", "Total assets", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.read.DSRI": _e("Piutang usaha setara {r1} dari penjualan di {y1} dan {r} di {y}. Rasio yang naik "
-                          "mendorong DSRI naik.", "Trade receivables equal {r1} of sales in {y1} and {r} in {y}. A "
-                          "higher ratio pushes DSRI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.read.GMI": _e("Laba kotor setara {r1} dari penjualan di {y1} dan {r} di {y}. Margin yang turun "
-                         "mendorong GMI naik.", "Gross profit equals {r1} of sales in {y1} and {r} in {y}. A lower "
-                         "margin pushes GMI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.read.AQI": _e("Aset tidak lancar selain aset tetap setara {r1} dari total aset di {y1} dan {r} di {y}. "
-                         "Porsi yang naik mendorong AQI naik.", "Non-current assets other than PPE equal {r1} of total "
-                         "assets in {y1} and {r} in {y}. A higher share pushes AQI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.read.SGI": _e("Penjualan berubah {g} dari {y1} ke {y}. Kenaikan penjualan mendorong SGI naik.",
-                         "Sales changed by {g} from {y1} to {y}. Higher sales push SGI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
-    "chart.read.TATA": _e("Bila laba tahun berjalan lebih besar dari arus kas operasi, akrualnya positif dan mendorong "
-                          "TATA naik.", "When profit for the year exceeds operating cash flow, accruals are positive and "
-                          "push TATA up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.unconfirmed": _e("Angka grafik belum dicocokkan; lihat daftar periksa", "Chart figures not yet agreed; see the checklist", "new"),
+                         'Laporan ini merupakan hasil penyaringan otomatis. Laporan ini bukan opini audit, tidak menggantikan prosedur audit atau pemeriksaan lainnya, dan bukan bukti adanya kecurangan maupun salah saji.',
+                         'This report presents the results of an automated screening process. It is not an audit opinion, does not replace audit or other examination procedures, and does not constitute evidence of fraud or misstatement.',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.title.DSRI": _e(
+                            'Piutang usaha dibanding penjualan',
+                            'Trade receivables relative to sales',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.title.GMI": _e(
+                           'Margin laba kotor',
+                           'Gross margin',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.title.AQI": _e(
+                           'Porsi aset tidak lancar selain aset tetap',
+                           'Share of non-current assets other than PPE',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.title.SGI": _e(
+                           'Penjualan',
+                           'Sales',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.title.TATA": _e(
+                            'Laba tahun berjalan dan arus kas operasi',
+                            'Profit for the year and operating cash flow',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.SGI": _e(
+                     'Penjualan',
+                     'Sales',
+                     'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.TATA_ni": _e(
+                         'Laba tahun berjalan',
+                         'Profit for the year',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.TATA_cfo": _e(
+                          'Arus kas operasi',
+                          'Operating cash flow',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.leg.prev": _e(
+                          '{y} (tahun pembanding)',
+                          '{y} (comparative year)',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.leg.cur": _e(
+                         '{y} (tahun berjalan)',
+                         '{y} (current year)',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.measure": _e(
+                         'Ukuran: {name}',
+                         'Measure: {name}',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.DSRI_ar": _e(
+                         'Piutang usaha',
+                         'Trade receivables',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.DSRI_rev": _e(
+                          'Penjualan',
+                          'Sales',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.GMI_rev": _e(
+                         'Penjualan',
+                         'Sales',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.GMI_gp": _e(
+                        'Laba kotor',
+                        'Gross profit',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.AQI_other": _e(
+                           'Aset tidak lancar selain aset tetap',
+                           'Non-current assets other than PPE',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.AQI_ta": _e(
+                        'Total aset',
+                        'Total assets',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.read.DSRI": _e(
+                           'Piutang usaha sebesar {r1} dari penjualan pada {y1} dan {r} pada {y}. Kenaikan rasio ini meningkatkan DSRI.',
+                           'Trade receivables represented {r1} of sales in {y1} and {r} in {y}. An increase in this ratio raises the DSRI.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.read.GMI": _e(
+                          'Laba kotor sebesar {r1} dari penjualan pada {y1} dan {r} pada {y}. Penurunan margin ini meningkatkan GMI.',
+                          'Gross profit represented {r1} of sales in {y1} and {r} in {y}. A decrease in this margin raises the GMI.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.read.AQI": _e(
+                          'Aset tidak lancar selain aset tetap sebesar {r1} dari total aset pada {y1} dan {r} pada {y}. Kenaikan proporsi ini meningkatkan AQI.',
+                          'Non-current assets other than property, plant and equipment (PPE) represented {r1} of total assets in {y1} and {r} in {y}. An increase in this proportion raises the AQI.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.read.SGI": _e(
+                          'Penjualan berubah sebesar {g} dari {y1} ke {y}. Pertumbuhan penjualan meningkatkan SGI.',
+                          'Sales changed by {g} from {y1} to {y}. Sales growth increases the SGI.',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.read.TATA": _e(
+                           'Grafik membandingkan laba tahun berjalan dengan arus kas operasi sebagai gambaran akrual. TATA dalam skor dihitung dari perubahan modal kerja dikurangi penyusutan dan amortisasi, dibagi total aset, sehingga nilainya dapat berbeda dari selisih pada grafik.',
+                           'The chart compares profit for the year with operating cash flow as an indication of accruals. TATA in the score is computed from the change in working capital less depreciation and amortisation, divided by total assets, so its value can differ from the gap shown in the chart.',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "chart.unconfirmed": _e(
+                             'Angka pada grafik belum dikonfirmasi di layar cek; lihat daftar periksa.',
+                             'Chart figures have not yet been confirmed on the review screen; see the checklist.',
+                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "rep.contact": _e("Hubungi kami", "Contact us", "Gail 28 Okt report"),
     "rep.check.line": _e("Baris di PDF: {s}", "Line in the PDF: {s}", "Gail 28 Okt report"),
 
-    "xl.sheet.summary": _e("Ringkasan", "Summary", "new"),
-    "xl.sheet.figures": _e("Angka", "Figures", "new"),
-    "xl.sheet.indices": _e("Indeks", "Indices", "new"),
-    "xl.sheet.checklist": _e("Daftar periksa", "Checklist", "new"),
-    "xl.sheet.checks": _e("Pemeriksaan silang", "Cross-checks", "new"),
-    "xl.col.answer": _e("Jawaban (Sesuai / Tidak sesuai)", "Answer (Matches / Does not match)", "new"),
-    "xl.col.source_label": _e("Pos di laporan", "Line in the report", "new"),
-    "xl.col.source_line": _e("Baris sumber (kutipan PDF)", "Source line (PDF quote)", "new"),
-    "xl.col.check": _e("Pemeriksaan", "Check", "new"),
+    "xl.sheet.summary": _e(
+                            'Ringkasan',
+                            'Summary',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.sheet.figures": _e(
+                            'Angka',
+                            'Figures',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.sheet.indices": _e(
+                            'Indeks',
+                            'Indices',
+                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.sheet.checklist": _e(
+                              'Daftar periksa',
+                              'Checklist',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.sheet.checks": _e(
+                           'Pemeriksaan silang',
+                           'Cross-checks',
+                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.col.answer": _e(
+                         'Jawaban (Sesuai / Tidak sesuai)',
+                         'Answer (Matches / Does not match)',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.col.source_label": _e(
+                               'Pos di laporan',
+                               'Line in the report',
+                               'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.col.source_line": _e(
+                              'Baris sumber (kutipan PDF)',
+                              'Source line (PDF quote)',
+                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.col.check": _e(
+                        'Pemeriksaan',
+                        'Check',
+                        'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "xl.col.result": _e("Hasil", "Result", "Gail 28 Okt desain"),
-    "xl.col.detail": _e("Rincian", "Detail", "new"),
-    "xl.k.file": _e("Berkas", "File", "new"),
-    "xl.k.generated": _e("Dibuat", "Generated", "new"),
-    "xl.k.mscore": _e("M-score", "M-score", "new"),
+    "xl.col.detail": _e(
+                         'Rincian',
+                         'Detail',
+                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.k.file": _e(
+                     'Berkas',
+                     'File',
+                     'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.k.generated": _e(
+                          'Dibuat',
+                          'Generated',
+                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "xl.k.mscore": _e(
+                       'M-score',
+                       'M-score',
+                       'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "xl.k.status": _e("Status", "Status", "Gail 28 Okt impl"),
 }
 
