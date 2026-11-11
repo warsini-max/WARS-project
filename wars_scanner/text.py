@@ -1796,16 +1796,23 @@ CATALOG: dict = {
     "chart.leg.prev": _e("{y} (tahun pembanding)", "{y} (comparative year)", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
     "chart.leg.cur": _e("{y} (tahun berjalan)", "{y} (current year)", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
     "chart.measure": _e("Ukuran: {name}", "Measure: {name}", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.read.DSRI": _e("Makin tinggi batang, makin besar piutang dibanding penjualan. Kenaikan di {t} mendorong "
-                          "DSRI naik.", "The taller the bar, the larger receivables are relative to sales. A rise in {t} "
-                          "pushes DSRI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.read.GMI": _e("Makin tinggi batang, makin besar margin laba kotor. Penurunan di {t} mendorong GMI naik.",
-                         "The taller the bar, the higher the gross margin. A fall in {t} pushes GMI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.read.AQI": _e("Makin tinggi batang, makin besar porsi aset tidak lancar selain aset tetap. Kenaikan di {t} "
-                         "mendorong AQI naik.", "The taller the bar, the larger the share of non-current assets other "
-                         "than PPE. A rise in {t} pushes AQI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
-    "chart.read.SGI": _e("Tinggi batang adalah penjualan. Kenaikan di {t} mendorong SGI naik.",
-                         "The bar height is sales. A rise in {t} pushes SGI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.DSRI_ar": _e("Piutang usaha", "Trade receivables", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.DSRI_rev": _e("Penjualan", "Sales", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.GMI_rev": _e("Penjualan", "Sales", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.GMI_gp": _e("Laba kotor", "Gross profit", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.AQI_other": _e("Aset tidak lancar selain aset tetap", "Non-current assets other than PPE", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.AQI_ta": _e("Total aset", "Total assets", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.read.DSRI": _e("Piutang usaha setara {r1} dari penjualan di {y1} dan {r} di {y}. Rasio yang naik "
+                          "mendorong DSRI naik.", "Trade receivables equal {r1} of sales in {y1} and {r} in {y}. A "
+                          "higher ratio pushes DSRI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.read.GMI": _e("Laba kotor setara {r1} dari penjualan di {y1} dan {r} di {y}. Margin yang turun "
+                         "mendorong GMI naik.", "Gross profit equals {r1} of sales in {y1} and {r} in {y}. A lower "
+                         "margin pushes GMI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.read.AQI": _e("Aset tidak lancar selain aset tetap setara {r1} dari total aset di {y1} dan {r} di {y}. "
+                         "Porsi yang naik mendorong AQI naik.", "Non-current assets other than PPE equal {r1} of total "
+                         "assets in {y1} and {r} in {y}. A higher share pushes AQI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
+    "chart.read.SGI": _e("Penjualan berubah {g} dari {y1} ke {y}. Kenaikan penjualan mendorong SGI naik.",
+                         "Sales changed by {g} from {y1} to {y}. Higher sales push SGI up.", "Claude 11 Nov (pilihan A Gail 11 Nov 10.32: grafik per akun, rasio di keterangan); menunggu Gail"),
     "chart.read.TATA": _e("Bila laba tahun berjalan lebih besar dari arus kas operasi, akrualnya positif dan mendorong "
                           "TATA naik.", "When profit for the year exceeds operating cash flow, accruals are positive and "
                           "push TATA up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),

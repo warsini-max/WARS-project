@@ -399,8 +399,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
             chart = report.finding_chart(r, d["index"], lang)
             left = [P(t("rep.a", lang), "label"), Spacer(1, 1 * mm), P(f["a"])]
             if chart:
-                right = [_Chart(chart, lang, W * 0.38), Spacer(1, 1 * mm), Paragraph(_x(t(
-                    f"chart.read.{d['index']}", lang, t=chart["years"]["t"])), ParagraphStyle(
+                right = [_Chart(chart, lang, W * 0.38), Spacer(1, 1 * mm), Paragraph(_x(chart["caption"]), ParagraphStyle(
                     "cr", parent=S["small"], fontSize=6.8, leading=8.8, textColor=SOFT))]
                 if chart["unconfirmed"]:
                     right += [Spacer(1, 1 * mm), Paragraph(_x(t("chart.unconfirmed", lang)), ParagraphStyle(
@@ -580,7 +579,7 @@ class _Chart(Flowable):
                 y = y_of(v[col])
                 c.setFillColor(fills[si] if two else fills[gi])
                 c.rect(x, min(zero, y), bar_w, abs(y - zero), stroke=0, fill=1)
-                c.setFont("Mono", 6.4)
+                c.setFont("Mono", 5.6 if two else 6.4)          # two bars per year: labels must fit their bar
                 c.setFillColor(INK)
                 ly = (y + 1 * mm) if v[col] >= 0 else (y - 3 * mm)
                 c.drawCentredString(x + bar_w / 2, ly, self._fmt(v[col]))

@@ -32,11 +32,24 @@ def _words(s: str) -> frozenset:
     return frozenset(w for w in re.findall(r"[a-z0-9]+", s.lower()) if w not in DROP)
 
 
+FULL_NAMES = os.path.join(os.path.dirname(MASTER), "company_master_names.csv")
+
+
+@lru_cache(maxsize=1)
+def full_names():
+    """Full names for master entries the workbook cut at 30 characters (Gail, 11 Nov 2026)."""
+    if not os.path.exists(FULL_NAMES):
+        return {}
+    with open(FULL_NAMES, encoding="utf-8") as fh:
+        return {r["ticker"]: r["company_name"].strip() for r in csv.DictReader(l for l in fh if not l.startswith("#"))}
+
+
 @lru_cache(maxsize=1)
 def master():
+    full = full_names()
     with open(MASTER, encoding="utf-8") as fh:
         rows = csv.DictReader(line for line in fh if not line.startswith("#"))
-        return tuple(Issuer(r["ticker"], r["company_name"], r["listing_status"]) for r in rows)
+        return tuple(Issuer(r["ticker"], full.get(r["ticker"], r["company_name"]), r["listing_status"]) for r in rows)
 
 
 def header_text(statements: dict) -> str:

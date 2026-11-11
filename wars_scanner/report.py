@@ -364,32 +364,43 @@ def finding_chart(r: Result, k: str, lang="id"):
             except (TypeError, ZeroDivisionError):
                 return None
         return out
+    # Gail 11 Nov 2026 (option A): the accounts behind the index as bars, the ratio in the caption
     if k == "DSRI":
-        series = [(t("chart.DSRI", lang), ratio(lambda c: g("accounts_receivable", c) / g("revenue", c)))]
-        kind = "pct"
+        series = [(t("chart.DSRI_ar", lang), ratio(lambda c: g("accounts_receivable", c) + 0)),
+                  (t("chart.DSRI_rev", lang), ratio(lambda c: g("revenue", c) + 0))]
+        rat = ratio(lambda c: g("accounts_receivable", c) / g("revenue", c))
     elif k == "GMI":
-        series = [(t("chart.GMI", lang), ratio(lambda c: (g("revenue", c) - g("cost_of_goods_sold", c)) / g("revenue", c)))]
-        kind = "pct"
+        series = [(t("chart.GMI_rev", lang), ratio(lambda c: g("revenue", c) + 0)),
+                  (t("chart.GMI_gp", lang), ratio(lambda c: g("revenue", c) - g("cost_of_goods_sold", c)))]
+        rat = ratio(lambda c: (g("revenue", c) - g("cost_of_goods_sold", c)) / g("revenue", c))
     elif k == "AQI":
-        series = [(t("chart.AQI", lang), ratio(lambda c: 1 - (g("current_assets", c) + g("property_plant_equipment_net", c))
-                                               / g("total_assets", c)))]
-        kind = "pct"
+        series = [(t("chart.AQI_other", lang), ratio(lambda c: g("total_assets", c) - g("current_assets", c)
+                                                     - g("property_plant_equipment_net", c))),
+                  (t("chart.AQI_ta", lang), ratio(lambda c: g("total_assets", c) + 0))]
+        rat = ratio(lambda c: 1 - (g("current_assets", c) + g("property_plant_equipment_net", c)) / g("total_assets", c))
     elif k == "SGI":
         series = [(t("chart.SGI", lang), ratio(lambda c: g("revenue", c) + 0))]
-        kind = "money"
+        rat = ratio(lambda c: g("revenue", "t") / g("revenue", "t1") - 1)
     elif k == "TATA":
         series = [(t("chart.TATA_ni", lang), ratio(lambda c: g("net_income", c) + 0)),
                   (t("chart.TATA_cfo", lang), ratio(lambda c: g("cash_flow_from_operations", c) + 0))]
-        kind = "money"
+        rat = None
     else:
         return None
+    kind = "money"
     if any(v is None for _, v in series):
         return None
     unconfirmed = any(_unconfirmed(r, f, c, ("REVIEW", "UNDISCLOSED", "BUILT FROM DISCLOSED COMPONENTS", "ASSUMED"))
                       for f in FINDING_FIELDS.get(k, ()) for c in ("t", "t1"))
+    if k == "SGI":
+        caption = t("chart.read.SGI", lang, g=Pct(rat["t"]), y1=years["t1"], y=years["t"]) if rat else ""
+    elif rat:
+        caption = t(f"chart.read.{k}", lang, r1=Pct(rat["t1"]), r=Pct(rat["t"]), y1=years["t1"], y=years["t"])
+    else:
+        caption = t(f"chart.read.{k}", lang)
     return {"title": t(f"chart.title.{k}", lang), "kind": kind, "series": series, "years": years,
             "unit": getattr(r.extraction, "unit_scale", None), "currency": getattr(r.extraction, "currency", None) or "IDR",
-            "unconfirmed": unconfirmed}
+            "unconfirmed": unconfirmed, "ratio": rat, "caption": caption}
 
 
 # ----------------------------------------------------------------------------------- confirmation

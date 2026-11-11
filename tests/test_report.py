@@ -130,7 +130,10 @@ def test_finding_chart_uses_the_figures_behind_the_index():
     r = _result(-2.5, NEUTRAL)
     r.inputs.update({"accounts_receivable_t": 30.0, "accounts_receivable_t1": 10.0, "revenue_t": 100.0, "revenue_t1": 80.0})
     ch = finding_chart(r, "DSRI", "en")
-    assert ch["kind"] == "pct" and ch["series"][0][1] == {"t": 0.3, "t1": 0.125}
+    # Gail 11 Nov 2026 (option A): the accounts as bars, the ratio in the caption
+    assert ch["kind"] == "money" and ch["series"][0][1] == {"t": 30.0, "t1": 10.0}
+    assert ch["series"][1][1] == {"t": 100.0, "t1": 80.0} and ch["ratio"] == {"t": 0.3, "t1": 0.125}
+    assert "12.5%" in ch["caption"] and "30.0%" in ch["caption"]
     r.inputs["revenue_t1"] = None
     assert finding_chart(r, "DSRI", "en") is None
     assert compact_money(252448924906, "Units", "IDR", "id") == "Rp252,4 M"
