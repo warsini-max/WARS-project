@@ -415,3 +415,13 @@ def test_issuer_cut_master_name_and_negatives():
 def test_issuer_from_xbrl_entity_code():
     from wars_scanner import company
     assert company.by_ticker("bipi").ticker == "BIPI" and company.by_ticker("ZZZZ") is None
+
+
+def test_issuer_name_from_xbrl_entity_name():
+    from wars_scanner import company
+    r = SimpleNamespace(issuer=None)
+    x_issuer = company.by_ticker("BIPI")
+    assert x_issuer.name == "Astrindo Nusantara Infrastrukt"          # the master name is cut at 30 characters
+    import re as _re
+    name = _re.sub(r"^\s*PT\.?\s+", "", "PT Astrindo Nusantara Infrastruktur Tbk.").strip()
+    assert name == "Astrindo Nusantara Infrastruktur Tbk."

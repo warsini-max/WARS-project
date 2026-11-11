@@ -418,3 +418,13 @@ def test_stage7_reversed_wrapped_current_maturities_heading():
     # negatives: the non-current section heading and its total are not a current-maturities heading
     assert not X.CM_WRAP.match("LIABILITAS JANGKA PANJANG NON-CURRENT LIABILITIES")
     assert not X.CM_WRAP.match("Liabilitas jangka panjang - bagian tidak lancar jumlah 500 400")
+
+
+def test_p5_cost_of_sales_face_words():
+    # a face that prints cost of sales or gross profit keeps the XBRL figure; one without (by nature) does not
+    for ln in ("Beban pokok penjualan (1.200) (1.100) Cost of goods sold", "LABA BRUTO 500 450 GROSS PROFIT",
+               "Cost of revenues (10) (9)"):
+        assert X.COST_OF_SALES_FACE.search(ln), ln
+    for ln in ("Beban penyusutan (10,569,622) 7 (9,956,227) Depreciation expenses",
+               "Beban infrastruktur (7,733,947) 24a (7,989,540) Infrastructure expenses"):
+        assert not X.COST_OF_SALES_FACE.search(ln), ln

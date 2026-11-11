@@ -1684,6 +1684,14 @@ CATALOG: dict = {
     "rep.box.figures_d": _e("{n} perlu dicocokkan; lihat daftar periksa.", "{n} to be checked; see the checklist.", "new"),
     "rep.box.user": _e("KONFIRMASI PENGGUNA", "USER CONFIRMATION", "Gail 23 Okt R-15"),
     "rep.box.user_v": _e("Belum dilakukan", "Not done yet", "new"),
+    "rep.box.user_done": _e("Dilakukan di layar cek: {a} pos dinyatakan Sesuai, {b} pos diganti dengan rujukan halaman",
+                            "Done on the review screen: {a} items agreed, {b} items amended with a page reference",
+                            "Claude 11 Nov (temuan uji BIPI Gail); menunggu Gail"),
+    "rep.box.user_skipped": _e("Dilewati; skor tidak dihitung", "Skipped; no score computed",
+                               "Claude 11 Nov (temuan uji BIPI Gail); menunggu Gail"),
+    "rep.box.user_done_d": _e("Ini konfirmasi pengguna, bukan verifikasi independen. Status tiap angka ada di Lampiran A.",
+                              "This is the user's confirmation, not an independent verification. The status of each "
+                              "figure is in Appendix A.", "Claude 11 Nov (temuan uji BIPI Gail); menunggu Gail"),
     "rep.box.user_d": _e("Cocokkan angka melalui daftar periksa.", "Agree the figures using the checklist.", "Gail 28 Okt report"),
     "rep.provisional_detail": _e("{n} angka perlu dicocokkan dengan PDF sumber melalui daftar periksa.",
                                  "{n} figures need to be agreed to the source PDF using the checklist.", "Gail 28 Okt report"),
@@ -1785,6 +1793,22 @@ CATALOG: dict = {
     "chart.SGI": _e("Penjualan", "Sales", "new"),
     "chart.TATA_ni": _e("Laba tahun berjalan", "Profit for the year", "new"),
     "chart.TATA_cfo": _e("Arus kas operasi", "Operating cash flow", "new"),
+    "chart.leg.prev": _e("{y} (tahun pembanding)", "{y} (comparative year)", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.leg.cur": _e("{y} (tahun berjalan)", "{y} (current year)", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.measure": _e("Ukuran: {name}", "Measure: {name}", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.read.DSRI": _e("Makin tinggi batang, makin besar piutang dibanding penjualan. Kenaikan di {t} mendorong "
+                          "DSRI naik.", "The taller the bar, the larger receivables are relative to sales. A rise in {t} "
+                          "pushes DSRI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.read.GMI": _e("Makin tinggi batang, makin besar margin laba kotor. Penurunan di {t} mendorong GMI naik.",
+                         "The taller the bar, the higher the gross margin. A fall in {t} pushes GMI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.read.AQI": _e("Makin tinggi batang, makin besar porsi aset tidak lancar selain aset tetap. Kenaikan di {t} "
+                         "mendorong AQI naik.", "The taller the bar, the larger the share of non-current assets other "
+                         "than PPE. A rise in {t} pushes AQI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.read.SGI": _e("Tinggi batang adalah penjualan. Kenaikan di {t} mendorong SGI naik.",
+                         "The bar height is sales. A rise in {t} pushes SGI up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
+    "chart.read.TATA": _e("Bila laba tahun berjalan lebih besar dari arus kas operasi, akrualnya positif dan mendorong "
+                          "TATA naik.", "When profit for the year exceeds operating cash flow, accruals are positive and "
+                          "push TATA up.", "Claude 11 Nov (permintaan Gail: keterangan warna grafik); menunggu Gail"),
     "chart.unconfirmed": _e("Angka grafik belum dicocokkan; lihat daftar periksa", "Chart figures not yet agreed; see the checklist", "new"),
     "rep.contact": _e("Hubungi kami", "Contact us", "Gail 28 Okt report"),
     "rep.check.line": _e("Baris di PDF: {s}", "Line in the PDF: {s}", "Gail 28 Okt report"),

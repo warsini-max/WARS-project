@@ -197,6 +197,21 @@ def _status(r, f, c):
     return v.status if v is not None else None
 
 
+DA_PARTS = ("ppe_depreciation_disclosed", "amortization_intangibles", "depreciation_amortization_non_ppe")
+
+
+def _unconfirmed(r, f, c, statuses):
+    """The figure still needs the user's check: its status is in `statuses` and the user has not confirmed or
+    amended it on the review screen. A D&A total built from its parts is confirmed when its parts are."""
+    done = {(x[0], x[1]) for x in (getattr(r, "user_checked", None) or [])}
+    if (f, c) in done:
+        return False
+    st_ = _status(r, f, c)
+    if f == "depreciation_amortization_total" and st_ == "BUILT FROM DISCLOSED COMPONENTS" and done:
+        return any(_unconfirmed(r, p, c, statuses) for p in DA_PARTS)
+    return st_ in statuses
+
+
 def _chg(a, b):
     if a is None or not b:
         return Raw("—")
@@ -293,7 +308,7 @@ def finding(r: Result, k: str, confirm=None, lang="id"):
             a = Msg("f.TATA_nocmp", **common)
     a_text = a.render(lang)
     confirmed = bool(confirm) and confirm.get("state") == "confirmed"
-    if not confirmed and any(_status(r, f, c) in ("REVIEW", "UNDISCLOSED", "BUILT FROM DISCLOSED COMPONENTS")
+    if not confirmed and any(_unconfirmed(r, f, c, ("REVIEW", "UNDISCLOSED", "BUILT FROM DISCLOSED COMPONENTS"))
                              for f in FINDING_FIELDS[k] for c in ("t", "t1")):
         a_text += " " + t("drivers.unconfirmed", lang)
     if k == "DSRI":
@@ -370,7 +385,7 @@ def finding_chart(r: Result, k: str, lang="id"):
         return None
     if any(v is None for _, v in series):
         return None
-    unconfirmed = any(_status(r, f, c) in ("REVIEW", "UNDISCLOSED", "BUILT FROM DISCLOSED COMPONENTS", "ASSUMED")
+    unconfirmed = any(_unconfirmed(r, f, c, ("REVIEW", "UNDISCLOSED", "BUILT FROM DISCLOSED COMPONENTS", "ASSUMED"))
                       for f in FINDING_FIELDS.get(k, ()) for c in ("t", "t1"))
     return {"title": t(f"chart.title.{k}", lang), "kind": kind, "series": series, "years": years,
             "unit": getattr(r.extraction, "unit_scale", None), "currency": getattr(r.extraction, "currency", None) or "IDR",
@@ -401,10 +416,13 @@ def review_items(r: Result, lang="id"):
     """
     items, seen = [], set()
     fold = {"amort_status": "amortization_intangibles", "non_ppe_status": "depreciation_amortization_non_ppe"}
+    # amounts the user already confirmed or amended on the review screen are not 'to be checked' any more
+    # (Gail 11 Nov: the PDF still said '14 to be checked' and 'User confirmation: not done yet' after the check)
+    done = {(f, c) for f, c, *_ in (getattr(r, "user_checked", None) or [])}
     for f, c, s, note in r.review:
         f2 = fold.get(f, f)
         key = f"in:{f2}:{c}"
-        if key in seen:
+        if key in seen or (f2, c) in done or (f, c) in done:
             continue
         seen.add(key)
         st_txt, note_txt = status_label(s, lang), render(note, lang)
@@ -413,9 +431,12 @@ def review_items(r: Result, lang="id"):
             t("confirm.why", lang, status=Raw(st_txt), note=Raw(note_txt)) if note_txt else st_txt)
         items.append({"key": key, "title": title(f2, lang), "column": c, "why": why.strip()})
     covered = {k.split(":")[1] for k in seen}
+    done_f = {f for f, c in done}
     for fl in getattr(r, "flags", []):
         if fl.severity != "REVIEW":
             continue
+        if fl.fields and all(fold.get(f, f) in done_f for f in fl.fields):
+            continue        # the user checked these amounts on the review screen
         if fl.fields and all(f in covered for f in fl.fields) and fl.code.startswith(("r_amort", "r_non_ppe")):
             continue        # same point as the input item already listed
         key = f"chk:{fl.code}:{','.join(fl.fields)}:{fl.column}"
@@ -561,6 +582,18 @@ def source_label(quote: str, lang="id"):
     if lang == "en":
         return right or left or q
     return left or q
+
+
+def user_check_state(r: Result):
+    """('done', confirmed, amended) after the review screen; ('skipped', 0, 0); ('none', 0, 0) when no check ran."""
+    uc = getattr(r, "user_checked", None) or []
+    if uc:
+        amended = {f for f, c, s, *_ in uc if s == "USER AMENDED"}
+        confirmed = {f for f, c, s, *_ in uc} - amended
+        return "done", len(confirmed), len(amended)
+    if getattr(r, "verification_skipped", False):
+        return "skipped", 0, 0
+    return "none", 0, 0
 
 
 def checklist_rows(r: Result, lang="id"):

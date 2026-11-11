@@ -96,9 +96,13 @@ def merge_xbrl(pr, xres):
     r.calc = dict(xres.calc)
     _sync_da_total(r)
     # the XBRL EntityCode names the issuer (the XBRL gate checks it); the PDF header match must not contradict it
-    x_issuer = company.by_ticker(((xres.xbrl or {}).get("dei") or {}).get("EntityCode", ""))
+    dei = (xres.xbrl or {}).get("dei") or {}
+    x_issuer = company.by_ticker(dei.get("EntityCode", ""))
     if x_issuer and (r.issuer is None or r.issuer.ticker == x_issuer.ticker):
-        r.issuer = x_issuer
+        # the name the issuer itself filed for this year: never cut at 30 characters, and the name of that year
+        # for an issuer renamed since (Gail 11 Nov: 'Astrindo Nusantara Infrastrukt')
+        name = re.sub(r"^\s*PT\.?\s+", "", str(dei.get("EntityName") or "")).strip()
+        r.issuer = company.Issuer(x_issuer.ticker, name, x_issuer.status) if name else x_issuer
     elif x_issuer:
         r.issuer = None                    # PDF header and XBRL name different issuers: not identified (T-1)
     r.review = [(it.field, it.column, it.status, _user_note(it))

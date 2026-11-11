@@ -328,14 +328,18 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
 
     used = [v for v in ex.values if v.field in report.FIELD_ORDER]
     n_found = sum(1 for v in used if v.status in ("FOUND", "USER SET"))
+    ucs, n_ok, n_ed = report.user_check_state(r)
+    user_v = {"done": t("rep.box.user_done", lang, a=n_ok, b=n_ed), "skipped": t("rep.box.user_skipped", lang)}.get(
+        ucs, t("rep.box.user_v", lang))
+    user_d = t("rep.box.user_done_d", lang) if ucs == "done" else t("rep.box.user_d", lang)
     boxes = [[[P(t("rep.box.figures", lang), "field"), P(t("rep.box.figures_v", lang, a=n_found, b=len(used)), "fieldv"),
-               P(t("rep.box.figures_d", lang, n=len(items)), "small")],
+               P(t("rep.box.figures_d", lang, n=len(items)) if items else t("rep.check.none", lang), "small")],
               [P(t("rep.box.user", lang), "field"),
-               Table([[P(t("rep.box.user_v", lang), "small")]],
+               Table([[P(user_v, "small")]],
                      style=[("BACKGROUND", (0, 0), (-1, -1), AMBER_BG), ("BOX", (0, 0), (-1, -1), 0.5, AMBER_INK),
                             ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
                             ("LEFTPADDING", (0, 0), (-1, -1), 4), ("RIGHTPADDING", (0, 0), (-1, -1), 4)], hAlign="LEFT"),
-               P(t("rep.box.user_d", lang), "small")]]]
+               P(user_d, "small")]]]
     story.append(Table(boxes, colWidths=[W / 2 - 2 * mm] * 2, hAlign="LEFT",
                        style=[("BOX", (0, 0), (0, 0), 0.6, LINE), ("BOX", (1, 0), (1, 0), 0.6, LINE),
                               ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -395,7 +399,9 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
             chart = report.finding_chart(r, d["index"], lang)
             left = [P(t("rep.a", lang), "label"), Spacer(1, 1 * mm), P(f["a"])]
             if chart:
-                right = [_Chart(chart, lang, W * 0.38)]
+                right = [_Chart(chart, lang, W * 0.38), Spacer(1, 1 * mm), Paragraph(_x(t(
+                    f"chart.read.{d['index']}", lang, t=chart["years"]["t"])), ParagraphStyle(
+                    "cr", parent=S["small"], fontSize=6.8, leading=8.8, textColor=SOFT))]
                 if chart["unconfirmed"]:
                     right += [Spacer(1, 1 * mm), Paragraph(_x(t("chart.unconfirmed", lang)), ParagraphStyle(
                         "cu", parent=S["small"], fontSize=6.8, leading=8.8, textColor=AMBER_INK))]
@@ -557,7 +563,7 @@ class _Chart(Flowable):
         c.drawString(0, h - 3 * mm, d["title"])
         vals = [v[col] for _, v in series for col in cols]
         hi, lo = max(vals + [0]), min(vals + [0])
-        year_y = (4 * mm if two else 0.8 * mm)                 # year labels above the legend
+        year_y = 4 * mm                                         # year labels above the legend (always drawn)
         top, base_y = h - 9 * mm, year_y + 4.5 * mm + (4 * mm if lo < 0 else 0)
         span = (hi - lo) or 1
         zero = base_y + (0 - lo) / span * (top - base_y)
@@ -584,15 +590,24 @@ class _Chart(Flowable):
         c.setStrokeColor(LINE)
         c.setLineWidth(0.6)
         c.line(0, zero, w, zero)
+        # legend (Gail 11 Nov: say what each colour is). Two series: one colour per series. One series: grey is
+        # the comparative year, green the current year; the measure is named under the title.
         if two:
-            x = 0
-            for si, (name, _) in enumerate(series):
-                c.setFillColor(fills[si])
-                c.rect(x, 0.4 * mm, 2.2 * mm, 2.2 * mm, stroke=0, fill=1)
-                c.setFont("Sans", 6.6)
-                c.setFillColor(SOFT)
-                c.drawString(x + 3 * mm, 0.8 * mm, name)
-                x += 3 * mm + c.stringWidth(name, "Sans", 6.6) + 4 * mm
+            legend = [(fills[si], name) for si, (name, _) in enumerate(series)]
+        else:
+            legend = [(fills[0], t("chart.leg.prev", self.lang, y=d["years"]["t1"])),
+                      (fills[1], t("chart.leg.cur", self.lang, y=d["years"]["t"]))]
+            c.setFont("Sans", 6.4)
+            c.setFillColor(MUTED)
+            c.drawString(0, h - 6 * mm, t("chart.measure", self.lang, name=series[0][0]))
+        x = 0
+        for col_, name in legend:
+            c.setFillColor(col_)
+            c.rect(x, 0.4 * mm, 2.2 * mm, 2.2 * mm, stroke=0, fill=1)
+            c.setFont("Sans", 6.6)
+            c.setFillColor(SOFT)
+            c.drawString(x + 3 * mm, 0.8 * mm, name)
+            x += 3 * mm + c.stringWidth(name, "Sans", 6.6) + 4 * mm
 
 
 class _Box(Flowable):

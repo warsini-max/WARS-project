@@ -296,12 +296,23 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
                     ok = False
                     break
                 ev += hit[:1]
+        # P5 (Gail, 28 Oct 2026): with expenses by nature there is no cost of sales on the face; the XBRL template
+        # still carries 0 (EXCL 2022). A cost of sales of 0 that the PDF does not print is 'not found', never 0.
+        p5 = name == "cost_of_goods_sold" and not ok and all(not f.value for f in (ft, f1) if f.value is not None) \
+            and not any(COST_OF_SALES_FACE.search(ln) for _, ln, _ in lines)
         for f in (ft, f1):
             f.evidence = ev[:2]
-            if f.value is not None:
+            if p5 and f.value is not None:
+                f.value, f.status = None, "NOT FOUND"
+                f.notes.append("P5: no cost of sales or gross profit on the face (expenses by nature); XBRL 0 not used")
+            elif f.value is not None:
                 f.status = "FOUND" if ok else "REVIEW"
                 if not ok:
                     f.notes.append("XBRL value not found as a (t, t-1) pair in the PDF")
+
+
+COST_OF_SALES_FACE = re.compile(r"(?i)\b(beban|harga) pokok\b|\bcost of (sales|revenues?|goods sold)\b|"
+                               r"\blaba (kotor|bruto)\b|\bgross (profit|loss)\b")
 
 
 def face_pages(fields: dict, lines: list) -> dict:
