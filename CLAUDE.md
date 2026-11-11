@@ -23,6 +23,14 @@ numbers). Claude builds and tests.
    needs a negative test (what it must NOT match), and every field the score uses needs an independent
    cross-check (a second place in the report where the same figure must appear) before it can be FOUND.
    A figure that cannot be cross-checked stays REVIEW. Prefer withholding the score over a plausible wrong number.
+8. **Never skip anything that touches WARS accuracy** (Gail, 11 Nov 2026 13.34: "JANGAN PERNAH MELEWATKAN APAPUN
+   YANG MELIBATKAN AKURASI WARS", after LRNA 2025 showed three faults that the stage 7 and 8 targets did not
+   measure). Every test stage and every release goes through the full accuracy checklist, not only "no wrong
+   FOUND value": (a) every score input against the PDF; (b) both paths, XBRL + PDF and PDF only; (c) every
+   review-step card: amount, components, and that the page extract shows them; (d) the report's conclusion:
+   findings and "no findings" consistent with the indices, ratios with a sign or denominator that makes them
+   meaningless (e.g. a negative gross margin) flagged; (e) the per-issuer result texts. A passed target is
+   reported as exactly what it measured, never as "WARS is accurate".
 
 ## Layout
 - `wars_scanner/` – package (`engine.py` = Track B calculation, `parameters.py` = coefficients/thresholds)
