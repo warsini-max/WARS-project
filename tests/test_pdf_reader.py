@@ -170,3 +170,19 @@ def test_no_test_document_is_taken_for_a_bank(doc):
     if not p.exists():
         pytest.skip(f"{doc} not available")
     assert read(p).financial_institution == []
+
+
+def test_negative_figure_with_detached_bracket_trin_2025():
+    # "(200.618.000 )": the closing bracket printed apart; the figure is a loss, not a profit
+    words = [Word("(200.618.000", 300, 350, 10), Word(")", 352, 355, 10)]
+    out = _merge_split_numbers(words)
+    assert [w.text for w in out] == ["(200.618.000)"] and parse_amount(out[0].text) == -200618000
+    words = [Word("(", 296, 299, 10), Word("200.618.000)", 300, 352, 10)]
+    assert [w.text for w in _merge_split_numbers(words)] == ["(200.618.000)"]
+    # must NOT join: a bracket far away (another column), a bracket after a label word, a closed figure
+    far = [Word("(200.618.000", 300, 350, 10), Word(")", 380, 383, 10)]
+    assert [w.text for w in _merge_split_numbers(far)] == ["(200.618.000", ")"]
+    label = [Word("(Catatan", 100, 140, 10), Word(")", 142, 145, 10)]
+    assert [w.text for w in _merge_split_numbers(label)] == ["(Catatan", ")"]
+    closed = [Word("(5.333.717)", 300, 350, 10), Word(")", 352, 355, 10)]
+    assert [w.text for w in _merge_split_numbers(closed)] == ["(5.333.717)", ")"]

@@ -214,3 +214,14 @@ def test_c_small_base_aqi():
     r.inputs["property_plant_equipment_net_t1"] = 397.0
     r.calc["AQI"] = 1.5
     assert _keys(r, "AQI") == []                             # negative: index below the limit
+
+
+def test_gmi_not_meaningful_when_gross_margin_turns_negative():
+    # LRNA 2025 (Gail 12 Nov 10.18, option A): margin 4.6% -> -2.1%, GMI -2.17 lowers M; the report must say so
+    from types import SimpleNamespace
+    r = SimpleNamespace(calc={"gm_t1": 0.046, "gm_t": -0.0212})
+    assert report.gm_nonpositive(r) == {"t1": 0.046, "t": -0.0212}
+    # must NOT flag: both margins positive (even when falling), or a margin not computed
+    assert report.gm_nonpositive(SimpleNamespace(calc={"gm_t1": 0.30, "gm_t": 0.10})) is None
+    assert report.gm_nonpositive(SimpleNamespace(calc={"gm_t1": "", "gm_t": -0.1})) is None
+    assert report.gm_nonpositive(SimpleNamespace(calc={})) is None

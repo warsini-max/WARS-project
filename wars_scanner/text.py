@@ -385,6 +385,27 @@ CATALOG: dict = {
                 "menurut rumus model.",
                 "The gross margin fell from {gm_t1} to {gm_t} (p. {p_rev}). GMI {idx} raises the score by {push} "
                 "under the model formula.", "B r1 §5"),
+    "f.GMI_sign": _e(
+        "Margin laba kotor berubah dari {gm_t1} menjadi {gm_t} (hal. {p_rev}). Rumus GMI mengandaikan margin positif "
+        "di kedua tahun. Di sini margin salah satu tahun nol atau negatif, sehingga GMI ({idx}) tidak bermakna dan "
+        "kontribusinya ({push}) tidak mencerminkan arah perubahan margin. Perubahan margin ini perlu diperiksa lebih lanjut.",
+        "The gross margin moved from {gm_t1} to {gm_t} (p. {p_rev}). The GMI formula assumes a positive margin in both "
+        "years. Here the margin is zero or negative in one year, so GMI ({idx}) is not meaningful and its contribution "
+        "({push}) does not reflect the direction of the change in margin. This change in margin warrants closer examination.",
+        "Claude 12 Nov (GMI pilihan A, Gail 12 Nov 10.18); menunggu Gail"),
+    "v.gmi_sign": _e(
+        "Margin laba kotor nol atau negatif di salah satu tahun, sehingga GMI tidak bermakna dan M-score perlu dibaca "
+        "dengan hati-hati; lihat Temuan.",
+        "The gross margin is zero or negative in one year, so GMI is not meaningful and the M-score is to be read with "
+        "caution; see Findings.",
+        "Claude 12 Nov (GMI pilihan A, Gail 12 Nov 10.18); menunggu Gail"),
+    "chart.read.GMI_sign": _e(
+        "Laba kotor sebesar {r1} dari penjualan pada {y1} dan {r} pada {y}. Karena margin nol atau negatif di salah satu "
+        "tahun, GMI tidak bermakna.",
+        "Gross profit represented {r1} of sales in {y1} and {r} in {y}. Because the margin is zero or negative in one "
+        "year, GMI is not meaningful.",
+        "Claude 12 Nov (GMI pilihan A, Gail 12 Nov 10.18); menunggu Gail"),
+    "rep.sign_tag": _e("GMI TIDAK BERMAKNA", "GMI NOT MEANINGFUL", "Claude 12 Nov (GMI pilihan A, Gail 12 Nov 10.18); menunggu Gail"),
     "f.AQI": _e("Porsi aset tidak lancar selain aset tetap naik dari {aq_t1} menjadi {aq_t} dari total aset "
                 "(hal. {p_ta}). AQI {idx} menaikkan skor {push} menurut rumus model.",
                 "The share of non-current assets other than PPE rose from {aq_t1} to {aq_t} of total assets "
@@ -1571,6 +1592,19 @@ CATALOG: dict = {
                         "The line \u201c{line}\u201d in the statement of financial position is not classified in XBRL. "
                         "The fixed asset amount used must include right-of-use assets; check whether this line is "
                         "already included in the amount above.", "Gail 4 Nov 09.07; diubah Claude 4 Nov opsi 1, menunggu Gail"),
+    "chk.parts": _e("{reason} Pembacaan WARS adalah jumlah baris berikut (tahun berjalan; tahun pembanding): {parts}.",
+                    "{reason} The WARS reading is the sum of these lines (current year; comparative year): {parts}.",
+                    "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "chk.part_nolabel": _e("baris {a}; {b} (hal. {p})", "line {a}; {b} (p. {p})",
+                           "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "np.cls.InvestmentProperties": _e("Properti investasi", "Investment property", "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "np.cls.PlantationAssetsMature": _e("Tanaman produktif", "Bearer plants", "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "np.cls.MiningProperties": _e("Properti pertambangan", "Mining properties", "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "np.cls.TollRoadConcessionRights": _e("Hak konsesi", "Concession rights", "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "np.cls.NonCurrentDeferredStrippingCosts": _e("Biaya pengupasan tanah tangguhan", "Deferred stripping costs", "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "np.cls.DeferredChargesOnExplorationAndDevelopmentExpenditures": _e("Biaya eksplorasi dan pengembangan tangguhan", "Deferred exploration and development costs", "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
+    "chk.part": _e("{label} {a}; {b} (hal. {p})", "{label} {a}; {b} (p. {p})",
+                   "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
     "chk.r.dep_parts": _e(
         "Pembacaan WARS adalah jumlah dua komponen: penyusutan aset tetap milik (tabel alokasi, hal. {p1}) dan "
         "penyusutan aset hak-guna (hal. {p2}). Tahun berjalan: {own_t} + {rou_t}; tahun pembanding: {own_t1} + {rou_t1}. "
@@ -1578,7 +1612,7 @@ CATALOG: dict = {
         "The WARS reading is the sum of two components: depreciation of owned PPE (allocation table, p. {p1}) and "
         "depreciation of right-of-use assets (p. {p2}). Current year: {own_t} + {rou_t}; comparative year: {own_t1} + "
         "{rou_t1}. Check both pages below.",
-        "Claude 11 Nov (LRNA 2025, Gail 11 Nov 13.11); menunggu Gail"),
+        "Gail 12 Nov 10.18 (teks kartu penyusutan disetujui, dua bahasa)"),
     "chk.r.dep_rou": _e("Aset hak-guna disajikan terpisah dan tidak diklasifikasikan dalam XBRL. Beban penyusutan yang "
                         "digunakan harus mencakup penyusutan aset hak-guna.",
                         "Right-of-use assets are presented separately and are not classified in XBRL. The depreciation "

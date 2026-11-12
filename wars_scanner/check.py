@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 from . import company, engine, validation
 from .pdf_reader import Value
-from .text import Amt, Msg, Raw
+from .text import Amt, Msg, Raw, join
 
 # Score inputs the user verifies. Amortisation and non-PPE depreciation keep the provisional rules of 28 Oct 2026
 # (listed in the report checklist, not verified here).
@@ -138,7 +138,8 @@ def merge_xbrl(pr, xres):
     r.xbrl = {"items": xres.items, "found": found,
               "notes": {(it.field, it.column): _xbrl_note(it) for it in xres.items}, "face_findings": (xres.xbrl or {}).get("face_findings", []),
               "face_pages": (xres.xbrl or {}).get("face_pages", {}), "tax": xres.tax, "warnings": xres.warnings,
-              "dep_parts": (xres.xbrl or {}).get("dep_parts") or {}}
+              "dep_parts": (xres.xbrl or {}).get("dep_parts") or {},
+              "parts": _sum_parts(xres)}
     return r
 
 
@@ -180,6 +181,40 @@ def annotate(r, checks):
         if v.field in reasons and v.status == "REVIEW":
             v.note = reasons[v.field]
     return r
+
+
+def _sum_parts(xres) -> dict:
+    """field -> [(label, t, t-1, page)]: the printed lines behind a figure that is a sum (XBRL concepts, or the
+    PPh 25/29 lines of the tax note). Gail 12 Nov 2026 10.18: a review card always names its components."""
+    out = {}
+    fields = ((xres.xbrl or {}).get("fields") or {}).get("t") or {}
+    for name, f in fields.items():
+        if getattr(f, "parts", None):
+            out[name] = [(_line_label(ln, prev), a, b, p) for _c, a, b, p, ln, prev in f.parts]
+    if (xres.xbrl or {}).get("np_parts"):
+        out["depreciation_amortization_non_ppe"] = [(Msg("np.cls." + cn), a, b, p) for cn, a, b, p in xres.xbrl["np_parts"]]
+    if (xres.xbrl or {}).get("ppe_parts"):
+        out["property_plant_equipment_net"] = [(_line_label(ln), a, b, p) for ln, a, b, p in xres.xbrl["ppe_parts"]]
+    tax = xres.tax or {}
+    if tax.get("parts") and not tax.get("proxy"):
+        out["taxes_payable"] = [(_line_label(ln), a, b, p) for ln, a, b, p in tax["parts"]]
+    return out
+
+
+def _line_label(line: str, prev=()) -> str:
+    """'Utang bank jangka panjang 2,15 99.285.251 26.424.655 Long-term ...' -> 'Utang bank jangka panjang'.
+    Only the label printed on the line with the amounts, and only when it is a whole label (starts with a capital,
+    two words or 'Pasal 25'). A label wrapped over lines is not rebuilt: its pieces can interleave with the English
+    text, and a garbled or partial label is worse than none (rule 7). Then '' and the card shows the amounts and the
+    page only. prev is kept for the caller's signature and not used."""
+    lab = re.sub(r"\s\(?\d[\d.,]{2,}\)?.*$", "", " " + line.strip()).strip()
+    pasal = re.fullmatch(r"(?i)(pasal|article)\s*\d+[a-z]?(\s*\(\d\))?", lab.strip(" -,"))
+    if not pasal:
+        lab = re.sub(r"(^|\s+)\d{1,2}[a-z]?(,\s*\d{1,2}[a-z]?)*,?$", "", lab)
+    lab = re.sub(r"\s{2,}.*$", "", lab).strip(" -,")                            # the English half after a wide gap
+    if pasal or (re.match(r"[A-Z(]", lab) and len(re.findall(r"[A-Za-z]{3,}", lab)) >= 2 and len(lab) <= 70):
+        return lab
+    return ""
 
 
 def _xbrl_note(it) -> str:
@@ -248,6 +283,9 @@ def items(r) -> list:
         pages = sorted({p for c in ("t", "t1") for p in ((by.get((f, c)).pages if by.get((f, c)) else []) or [])})
         if not pages or f in FACE_FIELDS:
             pages = sorted(set(pages) | set(_face_pages(r, f)))
+        if getattr(reason, "key", "") == "chk.r.tax_proxy":
+            # D-03g: the figure is total taxes payable printed on the face, so the face page comes first (MERK 2025)
+            pages = _face_pages(r, f) + [x for x in pages if x not in _face_pages(r, f)]
         second = ROU_DEP_LABELS if f == "ppe_depreciation_disclosed" else []
         numbers, second_ref = [vals["t"], vals["t1"]], None
         dp = ((getattr(r, "xbrl", None) or {}).get("dep_parts") or {}) if f == "ppe_depreciation_disclosed" else {}
@@ -261,6 +299,15 @@ def items(r) -> list:
                              rou_t1=Amt(dp["rou"][1]), p1=Raw(str(dp["own_page"])), p2=Raw(str(dp["rou_page"])))
             pages = [dp["own_page"]] + [x for x in pages if x != dp["own_page"]]
             numbers, second_ref = list(dp["own"]), (dp["rou_page"], list(dp["rou"]))
+        parts = ((getattr(r, "xbrl", None) or {}).get("parts") or {}).get(f) or []
+        if len(parts) > 1 and second_ref is None and all(
+                vals[c] is not None and abs(abs(vals[c]) - sum(abs(x[k] or 0) for x in parts)) <= len(parts)
+                for k, c in ((1, "t"), (2, "t1"))):
+            # the reading is a sum: the card names each printed line and the extract shows those lines
+            reason = Msg("chk.parts", reason=reason, parts=join(
+                [Msg("chk.part" if lab else "chk.part_nolabel", label=lab if isinstance(lab, Msg) else Raw(lab), a=Amt(a) if a is not None else Raw("–"), b=Amt(b) if b is not None else Raw("–"), p=Raw(str(p))) for lab, a, b, p in parts], " · "))
+            pages = sorted({p for *_x, p in parts if p}) + [x for x in pages if x not in {p for *_x, p in parts}]
+            numbers = [v for _l, a, b, _p in parts for v in (a, b) if v]
         out.append(CheckItem(f, vals, reason, pages, numbers, labels + LABELS.get(f, []), second, "review", second_ref))
     return out
 

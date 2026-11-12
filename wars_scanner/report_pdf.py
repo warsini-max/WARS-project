@@ -358,7 +358,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         extra, total = [], 0.0
         idx = report.index_rows(r, lang)
         top_push = max([abs(x["push_vs_neutral"]) for x in idx if x["push_vs_neutral"] is not None] or [1])
-        drv = {d["index"] for d in report.drivers(r, lang=lang)}
+        drv = {d["index"] for d in report.findings_list(r, lang=lang)}
         for i, x in enumerate(idx, 1):
             pu = x["push_vs_neutral"]
             total += pu or 0
@@ -385,13 +385,14 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     if m is None:
         story.append(P(t("rep.no_score", lang)))
     else:
-        drv = report.drivers(r, lang=lang)
+        drv = report.findings_list(r, lang=lang)
         if not drv:
             story.append(P(t("rep.no_findings", lang)))
         for n, d in enumerate(drv, 1):
             f = report.finding(r, d["index"], None, lang)
+            tag = t("rep.sign_tag", lang) if d["sign"] else t("rep.push_tag", lang, p=Num(d["push_vs_neutral"], 3, True))
             block = [Table([[Paragraph(_x(t("rep.finding", lang, n=n, idx=d["index"]) + " · " + d["name"]), S["h2"]),
-                             Paragraph(f'<font color="#FFFFFF">{_x(t("rep.push_tag", lang, p=Num(d["push_vs_neutral"], 3, True)))}</font>',
+                             Paragraph(f'<font color="#FFFFFF">{_x(tag)}</font>',
                                        ParagraphStyle("tag", fontName="Sans-Semi", fontSize=7.5, leading=10,
                                                       alignment=TA_RIGHT))]],
                            colWidths=[W - 40 * mm, 40 * mm],

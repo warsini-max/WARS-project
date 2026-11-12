@@ -147,6 +147,28 @@ def drivers(r: Result, n=3, lang="id"):
     return sorted(rows, key=lambda x: -x["push_vs_neutral"])[:n]
 
 
+def gm_nonpositive(r: Result):
+    """GMI pilihan A (Gail, 12 Nov 2026 10.18): the gross margin is zero or negative in either year, so GMI (margin t-1 ÷
+    margin t) is not meaningful - a margin turning negative even lowers the M-score (LRNA 2025). The score stays as the
+    workbook computes it; the report says so and shows GMI as a finding. Returns {"t1": .., "t": ..} or None."""
+    c = getattr(r, "calc", None) or {}
+    g1, g0 = c.get("gm_t1"), c.get("gm_t")
+    if isinstance(g1, (int, float)) and isinstance(g0, (int, float)) and min(g1, g0) <= 0:
+        return {"t1": g1, "t": g0}
+    return None
+
+
+def findings_list(r: Result, lang="id"):
+    """The findings shown: the drivers, then GMI when the gross margin is zero or negative and GMI is not a driver.
+    Each row carries 'sign': True for the GMI-not-meaningful finding."""
+    drv = [dict(d, sign=False) for d in drivers(r, lang=lang)]
+    if gm_nonpositive(r) and "GMI" not in {d["index"] for d in drv}:
+        row = next((x for x in index_rows(r, lang) if x["index"] == "GMI"), None)
+        if row is not None:
+            drv.append(dict(row, sign=True))
+    return drv
+
+
 INDEX_FIELDS = {
     "DSRI": ("accounts_receivable", "revenue"),
     "GMI": ("revenue", "cost_of_goods_sold"),
@@ -281,7 +303,7 @@ def finding(r: Result, k: str, confirm=None, lang="id"):
     elif k == "GMI":
         gm = {c: (g("revenue", c) - g("cost_of_goods_sold", c)) / g("revenue", c)
               if g("revenue", c) and g("cost_of_goods_sold", c) is not None else None for c in ("t", "t1")}
-        a = Msg("f.GMI", gm_t1=Pct(gm["t1"]) if gm["t1"] is not None else Raw("—"),
+        a = Msg("f.GMI_sign" if gm_nonpositive(r) else "f.GMI", gm_t1=Pct(gm["t1"]) if gm["t1"] is not None else Raw("—"),
                 gm_t=Pct(gm["t"]) if gm["t"] is not None else Raw("—"), p_rev=_page(r, "revenue"), idx=idx, push=pu)
     elif k == "AQI":
         aq = {c: 1 - (g("current_assets", c) + g("property_plant_equipment_net", c)) / g("total_assets", c)
@@ -394,6 +416,8 @@ def finding_chart(r: Result, k: str, lang="id"):
                       for f in FINDING_FIELDS.get(k, ()) for c in ("t", "t1"))
     if k == "SGI":
         caption = t("chart.read.SGI", lang, g=Pct(rat["t"]), y1=years["t1"], y=years["t"]) if rat else ""
+    elif rat and k == "GMI" and gm_nonpositive(r):     # the margin is zero or negative: GMI does not rise with it
+        caption = t("chart.read.GMI_sign", lang, r1=Pct(rat["t1"]), r=Pct(rat["t"]), y1=years["t1"], y=years["t"])
     elif rat:
         caption = t(f"chart.read.{k}", lang, r1=Pct(rat["t1"]), r=Pct(rat["t"]), y1=years["t1"], y=years["t"])
     else:
@@ -516,6 +540,8 @@ def verdict(r: Result, confirm=None, lang="id", reviewer="", provisional_note=Tr
     else:
         head, level = t("v.below", lang, m=Num(m, 2), thr=thr), "low"
         detail = t("v.below_detail", lang)
+    if gm_nonpositive(r):
+        detail += " " + t("v.gmi_sign", lang)
     fy = getattr(r.extraction, "fiscal_year", None)
     for fl in getattr(r, "flags", []):
         if fl.code == "r_standard_transition":

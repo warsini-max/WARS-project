@@ -234,8 +234,21 @@ def _merge_split_numbers(words):
             if AMOUNT_DOTTED.match(joined.strip("()")):
                 out[-1] = Word(joined, out[-1].x0, w.x1, out[-1].top, (out[-1].raw or out[-1].text) + (w.raw or w.text))
                 continue
+        # TRIN 2025: "(200.618.000 )" - the closing bracket of a negative figure printed apart from it, so the
+        # figure was read as positive. A lone ")" right after an unclosed "(figure" closes it; a lone "(" right
+        # before "figure)" opens it. Only when nothing else stands between them (gap < 12 pt).
+        if out and w.text.strip() == ")" and OPEN_FIGURE.match(out[-1].text.strip()) and w.x0 - out[-1].x1 < 12:
+            out[-1] = Word(out[-1].text.strip() + ")", out[-1].x0, w.x1, out[-1].top, (out[-1].raw or out[-1].text) + ")")
+            continue
+        if out and out[-1].text.strip() == "(" and CLOSED_FIGURE.match(w.text.strip()) and w.x0 - out[-1].x1 < 12:
+            out[-1] = Word("(" + w.text.strip(), out[-1].x0, w.x1, out[-1].top, "(" + (w.raw or w.text))
+            continue
         out.append(w)
     return out
+
+
+OPEN_FIGURE = re.compile(r"^\(\d{1,3}(?:[.,]\d{3})*$")       # "(200.618.000" with its ")" printed apart
+CLOSED_FIGURE = re.compile(r"^\d{1,3}(?:[.,]\d{3})*\)$")      # "200.618.000)" with its "(" printed apart
 
 
 def _notes_column_x(lines):

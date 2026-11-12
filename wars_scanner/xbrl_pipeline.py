@@ -152,6 +152,31 @@ def rou_dep_page(lines, pages, rou_t, rou_t1):
     return None
 
 
+def face_subset(lines, bs_pages, total_t, total_t1, max_parts=3):
+    """2 or 3 lines of the balance-sheet pages whose (t, t-1) pairs add up exactly to (total_t, total_t1) in both years.
+    Only for display (which printed lines an XBRL figure is made of). The smallest such set; None when there is no
+    set, or more than one set of the smallest size (ambiguous: nothing is shown rather than a guess)."""
+    from itertools import combinations
+    cand = []
+    for p, ln, _n in lines:
+        if p not in bs_pages:
+            continue
+        txt = re.sub(r"(?i)\bRp\.?\s*[\d.,]+", " ", ln)               # amounts quoted in a label (RDTX 2022)
+        txt = re.sub(r"\(\s*(19|20)\d{2}\s*:", " ", txt)                  # '(2021: Rp ...)': a year, not an amount
+        am = [x for x in X._amounts(re.sub(r"\s\d{1,2}[a-z]?(\s*[,&]\s*\d{1,2}[a-z]?)+\s", " ", txt)) if x is not None]
+        am = [x for x in am if abs(x) >= 100 or x == 0]          # note references ('9', '2&9') are not amounts
+        if len(am) >= 2 and abs(am[-2]) > 0:
+            cand.append((ln, abs(am[-2]), abs(am[-1]), p))
+    A, B = round(abs(total_t)), round(abs(total_t1))
+    for k in range(2, max_parts + 1):
+        hits = [c for c in combinations(cand, k) if sum(x[1] for x in c) == A and sum(x[2] for x in c) == B]
+        if len(hits) == 1:
+            return list(hits[0])
+        if hits:
+            return None
+    return None
+
+
 def _note_ref(lines, pages, value_t, value_t1):
     """Note number printed on the face line of an item (e.g. 'Aset takberwujud - neto 12,28 16.015 14.229')."""
     for p, ln, n in lines:
@@ -327,6 +352,12 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             p.pop(f"property_plant_equipment_net_{c}", None)
             items.append(Item("property_plant_equipment_net", c, None, "NOT FOUND", ""))
 
+    # ---- the printed lines behind an XBRL PPE figure that the face does not print as one pair (JAST 2025: PPE + ROU;
+    # RDTX 2022: investment property + PPE + ROU). The card names them (Gail 12 Nov 10.18); values are unchanged.
+    fp, fr = xr["fields"]["t"]["ppe_face"], xr["fields"]["t1"]["ppe_face"]
+    if fp.value is not None and fr.value is not None and not fp.evidence:
+        xr["ppe_parts"] = face_subset(lines, xr["face_pages"].get("bs") or [], fp.value, fr.value)
+
     # ---- taxes payable (D-03 / D-03g)
     tax = xr["tax"]
     for c in ("t", "t1"):
@@ -439,6 +470,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     classes = {cn: [inst.plain(cn, c, "i") for c in ("t", "t1")] for cn in NON_PPE_CONCEPTS}
     classes = {cn: v for cn, v in classes.items() if any(v)}
     dc = deferred_charge_amortisation(lines, inst, xr["face_pages"]) if not classes else None
+    np_read = {}                                     # concept -> {column: (amount, page)}, for the review card
     for i, c in enumerate(("t", "t1")):
         total, unread, srcs = 0.0, [], []
         for cn, vals in classes.items():
@@ -454,6 +486,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             if mv is not None:
                 total += mv[0]
                 srcs.append(f"{label} {mv[0]:,.0f} (movement table p{mv[1]})")
+                np_read.setdefault(cn, {})[c] = (mv[0], mv[1])
             else:
                 unread.append(label)
         if not classes and dc and not pdf_read.get(c):
@@ -484,6 +517,9 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
         if dep is not None and p.get(f"depreciation_amortization_non_ppe_{c}") is not None:
             p[f"depreciation_amortization_total_{c}"] = dep + (p.get(f"amortization_intangibles_{c}") or 0) + \
                 p[f"depreciation_amortization_non_ppe_{c}"]
+
+    if len(np_read) > 1 and all(set(v) == {"t", "t1"} for v in np_read.values()):
+        xr["np_parts"] = [(cn, v["t"][0], v["t1"][0], v["t"][1]) for cn, v in np_read.items()]
 
     calc = engine.calculate(p)
     m = calc.get("m_score_B")

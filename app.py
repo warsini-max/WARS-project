@@ -720,13 +720,14 @@ def page_result():
 
     # ------------------------------------------------------------------ drivers and the eight indices
     if m is not None:
-        drv = report.drivers(r, lang=L)
+        drv = report.findings_list(r, lang=L)
         if drv:
             cards = []
             for d in drv:
                 f = report.finding(r, d["index"], None, L)
+                tag = T("rep.sign_tag") if d["sign"] else fmt_number(d["push_vs_neutral"], L, 2, True)
                 cards.append(f'<article class="w-drv"><div class="top"><h3>{E(d["index"])} · {E(d["name"])}</h3>'
-                             f'<span class="w-push">{E(fmt_number(d["push_vs_neutral"], L, 2, True))}</span></div>'
+                             f'<span class="w-push">{E(tag)}</span></div>'
                              f'<p>{E(f["a"])}</p>'
                              + "".join(f'<p class="w-small" style="margin-top:8px">{E(c)}</p>' for c in f["caveats"])
                              + "</article>")

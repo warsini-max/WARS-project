@@ -123,6 +123,7 @@ class Field:
     status: str = "NOT FOUND"           # FOUND / REVIEW / NOT FOUND
     evidence: list = field(default_factory=list)   # (page, line)
     notes: list = field(default_factory=list)
+    parts: list = field(default_factory=list)      # (concept, t, t-1, page, line) of a sum of XBRL concepts
 
 
 def read_instance(source) -> Instance:
@@ -299,7 +300,7 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
             continue
         concepts = sorted(set(ft.concepts) | set(f1.concepts))
         ok, ev = False, []
-        rounded = []
+        rounded, parts = [], []
         if ft.value is not None and f1.value is not None:
             ev = _pair_lines(lines, ft.value, f1.value)
             ok = bool(ev)
@@ -316,7 +317,7 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
             ev = [h[0] for h in hits if h]
         if not ok and len(concepts) > 1:
             kind = "d" if name == "selling_general_administrative_expenses" else "i"
-            ok, ev = True, []
+            ok, ev, parts = True, [], []
             delta = [0, 0]
             for cname in concepts:
                 a, b = inst.plain(cname, "t", kind), inst.plain(cname, "t1", kind)
@@ -335,6 +336,9 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
                     ok = False
                     break
                 ev += hit[:1]
+                k = next((i for i, (pp, ll, _n) in enumerate(lines) if (pp, ll) == hit[0][:2]), None)
+                prev = [lines[i][1] for i in range(max(0, (k or 0) - 4), k or 0) if lines[i][0] == hit[0][0]]
+                parts.append((cname, a, b, hit[0][0], hit[0][1], prev))
             if ok and any(delta):
                 rounded = [(ft, round(abs(ft.value)) + delta[0]), (f1, round(abs(f1.value)) + delta[1])]
         # P5 (Gail, 28 Oct 2026): with expenses by nature there is no cost of sales on the face; the XBRL template
@@ -343,6 +347,8 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
             and not any(COST_OF_SALES_FACE.search(ln) for _, ln, _ in lines)
         for f in (ft, f1):
             f.evidence = ev[:2]
+            # the printed lines behind a sum, for the review card (Gail 12 Nov 10.18: cards name their components)
+            f.parts = list(parts) if ok and len(concepts) > 1 and len(parts) > 1 else []
             if p5 and f.value is not None:
                 f.value, f.status = None, "NOT FOUND"
                 f.notes.append("P5: no cost of sales or gross profit on the face (expenses by nature); XBRL 0 not used")
@@ -744,6 +750,7 @@ def corporate_tax_payable(inst: Instance, lines: list, pages: dict) -> dict:
                 res["notes"].append(f"p{p}: detail lines {st}/{s1} do not add up to {A}/{B}")
                 continue
             res["t"], res["t1"] = float(sum(x[1] for x in corp)), float(sum(x[2] for x in corp))
+            res["parts"] = [(x[0], x[1], x[2], p) for x in corp] if len(corp) > 1 else []
             res["status"] = "REVIEW" if unknown or not corp or conflict or head != "tax" else "FOUND"
             if head != "tax":
                 res["notes"].append("table heading 'utang pajak / taxes payable' not found above the table")
