@@ -321,6 +321,7 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
             delta = [0, 0]
             for cname in concepts:
                 a, b = inst.plain(cname, "t", kind), inst.plain(cname, "t1", kind)
+                shown = (a, b)                         # the amounts the review card shows: as printed
                 if a and b:
                     hit = _pair_lines(lines, a, b)
                     if not hit:
@@ -329,6 +330,7 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
                             hit = [(h[0], h[1]) for h in rh]
                             delta[0] += rh[0][2] - round(abs(a))
                             delta[1] += rh[0][3] - round(abs(b))
+                            shown = (float(rh[0][2]), float(rh[0][3]))
                 else:
                     one = a or b
                     hit = [(p, ln) for p, ln, n in lines if one and round(abs(one)) in n]
@@ -338,7 +340,7 @@ def verify(inst: Instance, fields: dict, lines: list) -> None:
                 ev += hit[:1]
                 k = next((i for i, (pp, ll, _n) in enumerate(lines) if (pp, ll) == hit[0][:2]), None)
                 prev = [lines[i][1] for i in range(max(0, (k or 0) - 4), k or 0) if lines[i][0] == hit[0][0]]
-                parts.append((cname, a, b, hit[0][0], hit[0][1], prev))
+                parts.append((cname, shown[0], shown[1], hit[0][0], hit[0][1], prev))
             if ok and any(delta):
                 rounded = [(ft, round(abs(ft.value)) + delta[0]), (f1, round(abs(f1.value)) + delta[1])]
         # P5 (Gail, 28 Oct 2026): with expenses by nature there is no cost of sales on the face; the XBRL template
