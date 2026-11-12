@@ -169,7 +169,45 @@ def test_target_b_counted_zero_amortisation_goes_to_the_review_screen():
     r = _b_result({"amortization_intangibles": "UNDISCLOSED", "depreciation_amortization_non_ppe": "ASSUMED"})
     its = check.items(r)
     assert [i.field for i in its] == ["amortization_intangibles", "depreciation_amortization_non_ppe"]
-    assert all(i.reason.key == "chk.r.risk_zero" for i in its)
+    by = {i.field: i for i in its}
+    # present but undisclosed: zero under the workbook rule, Agree / Amend with the rule named
+    assert by["amortization_intangibles"].reason.key == "chk.r.risk_undisclosed"
+    assert by["amortization_intangibles"].mode == "review"
+    # not found in both years: completed like a missing line (amount with page, or nil with the notes examined);
+    # 'Agree' would record a provisional 0 as verified (RUNS FY2025 report review, 12 Nov 2026, item 2.1)
+    assert by["depreciation_amortization_non_ppe"].reason.key == "chk.r.risk_zero"
+    assert by["depreciation_amortization_non_ppe"].mode == "missing"
+
+
+def test_target_b_assumed_zero_in_one_year_only_keeps_agree_amend():
+    # must NOT: turn a line read in one year into nil for both years
+    r = _b_result({"depreciation_amortization_non_ppe": "ASSUMED"})
+    v = next(x for x in r.extraction.values if x.column == "t1")
+    v.status, v.value = "REVIEW", 90
+    r.inputs["depreciation_amortization_non_ppe_t1"] = 90
+    its = check.items(r)
+    assert [(i.field, i.mode) for i in its] == [("depreciation_amortization_non_ppe", "review")]
+
+
+def test_assumed_zero_nil_records_the_basis_and_none_present():
+    r = _b_result({"depreciation_amortization_non_ppe": "ASSUMED"})
+    r.inputs.update(non_ppe_status_t="PARTIAL_UNDISCLOSED", non_ppe_status_t1="PARTIAL_UNDISCLOSED")
+    its = check.items(r)
+    with pytest.raises(check.AnswerError):          # nil without the notes examined is refused
+        check._apply_missing(r, {(v.field, v.column): v for v in r.extraction.values}, r.inputs, its[0], {"choice": "nil"})
+    got = check._apply_missing(r, {(v.field, v.column): v for v in r.extraction.values}, r.inputs, its[0],
+                               {"choice": "nil", "note": "Catatan 10, 11"})
+    assert [g[4] for g in got] == [0, 0]
+    assert r.inputs["non_ppe_status_t"] == r.inputs["non_ppe_status_t1"] == "NONE_PRESENT"
+    from wars_scanner import report
+    assert {report._shown_status(v) for v in r.extraction.values} == {"USER NIL"}
+
+
+def test_missing_line_text_names_nil_only_where_nil_is_offered():
+    r = _b_result({"revenue": "NOT FOUND", "long_term_debt": "NOT FOUND"})
+    r.missing = [(f, c, "NOT FOUND", "") for f in ("revenue", "long_term_debt") for c in ("t", "t1")]
+    its = {i.field: i.reason.key for i in check.items(r)}
+    assert its == {"revenue": "chk.r.missing_val", "long_term_debt": "chk.r.missing"}
 
 
 def test_target_b_not_found_and_already_checked_are_not_listed():

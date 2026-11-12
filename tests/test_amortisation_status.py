@@ -40,7 +40,7 @@ def test_no_intangibles_found_holds_the_score_and_never_enters_zero():
     assert r.m_score is None and r.status == "AWAITING AMORTISATION STATUS"
     assert all(v.value is None for v in r.extraction.values if v.field == "amortization_intangibles")
     head, detail, _ = report.verdict(r)
-    assert head == "M-score ditahan" and "Aset takberwujud tidak ditemukan" in detail
+    assert head == "M-score ditahan" and "Aset takberwujud belum teridentifikasi" in detail
 
 
 @pytest.mark.parametrize("choice", ["NONE_PRESENT", "GOODWILL_ONLY", "INDEFINITE_ONLY"])

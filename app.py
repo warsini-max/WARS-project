@@ -274,6 +274,7 @@ def analyse(data: bytes, xdata: bytes | None = None):
             r = pipeline.apply_provisional(pipeline.run(path, "UPLOAD"))
     checks = check.items(r)
     check.annotate(r, checks)
+    report.keep_printed_labels(r)         # wrapped labels of the source lines, before the lines are dropped
     r.extraction.statements = {}          # not needed after reading; keeps the cache small
     return r, checks
 

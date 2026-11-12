@@ -139,6 +139,7 @@ def merge_xbrl(pr, xres):
               "notes": {(it.field, it.column): _xbrl_note(it) for it in xres.items}, "face_findings": (xres.xbrl or {}).get("face_findings", []),
               "face_pages": (xres.xbrl or {}).get("face_pages", {}), "tax": xres.tax, "warnings": xres.warnings,
               "dep_parts": (xres.xbrl or {}).get("dep_parts") or {},
+              "sga_final_tax": (xres.xbrl or {}).get("sga_final_tax"),
               "parts": _sum_parts(xres)}
     return r
 
@@ -275,6 +276,10 @@ NIL_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_paya
               "depreciation_amortization_non_ppe")
 
 
+FINAL_TAX_LABELS = ["Pajak final", "Pajak Final", "Final tax", "Final Tax", "Beban usaha", "Beban Usaha",
+                    "Operating expenses", "Operating Expenses"]
+
+
 def _psak_bearer(r):
     return Psak("216", "16", (getattr(r, "inputs", None) or {}).get("fiscal_year_t"), "")
 
@@ -308,7 +313,9 @@ def items(r) -> list:
         vals = {c: r.inputs.get(f"{f}_{c}") for c in ("t", "t1")}
         if f in missing and any(v is None for v in vals.values()):
             pages = sorted({pg for v in r.extraction.values if v.field == f for pg in (getattr(v, "pages", None) or [])})
-            out.append(CheckItem(f, vals, Msg("chk.r.missing"), pages, [], [], mode="missing"))
+            # Nil is offered only where nil is a real possibility for the line; the text names only the buttons shown
+            out.append(CheckItem(f, vals, Msg("chk.r.missing" if f in NIL_FIELDS else "chk.r.missing_val"), pages, [], [],
+                                 mode="missing"))
             continue
         cols = [c for c in ("t", "t1") if (f, c) in rev]
         risk = _risk_status(r, f) if f in RISK_FIELDS else {}
@@ -320,8 +327,19 @@ def items(r) -> list:
         if cols:
             note = " ".join(str(rev[(f, c)]) for c in cols)
             reason, labels = _reason(f, note, findings, r)
+        elif f in NIL_FIELDS and set(risk) == {"t", "t1"} and all(s == "ASSUMED" and not vals.get(c)
+                                                                    for c, s in risk.items()):
+            # not found and provisionally 0 in both years: completed like a missing line, the amount with its page
+            # or nil with the notes examined (Gail 8 Nov 16.21). 'Agree' would record a provisional 0 as verified
+            # (RUNS FY2025 report review, 12 Nov 2026, item 2.1).
+            pages = sorted({pg for v in r.extraction.values if v.field == f for pg in (getattr(v, "pages", None) or [])})
+            out.append(CheckItem(f, vals, Msg("chk.r.risk_zero"), pages, [], [], mode="missing"))
+            continue
+        elif any(s == "ASSUMED" and not vals.get(c) for c, s in risk.items()):
+            reason, labels = Msg("chk.r.risk_zero_one"), []
         elif any(s in ZERO_STATUSES and not vals.get(c) for c, s in risk.items()):
-            reason, labels = Msg("chk.r.risk_zero"), []
+            # present but not disclosed: 0 under the workbook rule (M-06/M-14, G-22), a methodological assumption
+            reason, labels = Msg("chk.r.risk_undisclosed"), []
         else:   # the lease / right of use wording fits debt and depreciation, not tax payable (Gail 8 Nov 16.06);
             # debt also names interest-bearing related-party loans (XBRL stage 7, finding 3: CTTH)
             reason, labels = Msg(RISK_REASON.get(f, "chk.r.risk")), []
@@ -384,6 +402,14 @@ def _reason(f, note, findings, r):
     label = re.sub(r"[\d.,()\s-]+$", "", re.sub(r"\s\d[\d.,a-z]*\s.*$", "", line)).strip() if line else ""
     if f == "taxes_payable" and ("pendekatan" in note_l or "d-03g" in note_l):
         return Msg("chk.r.tax_proxy"), []
+    ft = (getattr(r, "xbrl", None) or {}).get("sga_final_tax") if f == "selling_general_administrative_expenses" else None
+    if ft and "final tax" in note_l:
+        # final tax presented on the face as a line of its own (RDTX 2022; Gail 12 Nov 15.43: as long as it follows PSAK)
+        a, b = ft["amounts"]
+        if ft.get("match") and "deducted" in note_l:
+            return Msg("chk.r.sga_final_tax", ft_t=Amt(a), ft_t1=Amt(b), p=Raw(str(ft["page"])),
+                       p2=Raw(str(ft["match"]))), FINAL_TAX_LABELS
+        return Msg("chk.r.sga_final_tax_check", ft_t=Amt(a), ft_t1=Amt(b), p=Raw(str(ft["page"]))), FINAL_TAX_LABELS
     if f == "accounts_receivable" and _contract_assets_on_face(r):
         return Msg("chk.r.ar_contract"), ["Tagihan bruto", "Gross amount", "Aset kontrak", "Contract assets"]
     if f in ("long_term_debt", "current_maturities_long_term_debt") and label:

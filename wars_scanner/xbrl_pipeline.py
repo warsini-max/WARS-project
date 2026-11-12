@@ -363,6 +363,27 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             p.pop(f"property_plant_equipment_net_{c}", None)
             items.append(Item("property_plant_equipment_net", c, None, "NOT FOUND", ""))
 
+    # ---- SGA: final tax presented on the face as a line of its own (RDTX 2022: XBRL G&A holds it; the face and note 22
+    # print operating expenses without it). Selling + G&A as presented by the issuer (workbook Data_Dictionary D23/J23,
+    # Data_Entry_Guide F24/J24); final tax is levied on the gross amount and is not income tax (PSAK 212 ¶02, DK02-DK03),
+    # so it is not removed as a tax line either: it is removed because the issuer presents it outside selling and G&A.
+    sga = {c: p.get(f"selling_general_administrative_expenses_{c}") for c in ("t", "t1")}
+    ft = final_tax_on_face(lines, xr["face_pages"].get("pl") or [], sga["t"], sga["t1"])
+    if ft:
+        for it in items:
+            if it.field == "selling_general_administrative_expenses" and it.value is not None:
+                k = 0 if it.column == "t" else 1
+                if ft["match"]:
+                    it.value = p[f"selling_general_administrative_expenses_{it.column}"] = sga[it.column] - ft["amounts"][k]
+                    it.note = "; ".join(x for x in (it.note, f"final tax {ft['amounts'][k]:,.0f} presented on the face as "
+                                                    f"a separate line (p{ft['page']}) deducted; selling and G&A as printed "
+                                                    f"p{ft['match']}") if x)
+                else:
+                    it.note = "; ".join(x for x in (it.note, f"final tax {ft['amounts'][k]:,.0f} presented on the face as "
+                                                    f"a separate line (p{ft['page']}); not deducted: no printed pair") if x)
+                it.status = "REVIEW"        # a new rule, applied first on data already seen: the user checks it
+        xr["sga_final_tax"] = ft
+
     # ---- the printed lines behind an XBRL PPE figure that the face does not print as one pair (JAST 2025: PPE + ROU;
     # RDTX 2022: investment property + PPE + ROU). The card names them (Gail 12 Nov 10.18); values are unchanged.
     fp, fr = xr["fields"]["t"]["ppe_face"], xr["fields"]["t1"]["ppe_face"]
@@ -598,6 +619,32 @@ IP_FV = re.compile(r"(?i)properti investasi[^.]{0,80}?(dicatat|diukur|dinyatakan
                    r"properti investasi[^.]{0,40}?model nilai wajar|investment propert[^.]{0,40}?fair value model")
 IP_COST = re.compile(r"(?i)properti investasi(?! dalam penyelesaian)[^.]{0,60}?(dicatat|dinyatakan|diukur|disajikan) "
                      r"(sebesar|pada|berdasarkan) biaya perolehan[^.]{0,40}?(dikurangi|setelah dikurangi) akumulasi penyusutan")
+
+
+FINAL_TAX_LINE = re.compile(r"^\s*(beban\s+)?pajak\s+(penghasilan\s+)?final\b|^\s*final\s+(income\s+)?tax\b", re.I)
+
+
+def final_tax_on_face(lines, pl_pages, sga_t, sga_t1):
+    """A final-tax line of its own on the profit or loss face, with both years. Returns {amounts (t, t1), page,
+    match}: match is the page where selling + G&A less final tax is printed as one pair (the operating-expense line
+    or its note total), else None. Lines in the notes (tax note, G&A breakdown) are never taken."""
+    if sga_t is None or sga_t1 is None:
+        return None
+    hits = [x for x in lines if x[0] in pl_pages and FINAL_TAX_LINE.search(x[1])]
+    if len(hits) != 1:
+        return None
+    pg, ln, _n = hits[0]
+    am = [abs(a) for a in X._amounts(ln) if a is not None and abs(a) >= 100]
+    if len(am) != 2:
+        return None
+    for a, b in ((am[0], am[1]), (am[1], am[0])):
+        rt, rt1 = round(abs(sga_t) - a), round(abs(sga_t1) - b)
+        if rt <= 0 or rt1 <= 0:
+            continue
+        pair = [x for x in lines if rt in x[2] and rt1 in x[2]]
+        if pair:
+            return {"amounts": (a, b), "page": pg, "match": min(x[0] for x in pair), "line": ln.strip()[:120]}
+    return {"amounts": (am[0], am[1]), "page": pg, "match": None, "line": ln.strip()[:120]}
 
 
 def _ip_fair_value(lines) -> bool:

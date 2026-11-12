@@ -144,7 +144,8 @@ def test_app_check_messages_are_about_the_figures_read_not_the_issuer():
     p["revenue_t1"] = p["revenue_t1"] * 10
     flags = [f for f in validation.check(p, r.extraction) if f.source == "app"]
     assert {f.code for f in flags} >= {"a_unit_implausible", "a_part_exceeds_total", "a_year_jump"}
-    assert all(f.message.startswith("Angka yang dibaca") for f in flags if f.code.startswith("a_") and f.code != "a_cash_tie_unavailable")
+    # 'Angka hasil pembacaan' (review r1, Gail 12 Nov 15.43) replaces 'Angka yang dibaca'; the rule is unchanged
+    assert all(f.message.startswith("Angka hasil pembacaan") for f in flags if f.code.startswith("a_") and f.code != "a_cash_tie_unavailable")
     banned = ("fraud", "kecurangan", "manipulasi", "sengaja", "emiten")
     assert not any(b in f.message.lower() for f in flags for b in banned)
 
