@@ -276,7 +276,7 @@ NIL_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_paya
 
 
 def _psak_bearer(r):
-    return Psak("216", "16", (getattr(r, "inputs", None) or {}).get("fiscal_year_t"), "¶3(b), ¶6")
+    return Psak("216", "16", (getattr(r, "inputs", None) or {}).get("fiscal_year_t"), "")
 
 
 BEARER_LABELS = ["Tanaman produktif", "Bearer plants", "Tanaman perkebunan", "Tanaman menghasilkan"]
@@ -390,14 +390,14 @@ def _reason(f, note, findings, r):
         return Msg("chk.r.debt_untagged", line=Raw(label)), [label]
     if f == "property_plant_equipment_net" and label:
         return Msg("chk.r.ppe_rou", line=Raw(label)), [label]
-    if f == "property_plant_equipment_net" and "tanaman produktif" in note_l and "jumlahnya tidak terbaca" in note_l:
+    if f == "property_plant_equipment_net" and "tanaman produktif" in note_l and "tidak terbaca" in note_l:
         return Msg("chk.r.ppe_bearer_unread", psak=_psak_bearer(r)), BEARER_LABELS
-    if f == "property_plant_equipment_net" and ("bearer plants" in note_l or "ditambah tanaman produktif" in note_l):
+    if f == "property_plant_equipment_net" and ("bearer plants" in note_l or "termasuk tanaman produktif" in note_l):
         return Msg("chk.r.ppe_bearer", psak=_psak_bearer(r)), BEARER_LABELS
     if f == "ppe_depreciation_disclosed" and "right-of-use" in note_l:
         return Msg("chk.r.dep_rou"), []
     if f == "ppe_depreciation_disclosed" and ("bearer plants on the face" in note_l or
-                                               ("tanaman produktif" in note_l and "penyusutannya tidak terbaca" in note_l)):
+                                               "penyusutan tanaman produktif tidak terbaca" in note_l):
         # bearer plants are PPE (option A, Gail 12 Nov 2026 11.59): their depreciation belongs in this figure
         return Msg("chk.r.dep_bearer_missing", psak=_psak_bearer(r)), BEARER_LABELS
     m = re.search(r"xbrl movement(?: table gives)? ([\d,]+)", note_l) if f == "ppe_depreciation_disclosed" else None

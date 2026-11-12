@@ -627,7 +627,7 @@ def _add_bearer_plants(values, pos, fiscal_year):
     full = lambda ln: ln.amounts.get("t") is not None and ln.amounts.get("t1") is not None
     tot = [ln for ln in rows if BEARER_TOTAL.search(_norm(ln.label)) and full(ln)]
     use = tot[:1] or [ln for ln in rows if full(ln)]
-    psak = Psak("216", "16", fiscal_year, "¶3(b), ¶6")
+    psak = Psak("216", "16", fiscal_year, "")
     amt = {c: sum(abs(ln.amounts[c]) for ln in use) for c in ("t", "t1")} if use else None
     for v in values:
         if v.field == "property_plant_equipment_net" and v.value is not None:

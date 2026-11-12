@@ -1613,39 +1613,28 @@ CATALOG: dict = {
         "depreciation of right-of-use assets (p. {p2}). Current year: {own_t} + {rou_t}; comparative year: {own_t1} + "
         "{rou_t1}. Check both pages below.",
         "Gail 12 Nov 10.18 (teks kartu penyusutan disetujui, dua bahasa)"),
-    "chk.r.ppe_bearer": _e("Aset tetap yang digunakan WARS mencakup tanaman produktif ({psak}), yang di laporan posisi "
-                           "keuangan disajikan di baris tersendiri. Periksa apakah jumlahnya sesuai.",
-                           "The fixed asset amount used by WARS includes bearer plants ({psak}), which the statement of "
-                           "financial position presents on a separate line. Check that the amount agrees.", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "chk.r.dep_bearer": _e("Beban penyusutan yang digunakan mencakup penyusutan tanaman produktif dari catatan tanaman "
-                           "produktif ({psak}).",
-                           "The depreciation used includes depreciation of bearer plants, taken from the bearer plant "
-                           "note ({psak}).", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "chk.r.dep_bearer_missing": _e("Tanaman produktif termasuk aset tetap ({psak}), tetapi penyusutannya tidak terbaca. "
-                                   "Beban penyusutan yang digunakan harus mencakup penyusutan tanaman produktif bila "
-                                   "laporan mengungkapkannya.",
-                                   "Bearer plants are fixed assets ({psak}), but their depreciation was not read. The "
-                                   "depreciation used must include depreciation of bearer plants when the report "
-                                   "discloses it.", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
+    "chk.r.ppe_bearer": _e("Termasuk tanaman produktif yang disajikan di baris tersendiri. Dasar: {psak}.",
+        "Includes bearer plants presented on a separate line. Basis: {psak}.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
+    "chk.r.dep_bearer": _e("Termasuk penyusutan tanaman produktif. Dasar: {psak}.",
+        "Includes depreciation of bearer plants. Basis: {psak}.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
+    "chk.r.dep_bearer_missing": _e("Penyusutan tanaman produktif tidak terbaca; tambahkan bila diungkapkan. Dasar: {psak}.",
+        "Depreciation of bearer plants not read; add it if disclosed. Basis: {psak}.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
     "dep.cls.ppe": _e("Penyusutan aset tetap", "Depreciation of fixed assets", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
     "dep.cls.own": _e("Penyusutan aset tetap milik", "Depreciation of owned fixed assets", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
     "dep.cls.rou": _e("Penyusutan aset hak-guna", "Depreciation of right-of-use assets", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "dep.cls.alloc": _e("Jumlah tabel alokasi beban penyusutan", "Total of the depreciation allocation table", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "dep.cls.fx": _e("Selisih kurs penjabaran, dikeluarkan", "Translation difference, taken out", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
+    "dep.cls.alloc": _e("Total tabel alokasi penyusutan",
+        "Depreciation allocation table total", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
+    "dep.cls.fx": _e("Selisih kurs penjabaran",
+        "Translation difference", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
     "dep.cls.bearer": _e("Penyusutan tanaman produktif", "Depreciation of bearer plants", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "note.ppe_plus_bearer": _e("Aset tetap ditambah tanaman produktif yang disajikan di baris tersendiri ({psak}).",
-                               "Fixed assets plus bearer plants presented on a separate line ({psak}).", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "note.ppe_bearer_unread": _e("Tanaman produktif ada di laporan posisi keuangan, tetapi jumlahnya tidak terbaca. "
-                                 "Aset tetap yang digunakan harus mencakup tanaman produktif ({psak}).",
-                                 "Bearer plants are on the statement of financial position, but their amount was not "
-                                 "read. The fixed asset amount used must include bearer plants ({psak}).", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "chk.r.ppe_bearer_unread": _e("Tanaman produktif ada di laporan posisi keuangan, tetapi jumlahnya tidak terbaca. "
-                                  "Aset tetap yang digunakan harus mencakup tanaman produktif ({psak}).",
-                                  "Bearer plants are on the statement of financial position, but their amount was not "
-                                  "read. The fixed asset amount used must include bearer plants ({psak}).", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "note.dep_bearer_missing": _e("Tanaman produktif ada di laporan posisi keuangan, tetapi penyusutannya tidak terbaca.",
-                                  "Bearer plants are on the statement of financial position, but their depreciation "
-                                  "was not read.", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
+    "note.ppe_plus_bearer": _e("Termasuk tanaman produktif yang disajikan di baris tersendiri. Dasar: {psak}.",
+        "Includes bearer plants presented on a separate line. Basis: {psak}.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
+    "note.ppe_bearer_unread": _e("Tanaman produktif tidak terbaca; tambahkan ke aset tetap. Dasar: {psak}.",
+        "Bearer plants not read; add them to fixed assets. Basis: {psak}.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
+    "chk.r.ppe_bearer_unread": _e("Tanaman produktif tidak terbaca; tambahkan ke aset tetap. Dasar: {psak}.",
+        "Bearer plants not read; add them to fixed assets. Basis: {psak}.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
+    "note.dep_bearer_missing": _e("Penyusutan tanaman produktif tidak terbaca.",
+        "Depreciation of bearer plants not read.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
     "comp.ppe_bearer": _e("aset tetap {a} + tanaman produktif {b}", "fixed assets {a} + bearer plants {b}", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
     "chk.r.dep_rou": _e("Aset hak-guna disajikan terpisah dan tidak diklasifikasikan dalam XBRL. Beban penyusutan yang "
                         "digunakan harus mencakup penyusutan aset hak-guna.",
