@@ -368,6 +368,12 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     # Data_Entry_Guide F24/J24); final tax is levied on the gross amount and is not income tax (PSAK 212 ¶02, DK02-DK03),
     # so it is not removed as a tax line either: it is removed because the issuer presents it outside selling and G&A.
     sga = {c: p.get(f"selling_general_administrative_expenses_{c}") for c in ("t", "t1")}
+    sga_items = [it for it in items if it.field == "selling_general_administrative_expenses" and it.value is not None]
+    # only an XBRL figure that is not printed as such: an XBRL selling + G&A found as a printed pair cannot hold a
+    # line the face presents apart (LTLS, TOTL, JRPT, KETR ... 2021-22: final tax on the face, SGA FOUND), and the
+    # PDF reader reads the selling and G&A lines, never the final-tax line (LAND 2022)
+    if not (len(sga_items) == 2 and all(it.source.startswith("XBRL") and it.status != "FOUND" for it in sga_items)):
+        sga = {"t": None, "t1": None}
     ft = final_tax_on_face(lines, xr["face_pages"].get("pl") or [], sga["t"], sga["t1"])
     if ft:
         for it in items:

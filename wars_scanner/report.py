@@ -686,6 +686,18 @@ def _label_start(full: str, tail: str) -> str:
                                                     or prev.endswith((")", ":"))):
             start = i
     out = " ".join(words[start:])
+    # headings and an English fragment of a bilingual line in front of the label ('Aset tidak lancar Aset tetap',
+    # 'Liabilitas Jangka Panjang Bagian utang ...', 'Property, plant and Aset tetap', '2022 PENJUALAN BERSIH')
+    lead = re.compile(r"^(?:(?:aset (?:tidak )?lancar|liabilitas (?:jangka (?:pendek|panjang)|(?:tidak )?lancar)|ekuitas|"
+                      r"\d{4}|[A-Z][a-z]+(?:,? [a-z]+)*)\s+)(?=(?:Aset|Piutang|Liabilitas|Bagian|Pinjaman|Utang|Kas|Arus|"
+                      r"Beban|Pendapatan|Penjualan|Laba|Rugi|Jumlah|Total|PENJUALAN|PENDAPATAN|BEBAN|LABA|RUGI|JUMLAH)\b)")
+    for _ in range(3):
+        new = re.sub(r"^(?i:aset (?:tidak )?lancar|liabilitas (?:jangka (?:pendek|panjang)|(?:tidak )?lancar)|ekuitas)\s+"
+                     r"(?=[A-Z])", "", out)
+        new = lead.sub("", new)
+        if new == out:
+            break
+        out = new
     out = re.sub(r"\s+sebesar\b.*$", "", out)
     out = re.sub(r"\s+(pada|per)\s+" + _DATE + r".*$", "", out, flags=re.I)
     return out.strip(" ,-")
