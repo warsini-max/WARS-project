@@ -609,6 +609,43 @@ def _first(lines, pattern, need_both=True):
 SIGNED_FIELDS = {"net_income", "cash_flow_from_operations"}      # a loss or a cash outflow keeps its sign
 
 
+# Bearer plants are PPE (PSAK 216 ¶3(b), ¶6, ¶22A, ¶37(i); option A, Gail 12 Nov 2026 11.59), wherever presented.
+# Only labels that name bearer plants; 'aset biologis', 'tanaman industri' / 'hutan tanaman industri' (timber, PSAK 241
+# ¶5A(a)), 'tanaman semusim' and 'uang muka ... tanaman' are not bearer plants and must not match (rule 7).
+BEARER_FACE = re.compile(r"^tanaman (produktif|perkebunan|menghasilkan|belum menghasilkan|telah menghasilkan)\b"
+                         r"(?! semusim)(?!.*\b(semusim|industri)\b)")
+BEARER_TOTAL = re.compile(r"^(jumlah|total) tanaman (produktif|perkebunan)\b")
+
+
+def _add_bearer_plants(values, pos, fiscal_year):
+    """PPE + bearer-plant face lines, REVIEW (a new rule, applied first on data already seen). A bearer-plant label
+    whose amounts were not read (wrapped label: PSDN, ASII) leaves PPE as read, REVIEW, with a note that asks for
+    them. PPE depreciation: the bearer-plant depreciation is not read on this path, so it is REVIEW with a note."""
+    rows = [ln for ln in pos.lines if BEARER_FACE.search(_norm(ln.label)) or BEARER_TOTAL.search(_norm(ln.label))]
+    if not rows:
+        return values
+    full = lambda ln: ln.amounts.get("t") is not None and ln.amounts.get("t1") is not None
+    tot = [ln for ln in rows if BEARER_TOTAL.search(_norm(ln.label)) and full(ln)]
+    use = tot[:1] or [ln for ln in rows if full(ln)]
+    psak = Psak("216", "16", fiscal_year, "¶3(b), ¶6")
+    amt = {c: sum(abs(ln.amounts[c]) for ln in use) for c in ("t", "t1")} if use else None
+    for v in values:
+        if v.field == "property_plant_equipment_net" and v.value is not None:
+            if amt is not None:
+                v.components = join([v.components, Msg("comp.ppe_bearer", a=Amt(v.value), b=Amt(amt[v.column]))])
+                v.value += amt[v.column]
+                v.pages += [ln.page for ln in use if ln.page not in v.pages]
+                v.quotes += [getattr(ln, "quote", "") or ln.text for ln in use]
+                v.note = join([Msg("note.ppe_plus_bearer", psak=psak), v.note], " ")
+            else:
+                v.note = join([Msg("note.ppe_bearer_unread", psak=psak), v.note], " ")
+            v.status = "REVIEW"
+        elif v.field == "ppe_depreciation_disclosed" and v.value is not None:
+            v.note = join([Msg("note.dep_bearer_missing"), v.note], " ")
+            v.status = "REVIEW"
+    return values
+
+
 def _value_pair(field_name, ln, status, note=""):
     out = []
     for col in ("t", "t1"):
@@ -1525,6 +1562,9 @@ def read(pdf_path) -> Extraction:
             values += [Value(f, c, None, "NOT SEARCHED",
                              note=Msg("note.notes_not_read_calk" if pos else "note.notes_not_read_fs"))
                        for c in ("t", "t1")]
+
+    if pos:
+        values = _add_bearer_plants(values, pos, fiscal_year)
 
     if statements:
         values = _rule7(values, checks, statements, loc["text"], (chosen or {}).get("notes_start"), cross_checks, issues)

@@ -10,8 +10,11 @@ on 28 Oct 2026), anchored by XBRL:
     notes state the fair-value model;
   - intangible assets on the XBRL face with amortisation not read -> amortisation line read from the notes
     (REVIEW), else the provisional UNDISCLOSED rule;
-  - bearer plants / mining properties / concession rights on the XBRL face (rule 4, Gail 30 Oct 2026): their
-    depreciation/amortisation is non-PPE; if not read, the year is marked ASSUMED (provisional rule).
+  - mining properties / concession rights on the XBRL face (rule 4, Gail 30 Oct 2026): their depreciation/
+    amortisation is non-PPE; if not read, the year is marked ASSUMED (provisional rule);
+  - bearer plants (mature and immature) are PPE (PSAK 216 ¶3(b), ¶6, ¶22A, ¶37(i); Gail 12 Nov 2026 11.59, option A,
+    replacing rule 4 for bearer plants): added to PPE wherever presented, their depreciation added to PPE depreciation,
+    both REVIEW; depreciation not read -> REVIEW with a card that asks for it (never counted 0 silently).
 Nothing is ever filled with 0 except under an approved rule, which is then listed.
 """
 from __future__ import annotations
@@ -34,11 +37,14 @@ FACE_MAP = {  # engine field -> xbrl_reader field
     "cash_and_cash_equivalents": "cash_and_cash_equivalents", "net_income": "net_income",
     "cash_flow_from_operations": "cash_flow_from_operations",
 }
-NON_PPE_CONCEPTS = {"InvestmentProperties": "investment property", "PlantationAssetsMature": "bearer plants",
+NON_PPE_CONCEPTS = {"InvestmentProperties": "investment property",
                     "MiningProperties": "mining properties", "TollRoadConcessionRights": "concession rights",
                     # mining long-term costs, workbook M-06 group 3 (XBRL stage 8 finding, ITMG 2025)
                     "NonCurrentDeferredStrippingCosts": "deferred stripping costs",
                     "DeferredChargesOnExplorationAndDevelopmentExpenditures": "deferred exploration and development"}
+# bearer plants are PPE (option A, Gail 12 Nov 2026 11.59); the movement table is anchored on their carrying amount,
+# mature + immature, which is the 'nilai tercatat' line of the bearer-plant note (ASII 2022: 7,310 = 5,675 + 1,635)
+BEARER_CONCEPTS = ("PlantationAssetsMature", "PlantationAssetsImmature")
 STRICT_CLASSES = ("NonCurrentDeferredStrippingCosts", "DeferredChargesOnExplorationAndDevelopmentExpenditures")
 
 
@@ -326,6 +332,8 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     pdf_status = {(v.field, v.column): v.status for v in pr.extraction.values}
 
     # ---- face statements: XBRL (verified); not tagged -> PDF reader value as REVIEW; else missing
+    bearer = {c: sum(abs(v) for v in (inst.plain(cn, c, "i") for cn in BEARER_CONCEPTS) if v) for c in ("t", "t1")}
+    has_bearer = any(bearer.values())
     for c in ("t", "t1"):
         for ef, xf in FACE_MAP.items():
             fx = xr["fields"][c][xf]
@@ -338,16 +346,19 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             else:
                 p.pop(f"{ef}_{c}", None)
                 items.append(Item(ef, c, None, "NOT FOUND", "", "; ".join(fx.notes)))
-        # PPE + ROU (D-08)
+        # PPE + ROU (D-08) + bearer plants (PSAK 216; option A, Gail 12 Nov 2026 11.59)
         ppe, rou = xr["fields"][c]["ppe_face"], xr["fields"][c]["rou_assets_net"]
         if ppe.value is not None:
-            p[f"property_plant_equipment_net_{c}"] = ppe.value + (rou.value or 0)
+            p[f"property_plant_equipment_net_{c}"] = ppe.value + (rou.value or 0) + bearer[c]
             p[f"rou_assets_net_{c}"] = rou.value if rou.value is not None else pr.inputs.get(f"rou_assets_net_{c}", 0)
             st = "FOUND" if ppe.status == "FOUND" and rou.status in ("FOUND", "NOT FOUND") and rou.value is not None else "REVIEW"
+            if has_bearer:
+                st = "REVIEW"       # a new rule, applied first on data already seen: the user checks it (rule 7)
             items.append(Item("property_plant_equipment_net", c, p[f"property_plant_equipment_net_{c}"], st,
-                              "XBRL PPE" + (" + ROU" if rou.value else ""),
+                              "XBRL PPE" + (" + ROU" if rou.value else "") + (" + bearer plants" if has_bearer else ""),
                               # the ROU notes are about the ROU line, not the PPE line (XBRL stage 8 finding, TRIN)
-                              "; ".join(ppe.notes + [f"right-of-use assets: {n}" for n in rou.notes])))
+                              "; ".join(ppe.notes + [f"right-of-use assets: {n}" for n in rou.notes]
+                                        + ([f"bearer plants {bearer[c]:,.0f} included (PSAK 216)"] if bearer[c] else []))))
         else:
             p.pop(f"property_plant_equipment_net_{c}", None)
             items.append(Item("property_plant_equipment_net", c, None, "NOT FOUND", ""))
@@ -355,7 +366,22 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     # ---- the printed lines behind an XBRL PPE figure that the face does not print as one pair (JAST 2025: PPE + ROU;
     # RDTX 2022: investment property + PPE + ROU). The card names them (Gail 12 Nov 10.18); values are unchanged.
     fp, fr = xr["fields"]["t"]["ppe_face"], xr["fields"]["t1"]["ppe_face"]
-    if fp.value is not None and fr.value is not None and not fp.evidence:
+    if has_bearer and all(p.get(f"property_plant_equipment_net_{c}") is not None for c in ("t", "t1")):
+        # the face lines behind PPE + ROU + bearer plants, for the card; their sum is the cross-check of the addition
+        xr["ppe_parts"] = face_subset(lines, xr["face_pages"].get("bs") or [], p["property_plant_equipment_net_t"],
+                                      p["property_plant_equipment_net_t1"], max_parts=4)
+        rv = [xr["fields"][c]["rou_assets_net"].value for c in ("t", "t1")]
+        if not xr["ppe_parts"] and not any(rv) and fp.status == "FOUND" and fr.status == "FOUND":
+            # a face with more than two year columns (PSDN 2022: restated opening balance): the PPE line and the
+            # bearer-plant line, each found on the face with its own figures, the zero year printed as '-'
+            bs = xr["face_pages"].get("bs") or []
+            pl = [x for x in lines if x[0] in bs and round(fp.value) in x[2] and round(fr.value) in x[2]]
+            need = [round(bearer[c]) for c in ("t", "t1") if bearer[c]]
+            bl = [x for x in lines if x[0] in bs and need and all(v in x[2] for v in need)]
+            if len(pl) == 1 and len(bl) == 1 and pl[0] != bl[0]:
+                xr["ppe_parts"] = [(pl[0][1], fp.value, fr.value, pl[0][0]),
+                                   (bl[0][1], bearer["t"], bearer["t1"], bl[0][0])]
+    elif fp.value is not None and fr.value is not None and not fp.evidence:
         xr["ppe_parts"] = face_subset(lines, xr["face_pages"].get("bs") or [], fp.value, fr.value)
 
     # ---- taxes payable (D-03 / D-03g)
@@ -430,6 +456,41 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
             items[:] = [Item(i.field, i.column, i.value, i.status, i.source, (i.note + "; " if i.note else "")
                              + f"ROU depreciation p{rp}") if i.field == "ppe_depreciation_disclosed" else i
                         for i in items]
+
+    # ---- bearer plants: their depreciation is PPE depreciation (PSAK 216; option A, Gail 12 Nov 2026 11.59).
+    # Read from the bearer-plant movement table (single source: REVIEW); not read -> REVIEW and the card asks for it.
+    if has_bearer:
+        idx = {it.column: k for k, it in enumerate(items) if it.field == "ppe_depreciation_disclosed"}
+        dep_b = {}
+        for c in ("t", "t1"):
+            # the asset existed during year t when it is on the face at the end of t or of t-1 (PSDN 2022: sold in 2022)
+            if not (bearer[c] or (c == "t" and bearer["t1"])) or c not in idx:
+                continue
+            it = items[idx[c]]
+            mv = movement_charge(lines, bearer[c], xr["face_pages"]) if bearer[c] else None
+            if mv and it.value is not None:
+                # the page of the PPE figure: the allocation table, else the PPE movement table when it gives the same
+                # charge (KMTR 2022: XBRL movement only), else none (then the card names no components)
+                base_pg, fx = (alloc["page"] if alloc else None), None
+                if alloc and alloc.get("fx_" + c):
+                    tot = alloc["total"][0 if c == "t" else 1]
+                    # ASII: the PPE figure is the allocation total less the translation difference, which is not printed
+                    # as one figure: the card shows both printed lines
+                    fx = (tot, alloc["fx_" + c]) if abs(tot - alloc["fx_" + c] - it.value) <= 1 else None
+                if base_pg is None and xr["fields"][c]["ppe_face"].value:
+                    pm = movement_charge(lines, xr["fields"][c]["ppe_face"].value, xr["face_pages"])
+                    base_pg = pm[1] if pm and abs(pm[0] - it.value) <= 1 else None
+                dep_b[c] = (it.value, mv[0], mv[1], base_pg, fx)
+                p[f"ppe_depreciation_disclosed_{c}"] = it.value + mv[0]
+                items[idx[c]] = Item(it.field, c, it.value + mv[0], "REVIEW", it.source + " + bearer plants",
+                                     (it.note + "; " if it.note else "") + f"bearer plants depreciation {mv[0]:,.0f} "
+                                     f"(movement table p{mv[1]})")
+            else:
+                items[idx[c]] = Item(it.field, c, it.value, "REVIEW", it.source,
+                                     (it.note + "; " if it.note else "") + "bearer plants on the face; their depreciation "
+                                     "was not read")
+        if set(dep_b) == {"t", "t1"}:
+            xr["dep_bearer"] = dep_b
 
     # ---- intangible amortisation: XBRL says intangibles exist, PDF reader did not read the amount
     am_x = None

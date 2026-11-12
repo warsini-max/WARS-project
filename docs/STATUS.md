@@ -4,6 +4,12 @@
 > the guest app is online; the XBRL path was added; blind stages 7 (FY2022) and 8 (FY2025) met the targets
 > redefined before stage 7; the engine matches workbook v0.7 r1 (same formulas as v0.6). Independent-user testing
 > has not been done. Current status and limitations: README.
+>
+> **12 Nov 2026 (dev branch, not yet on the guest app):** bearer plants (mature and immature) are PPE and their
+> depreciation is PPE depreciation (PSAK 216; decision 12 Nov 2026, workbook v0.7 r2 text pending review). Both paths;
+> PPE and depreciation become REVIEW where bearer plants are present. The review card no longer reports a depreciation
+> conflict when the only source is the XBRL movement table. Regression over 85 non-case pairs: M changed only for the
+> 5 pairs with bearer plants (largest change 0.059), no zone change. 537 passed, 1 skipped.
 
 Updated 28 Oct 2026. Phase definitions and completion criteria: `docs/WARS_App_Plan_r0.md` §4.
 A phase is DONE only when its completion criterion is met, not when the code exists.

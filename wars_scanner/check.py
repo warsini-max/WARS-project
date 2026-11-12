@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 from . import company, engine, validation
 from .pdf_reader import Value
-from .text import Amt, Msg, Raw, join
+from .text import Amt, Msg, Psak, Raw, join
 
 # Score inputs the user verifies. Amortisation and non-PPE depreciation keep the provisional rules of 28 Oct 2026
 # (listed in the report checklist, not verified here).
@@ -195,10 +195,50 @@ def _sum_parts(xres) -> dict:
         out["depreciation_amortization_non_ppe"] = [(Msg("np.cls." + cn), a, b, p) for cn, a, b, p in xres.xbrl["np_parts"]]
     if (xres.xbrl or {}).get("ppe_parts"):
         out["property_plant_equipment_net"] = [(_line_label(ln), a, b, p) for ln, a, b, p in xres.xbrl["ppe_parts"]]
+    db = (xres.xbrl or {}).get("dep_bearer") or {}
+    if set(db) == {"t", "t1"}:
+        # PPE depreciation + bearer-plant depreciation (option A, Gail 12 Nov 2026 11.59): owned + ROU when the
+        # depreciation card already splits them (LRNA), else the PPE figure as read
+        dp = (xres.xbrl or {}).get("dep_parts") or {}
+        base_page = dp.get("own_page") or _first_page(xres, "ppe_depreciation_disclosed")
+        if dp.get("rou_page") and all(abs(db[c][0] - dp["own"][k] - dp["rou"][k]) <= 1 for k, c in enumerate(("t", "t1"))):
+            rows = [(Msg("dep.cls.own"), dp["own"][0], dp["own"][1], dp["own_page"]),
+                    (Msg("dep.cls.rou"), dp["rou"][0], dp["rou"][1], dp["rou_page"])]
+        elif db["t"][3] and db["t1"][3] and (db["t"][4] is None) == (db["t1"][4] is None):
+            pg = _pages(db["t"][3], db["t1"][3])
+            if db["t"][4]:
+                # allocation total and the translation difference taken out, both printed (ASII 2022, 2025)
+                rows = [(Msg("dep.cls.alloc"), db["t"][4][0], db["t1"][4][0], pg),
+                        (Msg("dep.cls.fx"), -db["t"][4][1], -db["t1"][4][1], pg)]
+            else:
+                rows = [(Msg("dep.cls.ppe"), db["t"][0], db["t1"][0], pg)]
+        else:
+            rows = []
+        if rows:
+            out["ppe_depreciation_disclosed"] = rows + [(Msg("dep.cls.bearer"), db["t"][1], db["t1"][1],
+                                                         _pages(db["t"][2], db["t1"][2]))]
     tax = xres.tax or {}
     if tax.get("parts") and not tax.get("proxy"):
         out["taxes_payable"] = [(_line_label(ln), a, b, p) for ln, a, b, p in tax["parts"]]
     return out
+
+
+def _pages(a, b):
+    """One page, or 'a, b' when the two years are printed on different pages (PTBA 2022: p. 88 and 89)."""
+    return a if a == b else f"{a}, {b}"
+
+
+def _page_ints(p):
+    return [int(x) for x in str(p).split(",") if x.strip().isdigit()]
+
+
+def _first_page(xres, field):
+    """First PDF page the PDF reader cites for a field (t column), or None."""
+    ex = getattr(getattr(xres, "pdf", None), "extraction", None)
+    for v in (ex.values if ex is not None else []):
+        if v.field == field and v.column == "t" and getattr(v, "pages", None):
+            return v.pages[0]
+    return None
 
 
 def _line_label(line: str, prev=()) -> str:
@@ -235,6 +275,11 @@ NIL_FIELDS = ("long_term_debt", "current_maturities_long_term_debt", "taxes_paya
               "depreciation_amortization_non_ppe")
 
 
+def _psak_bearer(r):
+    return Psak("216", "16", (getattr(r, "inputs", None) or {}).get("fiscal_year_t"), "¶3(b), ¶6")
+
+
+BEARER_LABELS = ["Tanaman produktif", "Bearer plants", "Tanaman perkebunan", "Tanaman menghasilkan"]
 RISK_REASON = {"taxes_payable": "chk.r.risk_tax", "long_term_debt": "chk.r.risk_debt",
                "current_maturities_long_term_debt": "chk.r.risk_debt"}
 
@@ -301,13 +346,14 @@ def items(r) -> list:
             numbers, second_ref = list(dp["own"]), (dp["rou_page"], list(dp["rou"]))
         parts = ((getattr(r, "xbrl", None) or {}).get("parts") or {}).get(f) or []
         if len(parts) > 1 and second_ref is None and all(
-                vals[c] is not None and abs(abs(vals[c]) - sum(abs(x[k] or 0) for x in parts)) <= len(parts)
+                vals[c] is not None and abs(abs(vals[c]) - abs(sum((x[k] or 0) for x in parts))) <= len(parts)
                 for k, c in ((1, "t"), (2, "t1"))):
             # the reading is a sum: the card names each printed line and the extract shows those lines
             reason = Msg("chk.parts", reason=reason, parts=join(
                 [Msg("chk.part" if lab else "chk.part_nolabel", label=lab if isinstance(lab, Msg) else Raw(lab), a=Amt(a) if a is not None else Raw("–"), b=Amt(b) if b is not None else Raw("–"), p=Raw(str(p))) for lab, a, b, p in parts], " · "))
-            pages = sorted({p for *_x, p in parts if p}) + [x for x in pages if x not in {p for *_x, p in parts}]
-            numbers = [v for _l, a, b, _p in parts for v in (a, b) if v]
+            pp = sorted({q for *_x, p in parts if p for q in _page_ints(p)})
+            pages = pp + [x for x in pages if x not in pp]
+            numbers = [abs(v) for _l, a, b, _p in parts for v in (a, b) if v]
         out.append(CheckItem(f, vals, reason, pages, numbers, labels + LABELS.get(f, []), second, "review", second_ref))
     return out
 
@@ -344,11 +390,23 @@ def _reason(f, note, findings, r):
         return Msg("chk.r.debt_untagged", line=Raw(label)), [label]
     if f == "property_plant_equipment_net" and label:
         return Msg("chk.r.ppe_rou", line=Raw(label)), [label]
+    if f == "property_plant_equipment_net" and "tanaman produktif" in note_l and "jumlahnya tidak terbaca" in note_l:
+        return Msg("chk.r.ppe_bearer_unread", psak=_psak_bearer(r)), BEARER_LABELS
+    if f == "property_plant_equipment_net" and ("bearer plants" in note_l or "ditambah tanaman produktif" in note_l):
+        return Msg("chk.r.ppe_bearer", psak=_psak_bearer(r)), BEARER_LABELS
     if f == "ppe_depreciation_disclosed" and "right-of-use" in note_l:
         return Msg("chk.r.dep_rou"), []
-    if f == "ppe_depreciation_disclosed" and "xbrl movement" in note_l:
-        m = re.search(r"xbrl movement(?: table gives)? ([\d,]+)", note_l)
-        return Msg("chk.r.dep_conflict", x=Amt(float(m.group(1).replace(",", ""))) if m else Raw("—")), []
+    if f == "ppe_depreciation_disclosed" and ("bearer plants on the face" in note_l or
+                                               ("tanaman produktif" in note_l and "penyusutannya tidak terbaca" in note_l)):
+        # bearer plants are PPE (option A, Gail 12 Nov 2026 11.59): their depreciation belongs in this figure
+        return Msg("chk.r.dep_bearer_missing", psak=_psak_bearer(r)), BEARER_LABELS
+    m = re.search(r"xbrl movement(?: table gives)? ([\d,]+)", note_l) if f == "ppe_depreciation_disclosed" else None
+    if m:
+        # a conflict needs a second figure; 'XBRL movement table only' is a single source, not a conflict (KMTR 2022,
+        # PTBA 2022: the card said the notes differ, with no figure, although nothing was read from the notes)
+        return Msg("chk.r.dep_conflict", x=Amt(float(m.group(1).replace(",", "")))), []
+    if f == "ppe_depreciation_disclosed" and "bearer plants depreciation" in note_l:
+        return Msg("chk.r.dep_bearer", psak=_psak_bearer(r)), BEARER_LABELS
     if "not found as a (t, t-1) pair" in note_l:
         return Msg("chk.r.not_printed"), []
     return Msg("chk.r.single"), []
