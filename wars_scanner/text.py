@@ -317,14 +317,9 @@ CATALOG: dict = {
                      "bank dan asuransi.",
                      "Not yet supported: scanned PDFs, English-only reports, non-Rupiah currencies, banks and insurers.",
                      "Gail 28 Okt C6 7.4"),
-    "app.privacy": _e(
-        "PDF disimpan sementara di disk server selama dibaca, lalu dihapus. Hasil bacaan (angka, kutipan, halaman) "
-        "disimpan di memori server, maksimal 20 dokumen, sampai server dimulai ulang, agar tidak perlu dibaca ulang. "
-        "Bila aplikasi dijalankan di komputer Anda sendiri, semuanya terjadi di komputer Anda.",
-        "The PDF is written temporarily to the server's disk while it is read, then deleted. The results (figures, "
-        "quotes, pages) are kept in server memory, up to 20 documents, until the server restarts, so the file need "
-        "not be read again. When you run the app on your own computer, all of this happens on your computer.",
-        "r1 7.5"),
+    "app.privacy": _e("PDF disimpan sementara di disk server selama dibaca, lalu dihapus. Hasil bacaan (angka, kutipan, halaman) disimpan di memori server, maksimal 20 dokumen, sampai server dimulai ulang, agar tidak perlu dibaca ulang. Bila aplikasi dijalankan secara lokal, seluruh proses berlangsung di komputer pengguna.",
+        "The PDF is written temporarily to the server's disk while it is read, then deleted. The results (figures, quotes, pages) are kept in server memory, up to 20 documents, until the server restarts, so the file need not be read again. When the app runs locally, all processing takes place on the user's computer.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "app.upload": _e("Unggah laporan keuangan tahunan (PDF)", "Upload the annual financial statements (PDF)", "Gail 28 Okt impl"),
     "app.upload_help": _e("Satu file PDF, maksimal 50 MB.", "One PDF file, up to 50 MB.", "Gail 28 Okt impl"),
     "app.ticker": _e("Kode saham (opsional, contoh: SIDO)", "Ticker (optional, e.g. SIDO)", "Gail 28 Okt impl"),
@@ -439,18 +434,12 @@ CATALOG: dict = {
     "c.DSRI_numer": _e("Kenaikan rasio ini berasal dari piutang yang tumbuh lebih cepat daripada penjualan.",
                        "The rise in this ratio comes from receivables growing faster than sales.",
                        "Gail 8 Nov 11.38 (bagian C)"),
-    "c.small_base_DSRI": _e("Piutang tahun lalu sangat kecil (kurang dari {lim} penjualan), sehingga perubahan "
-                            "nominal yang kecil sudah menghasilkan indeks yang tinggi. Baca indeks ini bersama "
-                            "nominalnya.",
-                            "Prior-year receivables were very small (less than {lim} of sales), so a small change in "
-                            "amount already produces a high index. Read this index together with the amounts.",
-                            "Gail 8 Nov 11.38 (bagian C)"),
-    "c.small_base_AQI": _e("Porsi aset tidak lancar selain aset tetap tahun lalu sangat kecil ({aq_t1} dari total "
-                           "aset, kurang dari {lim}), sehingga perubahan nominal yang kecil sudah menghasilkan indeks "
-                           "yang tinggi. Baca indeks ini bersama nominalnya.",
-                           "The prior-year share of non-current assets other than PPE was very small ({aq_t1} of "
-                           "total assets, less than {lim}), so a small change in amount already produces a high "
-                           "index. Read this index together with the amounts.", "Gail 8 Nov 11.38 (bagian C)"),
+    "c.small_base_DSRI": _e("Piutang tahun lalu sangat kecil (kurang dari {lim} penjualan), sehingga perubahan nominal yang kecil menghasilkan indeks yang tinggi. Indeks dibaca bersama nilai nominalnya.",
+        "Prior-year receivables were very small (less than {lim} of sales), so a small nominal change produces a high index. The index is read together with the nominal amounts.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "c.small_base_AQI": _e("Porsi aset tidak lancar selain aset tetap tahun lalu sangat kecil ({aq_t1} dari total aset, kurang dari {lim}), sehingga perubahan nominal yang kecil menghasilkan indeks yang tinggi. Indeks dibaca bersama nilai nominalnya.",
+        "The prior-year share of non-current assets other than PPE was very small ({aq_t1} of total assets, less than {lim}), so a small nominal change produces a high index. The index is read together with the nominal amounts.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "c.DSRI": _e("perubahan termin kredit; pelanggan besar baru; penjualan musiman di akhir tahun",
                  "a change in credit terms; a large new customer; seasonal sales at the year end", "B r1 §5"),
     "d.DSRI": _e("umur piutang; piutang pihak berelasi; cadangan kerugian kredit; kebijakan pengakuan pendapatan "
@@ -529,15 +518,12 @@ CATALOG: dict = {
 
     # ---------------------------------------------------------------- verdicts (B r1 §6, r1/C6 7.x)
     "v.withheld": _e("M-score ditahan", "M-score withheld", "r1 9.8"),
-    "v.held_nonppe": _e("Status penyusutan dan amortisasi selain aset tetap untuk {years} belum ditetapkan. Tetapkan "
-                        "di bagian '{section}'. Mesin tidak mengisi 'tidak ada' sendiri.",
-                        "The status of depreciation and amortisation other than PPE for {years} has not been set. Set "
-                        "it in the '{section}' section. The machine does not enter 'none' by itself.", "r1 9.8", "Q6"),
-    "v.held_amort": _e("Aset takberwujud tidak ditemukan oleh pembaca untuk {years}. Tetapkan statusnya di bagian "
-                       "'{section}'. Mesin tidak mengisi 0 sendiri; 'tidak ditemukan' tidak sama dengan 'tidak ada'.",
-                       "The reader found no intangible assets for {years}. Set the status in the '{section}' section. "
-                       "The machine does not enter 0 by itself; 'not found' is not the same as 'none'.", "r1 9.16",
-                       "M-15"),
+    "v.held_nonppe": _e("Status penyusutan dan amortisasi selain aset tetap untuk {years} belum ditetapkan; tetapkan di bagian '{section}'. Status tidak diisi otomatis.",
+        "The status of depreciation and amortisation other than PPE for {years} has not been set; set it in the '{section}' section. The status is not filled automatically.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "v.held_amort": _e("Aset takberwujud tidak ditemukan untuk {years}; tetapkan statusnya di bagian '{section}'. Nilai 0 tidak diisi otomatis; tidak ditemukan tidak sama dengan tidak ada.",
+        "No intangible assets found for {years}; set the status in the '{section}' section. Zero is not filled automatically; not found is not the same as none.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "v.not_calc": _e("M-score tidak dihitung", "M-score not calculated", "r0 7.12"),
     "v.not_calc_detail": _e("Alasan: {reason}. Tidak ada angka yang ditebak atau diisi 0.",
                             "Reason: {reason}. No figure was guessed or entered as 0.", "B r1 §6"),
@@ -652,17 +638,17 @@ CATALOG: dict = {
     # ---------------------------------------------------------------- user-set statuses (M-06, M-15)
     "np.title": _e("Penyusutan dan amortisasi selain aset tetap: wajib ditetapkan",
                    "Depreciation and amortisation other than PPE: status required", "r1 9.4"),
-    "np.caption": _e("Status harus ditetapkan untuk tiap tahun. Mesin hanya mencari dan menunjukkan bukti; 'tidak "
-                     "ditemukan' tidak sama dengan 'tidak ada'. M-score ditahan sampai kedua tahun ditetapkan.",
-                     "The status must be set for each year. The machine only searches and shows evidence; 'not "
-                     "found' is not the same as 'none'. The M-score is withheld until both years are set.", "r1 9.5",
-                     "Q6"),
+    "np.caption": _e("Status ditetapkan untuk tiap tahun. Sistem hanya mencari dan menampilkan bukti; tidak ditemukan tidak sama dengan tidak ada. M-score ditahan sampai kedua tahun ditetapkan.",
+        "The status is set for each year. The system only searches and shows evidence; not found is not the same as none. The M-score is withheld until both years are set.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "np.opt.": _e("Belum ditetapkan", "Not set", "r1 9.6"),
     "np.opt.NONE_PRESENT": _e("Tidak ada", "None", "r1 9.6"),
     "np.opt.ALL_DISCLOSED": _e("Ada, seluruhnya diungkapkan", "Present, fully disclosed", "r1 9.6"),
     "np.opt.PARTIAL_UNDISCLOSED": _e("Ada, sebagian/seluruhnya tidak diungkapkan", "Present, partly or wholly not disclosed",
                                      "r1 9.6"),
-    "np.notes": _e("Catatan yang Anda periksa ({y})", "Notes you examined ({y})", "r1 9.7"),
+    "np.notes": _e("Catatan yang diperiksa ({y})",
+        "Notes examined ({y})",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "np.extra": _e("Catatan lain yang diperiksa ({y}), pisahkan dengan ;", "Other notes examined ({y}), separated by ;",
                    "r1 9.7"),
     "np.year": _e("Tahun {y}", "Year {y}", "Gail 28 Okt impl"),
@@ -670,15 +656,18 @@ CATALOG: dict = {
     "np.hit": _e("hal. {p}: {text}", "p. {p}: {text}", "Gail 28 Okt impl"),
     "np.hit_amount": _e("(ada angka)", "(with an amount)", "Gail 28 Okt impl"),
     "np.found": _e("{label}: ditemukan {n} kali", "{label}: found {n} time(s)", "Gail 28 Okt impl"),
-    "np.not_found": _e("{label}: tidak ditemukan oleh pencarian mesin.", "{label}: not found by the machine search.", "Gail 28 Okt impl"),
+    "np.not_found": _e("{label}: tidak ditemukan dalam pencarian otomatis.",
+        "{label}: not found by the automated search.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "np.amounts": _e("Jumlah yang terbaca: {list} ({source})", "Amounts read: {list} ({source})", "Gail 28 Okt impl"),
     "np.source_cross": _e(
                            'Hal. {p}: {text}. Angka tahun berjalan juga tercantum dalam catatan properti investasi pada hal. {q}.',
                            'P. {p}: {text}. The current-year figure is also presented in the investment property note on p. {q}.',
                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "np.source": _e("hal. {p}: {text}", "p. {p}: {text}", "Gail 28 Okt impl"),
-    "np.err_notes": _e("Belum diterapkan: pilih catatan yang Anda periksa untuk 'Tidak ada'.",
-                       "Not applied: select the notes you examined for 'None'.", "Gail 28 Okt impl"),
+    "np.err_notes": _e("Belum diterapkan: pilih catatan yang diperiksa untuk 'Tidak ada'.",
+        "Not applied: select the notes examined for 'None'.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "np.err_amount": _e("Belum diterapkan: 'Ada, seluruhnya diungkapkan' hanya bisa dipilih bila jumlahnya terbaca "
                         "dari CALK.",
                         "Not applied: 'Present, fully disclosed' can be chosen only when the amount was read from the "
@@ -691,17 +680,9 @@ CATALOG: dict = {
                                    "Amortisation of long-term costs (deferred charges, land rights, etc.)", "Gail 28 Okt impl"),
     "am.title": _e("Amortisasi aset takberwujud: wajib ditetapkan", "Amortisation of intangible assets: status required",
                    "r1 9.10"),
-    "am.caption": _e(
-        "Pembaca tidak menemukan aset takberwujud. 'Tidak ditemukan' tidak sama dengan 'tidak ada', jadi mesin tidak "
-        "mengisi 0 sendiri. Periksa CALK, lalu tetapkan status untuk tiap tahun dan catat catatan atau halaman yang "
-        "Anda periksa. Bila Anda tidak dapat memastikan, biarkan 'Belum ditetapkan': M-score tetap ditahan. Bila "
-        "Anda melihat angka amortisasi di CALK yang tidak terbaca, biarkan juga 'Belum ditetapkan': skor ditahan "
-        "karena pembaca gagal membaca angka tersebut; Anda tidak perlu dan tidak dapat mengisi angka.",
-        "The reader found no intangible assets. 'Not found' is not the same as 'none', so the machine does not enter "
-        "0 by itself. Check the notes, then set the status for each year and record the notes or pages you "
-        "examined. If you cannot be sure, leave 'Not set': the M-score stays withheld. If you see an amortisation "
-        "amount in the notes that was not read, also leave 'Not set': the score is withheld because the reader "
-        "failed to read it; you do not need to, and cannot, enter any figure.", "r1 9.11", "M-15"),
+    "am.caption": _e("Aset takberwujud tidak ditemukan; tidak ditemukan tidak sama dengan tidak ada, sehingga nilai 0 tidak diisi otomatis. Telaah CALK, tetapkan status untuk tiap tahun, dan catat catatan atau halaman yang diperiksa. Bila tidak dapat dipastikan, atau amortisasi tercantum di CALK tetapi tidak terbaca, biarkan 'Belum ditetapkan'; M-score tetap ditahan.",
+        "No intangible assets found; not found is not the same as none, so zero is not filled automatically. Review the notes, set the status for each year and record the notes or pages examined. Where this cannot be determined, or amortisation is shown in the notes but was not read, leave 'Not set'; the M-score stays withheld.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "am.opt.": _e("Belum ditetapkan", "Not set", "r1 9.12"),
     "am.opt.NONE_PRESENT": _e("Tidak ada aset takberwujud", "No intangible assets", "r1 9.12"),
     "am.opt.GOODWILL_ONLY": _e("Hanya goodwill; tidak ada aset takberwujud lain yang diamortisasi",
@@ -712,12 +693,14 @@ CATALOG: dict = {
     "am.opt.UNDISCLOSED": _e("Ada aset takberwujud, tetapi amortisasinya tidak diungkapkan",
                              "Intangible assets present, but amortisation not disclosed", "r1 9.12"),
     "am.status": _e("Status amortisasi {y}", "Amortisation status {y}", "Gail 28 Okt impl"),
-    "am.notes": _e("Catatan yang Anda periksa ({y})", "Notes you examined ({y})", "r1 9.13"),
+    "am.notes": _e("Catatan yang diperiksa ({y})",
+        "Notes examined ({y})",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "am.extra": _e("Catatan/halaman lain yang diperiksa ({y}), pisahkan dengan ;",
                    "Other notes/pages examined ({y}), separated by ;", "r1 9.13"),
-    "am.err": _e("Belum diterapkan: pilih atau tulis catatan/halaman yang Anda periksa.",
-                 "Not applied: select or type the notes/pages you examined.", "r1 9.14"),
-
+    "am.err": _e("Belum diterapkan: pilih atau tulis catatan/halaman yang diperiksa.",
+        "Not applied: select or enter the notes/pages examined.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     # ---------------------------------------------------------------- field labels (r0 §8, r1 C7)
     "label.revenue": _e("Pendapatan (penjualan neto)", "Revenue (net sales)", "r0 8"),
     "label.cost_of_goods_sold": _e("Beban pokok penjualan", "Cost of goods sold", "r0 8"),
@@ -925,12 +908,9 @@ CATALOG: dict = {
                         "Foreign-currency translation line(s) within the block excluded from amortisation; kept as "
                         "evidence ({evidence}); {psak238}", "r1 3.20", "M-03"),
     "note.amort_disclosed": _e("amortisasi diungkapkan", "amortisation disclosed", "Gail 28 Okt impl"),
-    "note.amort_undisclosed": _e("Ada aset takberwujud, tetapi amortisasinya tidak diungkapkan; komponen diperlakukan "
-                                 "sebagai 0 sesuai aturan dan perlu diperiksa. Ini bukan pernyataan bahwa beban "
-                                 "sebenarnya nol",
-                                 "Intangible assets exist, but their amortisation is not disclosed; the component is "
-                                 "treated as 0 under the rule and needs review. This does not state that the actual "
-                                 "charge is nil", "r1 3.21", "G-22"),
+    "note.amort_undisclosed": _e("Ada aset takberwujud, tetapi amortisasinya tidak diungkapkan; dihitung 0 sesuai aturan dan perlu diperiksa. Bukan berarti bebannya nol.",
+        "Intangible assets exist but their amortisation is not disclosed; counted as 0 under the rule and to be checked. This does not mean the expense is zero.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "note.amort_not_assessed": _e("Pembaca tidak menemukan aset takberwujud; tidak ditemukan bukan berarti nihil. Status "
                                   "ditetapkan pengguna per tahun",
                                   "The reader found no intangible assets; not found does not mean nil. The status is "
@@ -1133,30 +1113,25 @@ CATALOG: dict = {
     "flag.part_gt_total": _e("Angka yang dibaca: {part} melebihi {total}; kemungkinan salah baca, periksa di PDF",
                              "Figures as read: {part} exceeds {total}; possibly misread, check in the PDF", "r1 6.10",
                              "M-12"),
-    "flag.sga_gt_rev": _e("Angka yang dibaca: beban penjualan dan umum melebihi pendapatan; bisa sah, periksa di PDF",
-                          "Figures as read: selling and general expenses exceed revenue; may be legitimate, check in "
-                          "the PDF", "r1 6.10b", "M-12"),
-    "flag.jump": _e("Angka yang dibaca: nilai satu tahun ≥{r}× tahun lainnya. Bisa sah (mis. akuisisi), bisa salah digit "
-                    "atau satuan; periksa di PDF",
-                    "Figures as read: one year's value is {r}× the other or more. May be legitimate (e.g. an acquisition) "
-                    "or a misread digit or unit; check in the PDF", "r1 6.11", "M-12"),
-    "flag.cash_diff": _e("Angka yang dibaca: kas akhir tahun di laporan arus kas berbeda dengan kas di laporan posisi "
-                         "keuangan. Ini bisa wajar (misalnya ada cerukan bank); mohon dicek",
-                         "Figures as read: closing cash in the statement of cash flows differs from cash in the "
-                         "statement of financial position. This can be legitimate (e.g. bank overdrafts); please check",
-                         "Gail 28 Okt impl (r0 6.12 + awalan M-12)", "M-12"),
+    "flag.sga_gt_rev": _e("Angka yang dibaca: beban penjualan dan umum melebihi pendapatan; dapat wajar, periksa di PDF.",
+        "Figures as read: selling and general expenses exceed revenue; this may be legitimate, check the PDF.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "flag.jump": _e("Angka yang dibaca: nilai satu tahun ≥{r}× tahun lainnya. Dapat wajar (misalnya akuisisi) atau akibat salah digit atau satuan; periksa di PDF.",
+        "Figures as read: one year is ≥{r}× the other. This may be legitimate (e.g. an acquisition) or a digit or unit error; check the PDF.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "flag.cash_diff": _e("Angka yang dibaca: kas akhir tahun di laporan arus kas berbeda dengan kas di laporan posisi keuangan. Selisih dapat wajar (misalnya cerukan bank); periksa di PDF.",
+        "Figures as read: closing cash in the statement of cash flows differs from cash in the statement of financial position. The difference may be legitimate (e.g. bank overdrafts); check the PDF.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "flag.cash_swapped": _e("Angka yang dibaca: kolom tahun kemungkinan tertukar (kas di laporan posisi keuangan sama "
                             "dengan kas akhir tahun di arus kas untuk tahun yang lain). Periksa di PDF",
                             "Figures as read: the year columns may be swapped (balance-sheet cash equals the other "
                             "year's closing cash in the statement of cash flows). Check in the PDF", "r1 6.13", "M-12"),
-    "flag.year_missing": _e(
-                             'Angka hasil ekstraksi: label tahun pada judul kolom tidak dapat dibaca pada {stmts}. Dengan demikian, kolom tahun berjalan dan tahun pembanding belum dapat dipastikan. Skor ditahan; periksa di PDF.',
-                             'Extracted figures: the year labels in the column headings could not be read in {stmts}. Therefore, the current-year and comparative-year columns cannot be confirmed. The score is withheld; check the PDF.',
-                             'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "P0-2"),
-    "flag.year_mismatch": _e(
-                              'Angka hasil ekstraksi: tahun pada judul kolom berbeda antar laporan ({list}). Skor ditahan; periksa di PDF.',
-                              'Extracted figures: the year labels in the column headings differ across the statements ({list}). The score is withheld; check the PDF.',
-                              'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)', "P0-2"),
+    "flag.year_missing": _e("Label tahun pada judul kolom {stmts} tidak terbaca, sehingga kolom tahun berjalan dan tahun pembanding tidak dapat dipastikan. Skor ditahan.",
+        "The year labels in the column headings of {stmts} could not be read, so the current-year and prior-year columns cannot be determined. The score is withheld.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "flag.year_mismatch": _e("Tahun pada judul kolom berbeda antarlaporan ({list}). Skor ditahan.",
+        "The years in the column headings differ between statements ({list}). The score is withheld.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "flag.year_item": _e(
                           '{stmt} {y}, hal. {p}',
                           '{stmt} {y}, p. {p}',
@@ -1175,16 +1150,17 @@ CATALOG: dict = {
                                 "not be run", "r0 6.14"),
 
     # decision errors (pipeline.DecisionError)
-    "err.np_notes": _e("pilih catatan yang Anda periksa untuk 'Tidak ada'", "select the notes you examined for 'None'",
-                       "Gail 28 Okt impl", "M-06"),
+    "err.np_notes": _e("pilih catatan yang diperiksa untuk 'Tidak ada'",
+        "select the notes examined for 'None'",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "err.np_amount": _e("'Ada, seluruhnya diungkapkan' hanya bisa dipilih bila jumlahnya terbaca dari CALK",
                         "'Present, fully disclosed' can be chosen only when the amount was read from the notes", "Gail 28 Okt impl",
                         "M-14"),
     "err.am_read": _e("amortisasi sudah terbaca dari laporan; pilihan status tidak berlaku",
                       "amortisation was read from the report; the status choice does not apply", "Gail 28 Okt impl", "M-15"),
-    "err.am_notes": _e("pilih atau tulis catatan/halaman yang Anda periksa",
-                       "select or type the notes/pages you examined", "r1 9.14", "M-15"),
-
+    "err.am_notes": _e("pilih atau tulis catatan/halaman yang diperiksa",
+        "select or enter the notes/pages examined",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     # ---------------------------------------------------------------- app design (Gail 28 Okt 11.01: design approved)
     # ID wording as on the approved canvas "WARS App Design"; EN versions written by Claude to the same rules.
     "ui.tagline": _e("Beneish M-score untuk laporan keuangan tahunan emiten BEI",
@@ -1383,10 +1359,9 @@ CATALOG: dict = {
                         'Hal. {p}: properti investasi diukur dengan model nilai wajar sehingga tidak disusutkan: “{text}”.',
                         'P. {p}: investment property is measured using the fair value model and is therefore not depreciated: “{text}”.',
                         'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
-    "v.held_invprop": _e(
-                          'Properti investasi tercantum dalam laporan posisi keuangan (hal. {p}), tetapi beban penyusutannya tidak dapat diambil dari catatan atas laporan keuangan untuk {years}. M-score ditahan karena menganggapnya 0 dapat menghasilkan skor yang tidak akurat.',
-                          'Investment property is presented in the statement of financial position (p. {p}), but its depreciation expense could not be extracted from the notes to the financial statements for {years}. M-score calculation is withheld because assuming a value of zero could produce an inaccurate score.',
-                          'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "v.held_invprop": _e("Properti investasi tercantum di laporan posisi keuangan (hal. {p}), tetapi beban penyusutannya tidak terbaca dari catatan untuk {years}. M-score ditahan; nilai 0 tidak diasumsikan.",
+        "Investment property is presented in the statement of financial position (p. {p}), but its depreciation was not read from the notes for {years}. The M-score is withheld; zero is not assumed.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "issue.number_format": _e(
                                'Format angka tidak dapat ditentukan karena laporan utama menggunakan titik dan koma secara tidak konsisten sebagai pemisah ribuan. Angka tidak diekstrak karena kesalahan pemisah dapat mengubah nilainya hingga seribu kali lipat.',
                                'The number format could not be determined because the primary statements use dots and commas inconsistently as thousands separators. The figures were not extracted because an incorrect separator could change their values by a factor of 1,000.',
@@ -1478,16 +1453,9 @@ CATALOG: dict = {
                           'For financial years 2022 onwards, provide the instance.zip file downloaded from the IDX website. Primary-statement figures are extracted from XBRL and then reconciled to the PDF financial statements.',
                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
     "chk.title": _e("Skor ditahan: {n} pos memerlukan verifikasi", "Score withheld: {n} items require verification", "Gail 4 Nov 09.07"),
-    "chk.sub": _e("Pos lainnya telah selesai pembacaan automated dan rekonsiliasi silang. Pos berikut belum dapat "
-                  "direkonsiliasi dengan sumber kedua dalam laporan. Tinjau setiap pos terhadap potongan halaman sumber, "
-                  "lalu pilih Sesuai apabila pembacaan WARS telah tepat, atau Ganti nilai untuk memasukkan nilai yang benar. "
-                  "Untuk pos yang tidak ditemukan, lengkapi nilai beserta rujukan halaman sumber atau nyatakan nihil. "
-                  "Skor dihitung setelah seluruh pos diverifikasi.",
-                  "All other items have completed automated reading and cross-reconciliation. The items below could not be "
-                  "reconciled to a second source within the report. Review each item against the source page extract, then "
-                  "select Agree if the WARS reading is correct, or Amend to enter the correct amount. For lines not "
-                  "found, complete the amount with its source page reference or state nil. The score is "
-                  "calculated once all items have been verified.", "Gail 4 Nov 09.07; tambahan Gail 8 Nov 16.32"),
+    "chk.sub": _e("Pos berikut belum dapat direkonsiliasi dengan sumber kedua dalam laporan. Bandingkan setiap pos dengan potongan halaman sumber, lalu pilih Sesuai atau Ganti nilai. Pos yang tidak ditemukan dilengkapi dengan nilai dan rujukan halaman, atau dinyatakan nihil. Skor dihitung setelah seluruh pos diverifikasi.",
+        "The items below could not be reconciled to a second source in the report. Compare each item with the source page extract, then select Agree or Amend. Items not found are completed with the amount and page reference, or declared nil. The score is calculated once all items are verified.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.item_of": _e("POS {i} DARI {n}", "ITEM {i} OF {n}", "Gail 4 Nov 09.07"),
     "chk.reading": _e("Pembacaan WARS {y}", "WARS reading {y}", "Gail 4 Nov 09.07"),
     "chk.ok": _e("Sesuai", "Agree", "Gail 4 Nov 09.07"),
@@ -1502,7 +1470,9 @@ CATALOG: dict = {
                          "Page extract unavailable. Refer to page {p} of the report.", "Gail 4 Nov 09.07"),
     "chk.summary": _e("Ringkasan", "Summary", "Gail 4 Nov 09.07"),
     "chk.progress": _e("{d} dari {n} pos telah diverifikasi", "{d} of {n} items verified", "Gail 4 Nov 09.07"),
-    "chk.others": _e("{n} pos lainnya: Selesai pembacaan automated.", "{n} other items: automated reading completed.", "Gail 4 Nov 09.07"),
+    "chk.others": _e("{n} pos lainnya: terbaca dan tercocokkan otomatis.",
+        "{n} other items: read and reconciled automatically.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.calc": _e("Hitung skor", "Calculate score", "Gail 4 Nov 09.07"),
     "chk.calc_hint": _e("Tersedia setelah seluruh pos diverifikasi.", "Available once all items have been verified.", "Gail 4 Nov 09.07"),
     "chk.skip": _e("Lewati langkah pengecekan. Unduh laporan.", "Skip the review step. Download the report.", "Gail 4 Nov 09.07"),
@@ -1517,6 +1487,9 @@ CATALOG: dict = {
     "chk.err.pending": _e("{item} belum diverifikasi.", "{item} has not been verified.", "Gail 4 Nov 09.07"),
     "chk.err.missing": _e("Nilai {y} untuk {item} belum diisi.", "The {y} amount for {item} has not been entered.", "Gail 4 Nov 09.07"),
     "chk.err.negative": _e("{item} tidak boleh bernilai negatif.", "{item} cannot be negative.", "Gail 4 Nov 09.07"),
+    "chk.held_doc": _e("Skor ditahan karena kondisi dokumen, bukan karena nilai pos: {why} Verifikasi pos tetap dicatat dalam laporan yang diunduh.",
+        "Score withheld because of a condition of the document, not of the item values: {why} Item verification is still recorded in the downloaded report.",
+        "Claude 12 Nov (pesan peringatan salah alamat, Gail 15.26); menunggu Gail"),
     "chk.err.checks": _e("Nilai yang dimasukkan tidak lolos pemeriksaan: {msg}", "The amounts entered failed a check: {msg}",
                          "Gail 4 Nov 09.07"),
     "chk.prov.note": _e("Pembacaan WARS: {old}", "WARS reading: {old}", "Gail 4 Nov 09.07"),
@@ -1529,7 +1502,9 @@ CATALOG: dict = {
     "chk.note.single": _e("Dibaca dari satu sumber dalam laporan; belum direkonsiliasi dengan sumber kedua.",
                           "Read from a single source within the report; not reconciled to a second source.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.res.origin": _e("ASAL NILAI", "ORIGIN OF AMOUNTS", "Gail 4 Nov 09.07"),
-    "chk.res.auto": _e("Selesai pembacaan automated", "Automated reading completed", "Gail 4 Nov 09.07"),
+    "chk.res.auto": _e("Terbaca dan tercocokkan otomatis",
+        "Read and reconciled automatically",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.res.agreed": _e("Diverifikasi sesuai oleh pengguna", "Agreed by the user", "Gail 4 Nov 09.07"),
     "chk.res.amended": _e("Diganti oleh pengguna", "Amended by the user", "Gail 4 Nov 09.07"),
     "chk.res.n": _e("{n} pos", "{n} items", "Gail 4 Nov 09.07"),
@@ -1563,35 +1538,25 @@ CATALOG: dict = {
                                            "Depreciation of fixed assets and right-of-use assets", "Gail 4 Nov 09.07"),
     "chk.f.amortization_intangibles": _e("Amortisasi aset takberwujud", "Amortisation of intangible assets",
                                          "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
-    "chk.f.depreciation_amortization_non_ppe": _e(
-        "Penyusutan dan amortisasi lain (properti investasi, aset tidak digunakan, biaya jangka panjang)",
-        "Other depreciation and amortisation (investment property, assets not in use, long-term costs)",
-        "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
+    "chk.f.depreciation_amortization_non_ppe": _e("Penyusutan dan amortisasi lain",
+        "Other depreciation and amortisation",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.f.net_income": _e("Laba tahun berjalan", "Profit for the year", "Gail 4 Nov 09.07"),
     "chk.f.cash_flow_from_operations": _e("Arus kas dari aktivitas operasi", "Cash flows from operating activities", "Gail 4 Nov 09.07"),
-    "chk.r.tax_proxy": _e("Utang PPh badan (Pasal 25 dan 29) tidak dapat direkonsiliasi dengan total utang pajak, sehingga "
-                          "total utang pajak digunakan sebagai pendekatan. Pilih Sesuai untuk mempertahankan pendekatan "
-                          "tersebut, atau Ganti nilai dengan jumlah utang PPh badan.",
-                          "Corporate income tax payable (Articles 25 and 29) could not be reconciled to total taxes payable; "
-                          "total taxes payable is therefore used as an approximation. Select Agree to retain the "
-                          "approximation, or Amend to enter the corporate income tax payable.", "Gail 4 Nov 09.07"),
-    "chk.r.ar_contract": _e("Nilai XBRL mencakup tagihan bruto kepada pemberi kerja (aset kontrak). Aset kontrak tidak "
-                            "termasuk piutang usaha; apabila rinciannya disajikan, nilai yang digunakan hanya piutang "
-                            "usaha pihak ketiga dan pihak berelasi.",
-                            "The XBRL amount includes gross amounts due from customers (contract assets). Contract assets "
-                            "are excluded from trade receivables; where a breakdown is presented, only third-party and "
-                            "related-party trade receivables are used.", "Gail 4 Nov 09.07"),
+    "chk.r.tax_proxy": _e("Utang PPh badan (Pasal 25 dan 29) tidak dapat direkonsiliasi; total utang pajak dipakai sebagai pendekatan. Sesuai: pendekatan dipertahankan. Ganti nilai: masukkan utang PPh badan.",
+        "Corporate income tax payable (Articles 25 and 29) could not be reconciled; total taxes payable is used as a proxy. Agree: the proxy is kept. Amend: enter corporate income tax payable.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "chk.r.ar_contract": _e("Nilai XBRL mencakup tagihan bruto kepada pemberi kerja (aset kontrak). Aset kontrak tidak termasuk piutang usaha; bila rinciannya disajikan, hanya piutang usaha pihak ketiga dan berelasi yang digunakan.",
+        "The XBRL amount includes gross amounts due from customers (contract assets). Contract assets are excluded from trade receivables; where a breakdown is presented, only third-party and related-party trade receivables are used.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.r.debt_untagged": _e("Pos \u201c{line}\u201d pada laporan posisi keuangan tidak diklasifikasikan sebagai utang "
                               "berbunga dalam XBRL. Liabilitas sewa dan pinjaman berbunga lainnya termasuk dalam pos ini.",
                               "The line \u201c{line}\u201d in the statement of financial position is not classified as "
                               "interest-bearing debt in XBRL. Lease liabilities and other interest-bearing borrowings are "
                               "included in this item.", "Gail 4 Nov 09.07"),
-    "chk.r.ppe_rou": _e("Pos \u201c{line}\u201d pada laporan posisi keuangan tidak diklasifikasikan dalam XBRL. Nilai "
-                        "aset tetap yang digunakan harus mencakup aset hak-guna; periksa apakah pos ini sudah termasuk "
-                        "dalam angka di atas.",
-                        "The line \u201c{line}\u201d in the statement of financial position is not classified in XBRL. "
-                        "The fixed asset amount used must include right-of-use assets; check whether this line is "
-                        "already included in the amount above.", "Gail 4 Nov 09.07; diubah Claude 4 Nov opsi 1, menunggu Gail"),
+    "chk.r.ppe_rou": _e("Pos “{line}” di laporan posisi keuangan tidak diklasifikasikan dalam XBRL. Aset tetap mencakup aset hak-guna; periksa apakah pos ini sudah termasuk.",
+        "The line “{line}” in the statement of financial position is not classified in XBRL. PPE includes right-of-use assets; check whether this line is included.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.parts": _e("{reason} Pembacaan WARS adalah jumlah baris berikut (tahun berjalan; tahun pembanding): {parts}.",
                     "{reason} The WARS reading is the sum of these lines (current year; comparative year): {parts}.",
                     "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
@@ -1605,14 +1570,9 @@ CATALOG: dict = {
     "np.cls.DeferredChargesOnExplorationAndDevelopmentExpenditures": _e("Biaya eksplorasi dan pengembangan tangguhan", "Deferred exploration and development costs", "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
     "chk.part": _e("{label} {a}; {b} (hal. {p})", "{label} {a}; {b} (p. {p})",
                    "Claude 12 Nov (kartu menyebut komponen, Gail 12 Nov 10.18); menunggu Gail"),
-    "chk.r.dep_parts": _e(
-        "Pembacaan WARS adalah jumlah dua komponen: penyusutan aset tetap milik (tabel alokasi, hal. {p1}) dan "
-        "penyusutan aset hak-guna (hal. {p2}). Tahun berjalan: {own_t} + {rou_t}; tahun pembanding: {own_t1} + {rou_t1}. "
-        "Periksa kedua halaman di bawah ini.",
-        "The WARS reading is the sum of two components: depreciation of owned PPE (allocation table, p. {p1}) and "
-        "depreciation of right-of-use assets (p. {p2}). Current year: {own_t} + {rou_t}; comparative year: {own_t1} + "
-        "{rou_t1}. Check both pages below.",
-        "Gail 12 Nov 10.18 (teks kartu penyusutan disetujui, dua bahasa)"),
+    "chk.r.dep_parts": _e("Jumlah dua komponen: penyusutan aset tetap milik (tabel alokasi, hal. {p1}) dan penyusutan aset hak-guna (hal. {p2}). Tahun berjalan: {own_t} + {rou_t}; tahun pembanding: {own_t1} + {rou_t1}.",
+        "Sum of two components: depreciation of owned PPE (allocation table, p. {p1}) and depreciation of right-of-use assets (p. {p2}). Current year: {own_t} + {rou_t}; prior year: {own_t1} + {rou_t1}.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.r.ppe_bearer": _e("Termasuk tanaman produktif yang disajikan di baris tersendiri. Dasar: {psak}.",
         "Includes bearer plants presented on a separate line. Basis: {psak}.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
     "chk.r.dep_bearer": _e("Termasuk penyusutan tanaman produktif. Dasar: {psak}.",
@@ -1636,27 +1596,20 @@ CATALOG: dict = {
     "note.dep_bearer_missing": _e("Penyusutan tanaman produktif tidak terbaca.",
         "Depreciation of bearer plants not read.", "Claude 12 Nov, disingkat atas arahan Gail 15.13 (singkat, gaya auditor); menunggu Gail"),
     "comp.ppe_bearer": _e("aset tetap {a} + tanaman produktif {b}", "fixed assets {a} + bearer plants {b}", "Claude 12 Nov (tanaman produktif = aset tetap, pilihan A Gail 12 Nov 11.59); menunggu Gail"),
-    "chk.r.dep_rou": _e("Aset hak-guna disajikan terpisah dan tidak diklasifikasikan dalam XBRL. Beban penyusutan yang "
-                        "digunakan harus mencakup penyusutan aset hak-guna.",
-                        "Right-of-use assets are presented separately and are not classified in XBRL. The depreciation "
-                        "used must include depreciation of right-of-use assets.", "Gail 4 Nov 09.07"),
-    "chk.r.dep_conflict": _e("Beban penyusutan menurut catatan atas laporan keuangan berbeda dengan tabel mutasi aset "
-                             "tetap dalam XBRL ({x}). Beban penyusutan yang digunakan mencakup aset tetap milik sendiri "
-                             "dan aset hak-guna, tanpa amortisasi aset takberwujud.",
-                             "Depreciation per the notes to the financial statements differs from the XBRL fixed asset "
-                             "movement schedule ({x}). The depreciation used covers owned fixed assets and right-of-use "
-                             "assets, excluding amortisation of intangible assets.", "Gail 4 Nov 09.07"),
+    "chk.r.dep_rou": _e("Aset hak-guna disajikan terpisah dan tidak diklasifikasikan dalam XBRL. Periksa apakah penyusutan aset hak-guna sudah termasuk.",
+        "Right-of-use assets are presented separately and are not classified in XBRL. Check whether their depreciation is included.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "chk.r.dep_conflict": _e("Beban penyusutan menurut catatan berbeda dengan tabel mutasi aset tetap dalam XBRL ({x}). Cakupan: aset tetap milik dan aset hak-guna, tanpa amortisasi aset takberwujud.",
+        "Depreciation per the notes differs from the PPE movement table in XBRL ({x}). Scope: owned PPE and right-of-use assets, excluding amortisation of intangible assets.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.r.not_printed": _e("Nilai XBRL tidak ditemukan sebagai pasangan angka dua tahun pada satu baris laporan PDF, "
                             "sehingga belum dapat direkonsiliasi.",
                             "The XBRL amount does not appear as a two-year pair on a single line of the PDF statements and "
                             "could not be reconciled.", "Gail 4 Nov 09.07"),
     # A line WARS did not find (Gail 8 Nov 16.21: test branch first; wording chosen by Gail 16.32: 1A, 2A, 3B, 4A)
-    "chk.r.missing": _e("Nilai pos ini tidak teridentifikasi dalam laporan sehingga skor belum dapat dihitung. "
-                        "Masukkan nilai beserta rujukan halaman sumber, atau nyatakan nihil apabila pos ini tidak "
-                        "terdapat dalam laporan.",
-                        "The amount for this line was not identified in the report, so the score cannot yet be "
-                        "calculated. Enter the amount with its source page reference, or state nil where the line is "
-                        "not present in the report.", "Gail 8 Nov 16.32"),
+    "chk.r.missing": _e("Tidak ditemukan dalam laporan. Masukkan nilai dan rujukan halaman, atau nyatakan nihil.",
+        "Not found in the report. Enter the amount and page reference, or declare nil.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.miss.enter": _e("Masukkan nilai", "Enter amount", "Gail 8 Nov 16.32"),
     "chk.miss.nil": _e("Nihil", "Nil", "Gail 8 Nov 16.32"),
     "chk.miss.input": _e("Nilai tercatat {y}", "Recorded amount {y}", "Gail 8 Nov 16.32"),
@@ -1673,18 +1626,9 @@ CATALOG: dict = {
                         "tercetak di laporan.",
                         "Page number in the order of the PDF file (first page of the file = 1), not the page number "
                         "printed on the report.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
-    "chk.h.depreciation_amortization_non_ppe": _e(
-        "Pos ini hanya mencakup penyusutan properti investasi (model biaya), penyusutan aset yang tidak digunakan "
-        "atau dihentikan penggunaannya, dan amortisasi biaya jangka panjang (biaya ditangguhkan, hak atas tanah). "
-        "Penyusutan aset tetap dan aset hak-guna serta amortisasi aset takberwujud dicatat pada pos tersendiri. "
-        "Jangan memakai total penyusutan dan amortisasi dari informasi segmen, karena total tersebut sudah mencakup "
-        "pos-pos tersebut. Bila tidak ada, nilainya nihil.",
-        "This item covers only depreciation of investment property (cost model), depreciation of assets not in use "
-        "or retired from use, and amortisation of long-term costs (deferred charges, land rights). Depreciation of "
-        "PPE and right of use assets and amortisation of intangible assets are recorded under their own items. Do not "
-        "use the total depreciation and amortisation from the segment information, as that total already includes "
-        "those items. If there is none, the amount is nil.",
-        "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
+    "chk.h.depreciation_amortization_non_ppe": _e("Cakupan: penyusutan properti investasi (model biaya), penyusutan aset yang tidak digunakan atau dihentikan penggunaannya, dan amortisasi biaya jangka panjang (biaya ditangguhkan, hak atas tanah). Tidak termasuk: penyusutan aset tetap dan aset hak-guna, amortisasi aset takberwujud, dan total penyusutan dan amortisasi dalam informasi segmen.",
+        "Scope: depreciation of investment property (cost model), depreciation of assets not in use or retired from use, and amortisation of long-term costs (deferred charges, land rights). Excluded: depreciation of PPE and right-of-use assets, amortisation of intangible assets, and total depreciation and amortisation in segment information.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.err.page": _e("Isi halaman sumber untuk {item}.", "Enter the source page for {item}.",
                        "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
     "chk.err.note": _e("Isi dasar pernyataan nihil untuk {item}.", "Enter the basis for nil for {item}.",
@@ -1694,45 +1638,30 @@ CATALOG: dict = {
                           "The order of the year columns in the PDF text layer is inconsistent between lines (page "
                           "{pages}), so the XBRL amounts cannot be reliably agreed to the report. The score is not "
                           "calculated.", "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
-    "chk.r.risk": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris atau "
-                     "catatan. Pastikan seluruh komponen, termasuk liabilitas sewa dan aset hak-guna, telah tercakup "
-                     "dalam Pembacaan WARS.",
-                     "This line always requires verification because its presentation is often spread across several "
-                     "lines or notes. Confirm that all components, including lease liabilities and right of use "
-                     "assets, are captured in the WARS reading.", "Gail 8 Nov 12.50 (1C)"),
-    "chk.r.risk_debt": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris "
-                          "atau catatan. Pastikan seluruh komponen, termasuk liabilitas sewa dan pinjaman pihak berelasi "
-                          "yang dikenakan bunga, telah tercakup dalam Pembacaan WARS.",
-                          "This line always requires verification because its presentation is often spread across "
-                          "several lines or notes. Confirm that all components, including lease liabilities and "
-                          "interest-bearing loans from related parties, are captured in the WARS reading.",
-                          "Gail 11 Nov 09.43 (14 teks layar cek disetujui, dua bahasa)"),
-    "chk.r.risk_tax": _e("Pos ini selalu memerlukan verifikasi karena penyajiannya sering tersebar di beberapa baris "
-                         "atau catatan. Pastikan seluruh komponen, termasuk Pasal 25 dan Pasal 29, telah tercakup "
-                         "dalam Pembacaan WARS.",
-                         "This line always requires verification because its presentation is often spread across "
-                         "several lines or notes. Confirm that all components, including Article 25 and Article 29, "
-                         "are captured in the WARS reading.", "Gail 8 Nov 16.06 (1C, versi utang pajak)"),
-    "chk.r.risk_zero": _e("Nilai ini tidak ditemukan dalam laporan sehingga dihitung nol. Telaah catatan terkait; "
-                          "apabila nilai diungkapkan, termasuk dalam uraian naratif, masukkan nilai tersebut.",
-                          "This amount was not found in the report and is counted as nil. Review the related note; "
-                          "where the amount is disclosed, including in narrative text, enter that amount.",
-                          "Gail 8 Nov 12.50 (2A)"),
+    "chk.r.risk": _e("Pos berisiko: penyajiannya sering tersebar di beberapa baris atau catatan. Periksa kelengkapan komponen, termasuk liabilitas sewa dan aset hak-guna.",
+        "Risk item: often presented across several lines or notes. Check completeness, including lease liabilities and right-of-use assets.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "chk.r.risk_debt": _e("Pos berisiko: penyajiannya sering tersebar di beberapa baris atau catatan. Periksa kelengkapan komponen, termasuk liabilitas sewa dan pinjaman berbunga dari pihak berelasi.",
+        "Risk item: often presented across several lines or notes. Check completeness, including lease liabilities and interest-bearing related-party loans.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "chk.r.risk_tax": _e("Pos berisiko: penyajiannya sering tersebar di beberapa baris atau catatan. Periksa kelengkapan komponen, termasuk Pasal 25 dan Pasal 29.",
+        "Risk item: often presented across several lines or notes. Check completeness, including Articles 25 and 29.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
+    "chk.r.risk_zero": _e("Tidak ditemukan; dihitung nol. Bila diungkapkan dalam catatan, termasuk dalam narasi, masukkan nilainya.",
+        "Not found; counted as zero. Where disclosed in the notes, including in narrative, enter the amount.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "chk.r.single": _e("Nilai ini belum dapat direkonsiliasi dengan sumber kedua dalam laporan.",
                        "This amount could not be reconciled to a second source within the report.", "Gail 4 Nov 09.07"),
-    "note.assumed_am": _e(
-                           'Aset takberwujud tidak ditemukan pada bagian laporan yang dibaca. Untuk hasil sementara, amortisasinya dianggap 0. Periksa catatan atas laporan keuangan sebelum memakai hasil ini.',
-                           'No intangible assets were identified in the sections read. For the provisional result, their amortisation is assumed to be zero. Check the notes to the financial statements before relying on this result.',
-                           'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
+    "note.assumed_am": _e("Aset takberwujud tidak ditemukan pada bagian laporan yang dibaca; amortisasi dianggap 0 untuk hasil sementara. Periksa CALK.",
+        "No intangible assets found in the parts of the report read; amortisation is taken as 0 for the provisional result. Check the notes.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     "note.assumed_np": _e(
                            'Penyusutan dan amortisasi aset selain aset tetap: jumlah yang berhasil diekstrak ({source}) digunakan, tetapi kelengkapannya belum dapat dipastikan.',
                            'Depreciation and amortisation of assets other than PPE: the extracted amount ({source}) is used, but its completeness has not been established.',
                            'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
-    "note.assumed_np_zero": _e(
-                                'Penyusutan dan amortisasi aset selain aset tetap tidak ditemukan pada bagian laporan yang dibaca. Untuk hasil sementara, nilainya dianggap 0. Periksa catatan atas laporan keuangan sebelum memakai hasil ini.',
-                                'Depreciation and amortisation of assets other than PPE were not identified in the sections read. For the provisional result, they are assumed to be zero. Check the notes to the financial statements before relying on this result.',
-                                'Gail 11 Nov 12.12 (tinjauan teks, dua bahasa)'),
-
+    "note.assumed_np_zero": _e("Penyusutan dan amortisasi aset selain aset tetap tidak ditemukan pada bagian laporan yang dibaca; dianggap 0 untuk hasil sementara. Periksa CALK.",
+        "Depreciation and amortisation of assets other than PPE not found in the parts of the report read; taken as 0 for the provisional result. Check the notes.",
+        "Claude 12 Nov (nada auditor, singkat; permintaan Gail 12 Nov 15.25); menunggu Gail"),
     # ---------------------------------------------------------------- PDF report and Excel (new; awaiting review)
     "rep.title": _e("Red-flag Scanner Report", "Red-flag Scanner Report", "Gail 28 Okt report"),
     "rep.page": _e(

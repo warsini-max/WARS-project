@@ -479,6 +479,12 @@ def page_check():
                 + f'<div class="w-name" style="font-size:20px">{E(name)}</div>'
                 + f'<h1 class="w-h1" style="margin-top:14px">{E(T("chk.title", n=n))}</h1>'
                 + f'<p class="w-sub" style="max-width:760px">{E(T("chk.sub"))}</p>', unsafe_allow_html=True)
+    # a hold that comes from the document (e.g. unreadable year labels), not from the items below: shown before the
+    # review starts, because verifying the items cannot release it (Gail 12 Nov 2026 15.26)
+    pre = {f.code for f in r.errors}
+    if r.errors:
+        st.markdown(f'<div class="w-err" style="max-width:760px">{E(T("chk.held_doc", why=Raw(" ".join(R(f.message) for f in r.errors))))}</div>',
+                    unsafe_allow_html=True)
 
     left, right = st.columns([2.3, 1], gap="large")
     with left:
@@ -573,8 +579,9 @@ def page_check():
             if st.button(T("chk.calc"), type="primary", use_container_width=True, disabled=done < n, key="ck_calc"):
                 try:
                     r2 = check.apply(r, checks, ans)
-                    if r2.errors:
-                        raise check.AnswerError(Msg("chk.err.checks", msg=Raw("; ".join(R(f.message) for f in r2.errors))))
+                    new = [f for f in r2.errors if f.code not in pre]     # caused by the values entered
+                    if new:
+                        raise check.AnswerError(Msg("chk.err.checks", msg=Raw("; ".join(R(f.message) for f in new))))
                     ss.answers, ss.verified, ss.skipped = ans, True, False
                     ss.page = "result"
                     st.rerun()
