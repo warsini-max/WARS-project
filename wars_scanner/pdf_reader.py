@@ -92,6 +92,8 @@ class Extraction:
     number_format: str = "dot"                             # thousands separator of the figures: dot / comma / mixed
     currency: Optional[str] = None                         # IDR / USD from the statement headings; None = not read
     cross_checks: dict = field(default_factory=dict)       # rule 7: face figures found again elsewhere in the report
+    closing_cash: Optional[dict] = None                    # closing cash of the cash-flow statement, kept after reading
+    printed_labels: dict = field(default_factory=dict)     # (field, column) -> full printed label of a wrapped source line
 
 
 # ------------------------------------------------------------------------------------- parsing

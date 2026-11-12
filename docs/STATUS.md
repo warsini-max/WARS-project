@@ -5,8 +5,17 @@
 > redefined before stage 7; the engine matches workbook v0.7 r1 (same formulas as v0.6). Independent-user testing
 > has not been done. Current status and limitations: README.
 >
-> **12 Nov 2026 (dev branch, not yet on the guest app):** bearer plants (mature and immature) are PPE and their
-> depreciation is PPE depreciation (PSAK 216; decision 12 Nov 2026, workbook v0.7 r2 text pending review). Both paths;
+> **12 Nov 2026, second update (guest app):** texts of two reviews applied (app texts; RUNS FY2025 report output).
+> A line read as 0 because nothing was found in both years is now completed on the review screen as a missing line
+> (amount with page, or nil with the notes examined), not "agreed". The closing-cash check no longer reports
+> "not found" after Calculate (the app dropped the statement lines). The report shows the full printed label of a
+> wrapped source line, never a date or a line of figures. XBRL path: a final-tax line presented on its own on the
+> profit or loss face is not selling or G&A (RDTX 2022: 94.15 bn -> 43.20 bn, REVIEW; PSAK 212 ¶02, DK02-DK03 for the
+> nature of final tax; workbook SGA = selling + G&A as presented). Regression: see `WARS_Teks_Nada_Auditor_r1.md`
+> (project) and the register.
+>
+> **12 Nov 2026 (in the guest app since `e81e616`):** bearer plants (mature and immature) are PPE and their
+> depreciation is PPE depreciation (PSAK 216; decision 12 Nov 2026, workbook v0.7 r2 accepted 15.13). Both paths;
 > PPE and depreciation become REVIEW where bearer plants are present. The review card no longer reports a depreciation
 > conflict when the only source is the XBRL movement table. Regression over 85 non-case pairs: M changed only for the
 > 5 pairs with bearer plants (largest change 0.059), no zone change. 537 passed, 1 skipped.

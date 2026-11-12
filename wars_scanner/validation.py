@@ -46,10 +46,21 @@ def _g(p, f, c):
 
 
 def _cash_flow_closing_cash(ex):
-    """'Kas dan setara kas akhir tahun' from the cash-flow statement, {t, t1}."""
+    """'Kas dan setara kas akhir tahun' from the cash-flow statement, {t, t1}.
+
+    The first reading is kept on the extraction: the app drops the statement lines after reading (cache size), and
+    the checks run again when the review answers are applied. Without the kept reading the second run reported
+    'closing cash not found' next to the passed check of the first run (RUNS FY2025 report review, 12 Nov 2026)."""
     cf = ex.statements.get("cash_flow") if ex.statements else None
     if not cf:
-        return None, None
+        kept = getattr(ex, "closing_cash", None)
+        return (dict(kept), None) if kept else (None, None)
+    got, ln = _read_closing_cash(cf)
+    ex.closing_cash = dict(got) if got else None
+    return got, ln
+
+
+def _read_closing_cash(cf):
     for ln in cf.lines:
         lab = _norm(ln.full_label or ln.label)
         if re.search(r"(kas dan setara kas|kas dan bank).*akhir (tahun|periode)|akhir (tahun|periode)$", lab) \

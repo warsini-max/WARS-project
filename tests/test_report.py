@@ -30,12 +30,12 @@ def test_verdict_levels_and_language():
             assert not FORBIDDEN.search(head + detail)
             assert "1,49" not in head + detail and "1.49" not in head + detail
     head, _, _ = report.verdict(_result(-1.6, NEUTRAL), lang="en")
-    assert head == "M-score −1.60: crosses the −1.78 threshold"
+    assert head == "M-score −1.60 is above the −1.78 threshold"
     head, detail, _ = report.verdict(_result(-2.5, NEUTRAL))
-    assert head == "M-score −2,50: tidak melewati batas −1,78" and "Bukan jaminan" in detail
+    assert head == "M-score −2,50 berada di bawah ambang −1,78" and "risiko salah saji lainnya" in detail
     assert not FORBIDDEN.search(t("app.disclaimer")) and not FORBIDDEN.search(t("app.disclaimer", "en"))
     # disclaimer in professional English in both versions (Gail, 4 Nov 2026)
-    assert t("app.disclaimer") == t("app.disclaimer", "en") and "not constitute a conclusion of fraud" in t("app.disclaimer")
+    assert t("app.disclaimer") == t("app.disclaimer", "en") and "do not constitute an audit opinion or a determination of fraud" in t("app.disclaimer")
 
 
 def test_not_calculated_never_shows_a_score():
@@ -136,7 +136,7 @@ def test_finding_chart_uses_the_figures_behind_the_index():
     assert "12.5%" in ch["caption"] and "30.0%" in ch["caption"]
     r.inputs["revenue_t1"] = None
     assert finding_chart(r, "DSRI", "en") is None
-    assert compact_money(252448924906, "Units", "IDR", "id") == "Rp252,4 M"
+    assert compact_money(252448924906, "Units", "IDR", "id") == "Rp252,4 miliar"
     assert compact_money(-140738938560, "Units", "IDR", "en") == "−Rp140.7bn"
 
 

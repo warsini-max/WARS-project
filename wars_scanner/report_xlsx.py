@@ -83,7 +83,7 @@ def build(r, lang="id", file_name="", sha="", generated="") -> bytes:
         vt, vt1 = by.get((x["field"], "t")), by.get((x["field"], "t1"))
         num = lambda v: v.value if v is not None and isinstance(v.value, (int, float)) else None   # noqa: E731
         ws.append([x["label"].strip(), num(vt), num(vt1), x["status_t"], x["status_t1"], x["pages"],
-                   report.source_label(x["source"], lang), x["source"], x["note"]])
+                   x.get("label_src") or "", x["source"], x["note"]])
         i = ws.max_row
         for col, colour in ((2, x["colour_t"]), (3, x["colour_t1"])):
             if FILL[colour] is not None:

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from .parameters import COEFFICIENTS, THRESHOLDS
 from .pipeline import Result
-from .text import Money, Msg, Num, Pct, Psak, Raw, engine_reason, fmt_number, join, render, t
+from .text import Money, Msg, Num, Pct, Psak, Raw, engine_reason, fmt_number, join, keys_in, render, t
 
 INDEX_ORDER = ["DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI", "TATA"]
 SIGNIFICANT = ("DSRI", "GMI", "AQI", "SGI", "TATA")       # B r1 §3 / K7: only these get a finding
@@ -92,11 +92,30 @@ def status_label(status, lang="id"):
 
 # ----------------------------------------------------------------------------------- input table
 
+DA_COMPONENTS = ("ppe_depreciation_disclosed", "amortization_intangibles", "depreciation_amortization_non_ppe")
+
+
+def _shown_status(v, assumed_parts=False):
+    """A line the user completed on the review screen is shown as what the user did: declared nil with the notes
+    examined, or entered with a page reference; not as 'agreed' (RUNS FY2025 report review, item 2.1)."""
+    keys = keys_in(v.note) if isinstance(v.note, Msg) else set()
+    if v.status in ("USER CONFIRMED", "USER AMENDED") and "chk.prov.nil" in keys:
+        return "USER NIL"
+    if v.status in ("USER CONFIRMED", "USER AMENDED") and "chk.prov.entered" in keys:
+        return "USER ENTERED"
+    if v.status == "ASSUMED" and not v.value:
+        return "ASSUMED ZERO"
+    if v.status == "BUILT FROM DISCLOSED COMPONENTS" and assumed_parts:
+        return "BUILT WITH ASSUMED"
+    return v.status
+
+
 def input_rows(r: Result, lang="id"):
     """One row per field: value t, value t-1, colour per column, status text, pages, source line, remarks.
 
     Rule codes are not shown to the user (Gail 28 Oct 2026, report review)."""
     by = {(v.field, v.column): v for v in r.extraction.values}
+    keep_printed_labels(r)
     rows = []
     for f in FIELD_ORDER:
         cells = {c: by.get((f, c)) for c in ("t", "t1")}
@@ -108,10 +127,14 @@ def input_rows(r: Result, lang="id"):
             row[f"value_{c}"] = amount(v.value, lang) if v is not None else ""
             row[f"colour_{c}"] = STATUS_COLOUR.get(v.status, RED) if usable else (
                 YELLOW if v is not None and v.status in ("NOT DISCLOSED", "INCLUDED IN PPE") else RED)
-            row[f"status_{c}"] = status_label(v.status, lang) if v is not None else status_label("NOT SEARCHED", lang)
+            parts = f == "depreciation_amortization_total" and any(
+                (by.get((x, c)) is not None and by[(x, c)].status in ("ASSUMED", "UNDISCLOSED")) for x in DA_COMPONENTS)
+            row[f"status_{c}"] = status_label(_shown_status(v, parts), lang) if v is not None else \
+                status_label("NOT SEARCHED", lang)
         vt = cells["t"] or cells["t1"]
         row["pages"] = ", ".join(str(p) for p in sorted({p for v in cells.values() if v for p in v.pages}))
         row["source"] = (vt.quotes[0] if vt and vt.quotes else "")
+        row["label_src"] = printed_label(r, f, row["source"], lang) if row["source"] else ""
         row["components_t"] = render(cells["t"].components, lang) if cells["t"] else ""
         notes = list(dict.fromkeys(render(v.note, lang) for v in cells.values() if v and v.note))
         row["note"] = " | ".join(notes)
@@ -294,26 +317,28 @@ def finding(r: Result, k: str, confirm=None, lang="id"):
     m = lambda v: Money(v, unit, currency=ccy) if v is not None else Raw("—")        # noqa: E731
     push = next(x["push_vs_neutral"] for x in index_rows(r, lang) if x["index"] == k)
     idx, pu = Num(r.calc.get(k), 2), Num(push, 2, True)
+    yrs = dict(y_t=Raw(str(fy) if fy else "t"), y_t1=Raw(str(fy - 1) if fy else "t−1"))
     g = lambda f, c="t": _val(r, f, c)                                   # noqa: E731
     if k == "DSRI":
         a = Msg("f.DSRI", chg_ar=_chg(g("accounts_receivable"), g("accounts_receivable", "t1")),
                 chg_rev=_chg(g("revenue"), g("revenue", "t1")), ar_t1=m(g("accounts_receivable", "t1")),
                 ar_t=m(g("accounts_receivable")), p_ar=_page(r, "accounts_receivable"), p_rev=_page(r, "revenue"),
-                idx=idx, push=pu)
+                idx=idx, push=pu, **yrs)
     elif k == "GMI":
         gm = {c: (g("revenue", c) - g("cost_of_goods_sold", c)) / g("revenue", c)
               if g("revenue", c) and g("cost_of_goods_sold", c) is not None else None for c in ("t", "t1")}
         a = Msg("f.GMI_sign" if gm_nonpositive(r) else "f.GMI", gm_t1=Pct(gm["t1"]) if gm["t1"] is not None else Raw("—"),
-                gm_t=Pct(gm["t"]) if gm["t"] is not None else Raw("—"), p_rev=_page(r, "revenue"), idx=idx, push=pu)
+                gm_t=Pct(gm["t"]) if gm["t"] is not None else Raw("—"), p_rev=_page(r, "revenue"), idx=idx, push=pu, **yrs)
     elif k == "AQI":
         aq = {c: 1 - (g("current_assets", c) + g("property_plant_equipment_net", c)) / g("total_assets", c)
               if None not in (g("current_assets", c), g("property_plant_equipment_net", c)) and g("total_assets", c)
               else None for c in ("t", "t1")}
         a = Msg("f.AQI", aq_t1=Pct(aq["t1"]) if aq["t1"] is not None else Raw("—"),
-                aq_t=Pct(aq["t"]) if aq["t"] is not None else Raw("—"), p_ta=_page(r, "total_assets"), idx=idx, push=pu)
+                aq_t=Pct(aq["t"]) if aq["t"] is not None else Raw("—"), p_ta=_page(r, "total_assets"), idx=idx, push=pu,
+                **yrs)
     elif k == "SGI":
         a = Msg("f.SGI", chg_rev=_chg(g("revenue"), g("revenue", "t1")), rev_t1=m(g("revenue", "t1")),
-                rev_t=m(g("revenue")), p_rev=_page(r, "revenue"), idx=idx, push=pu)
+                rev_t=m(g("revenue")), p_rev=_page(r, "revenue"), idx=idx, push=pu, **yrs)
     else:  # TATA
         def d(f):
             a_, b_ = g(f), g(f, "t1")
@@ -357,11 +382,12 @@ SCALE = {"Units": 1, "Thousands": 1e3, "Millions": 1e6, "Billions": 1e9}
 
 
 def compact_money(v, unit, currency="IDR", lang="id"):
-    """Short amount for chart labels: Rp252,4 M / Rp252.4bn (unit of the report applied)."""
+    """Short amount for chart labels: Rp252,4 miliar / Rp252.4bn (unit of the report applied)."""
     if v is None:
         return "—"
     x = v * SCALE.get(unit or "Units", 1)
-    steps = {"id": ((1e12, " T"), (1e9, " M"), (1e6, " jt"), (1e3, " rb")),
+    # words, not 'M' (juta or miliar?), RUNS FY2025 report review, 12 Nov 2026, section 5 item 1
+    steps = {"id": ((1e12, " triliun"), (1e9, " miliar"), (1e6, " juta"), (1e3, " ribu")),
              "en": ((1e12, "tn"), (1e9, "bn"), (1e6, "m"), (1e3, "k"))}[lang]
     div, suf = next(((d, s_) for d, s_ in steps if abs(x) >= d), (1, ""))
     n = fmt_number(x / div, lang, 1 if div > 1 else 0)
@@ -621,6 +647,121 @@ def source_label(quote: str, lang="id"):
     return left or q
 
 
+_DATE = r"\d{1,2}\s+\w+\s+\d{4}"
+_TAIL_CAPS = ("DAN ", "TAHUN ", "PERIODE ")          # the second line of a wrapped capital label ('RUGI BERSIH / TAHUN BERJALAN')
+
+
+def _fragment(lab: str) -> bool:
+    """The label part of a source line is not an account name: empty, only figures or a date, or the tail of a
+    label wrapped over several lines (starts in lower case; RUNS FY2025 report review, 12 Nov 2026, item 2.3:
+    '31 Desember 2024' shown as the line item of fixed assets)."""
+    import re
+    s = re.sub(r"[\s().,/:;-]+", " ", lab or "").strip()
+    if not s or re.fullmatch(r"[\d ]+", s) or re.fullmatch(_DATE, s, re.I):
+        return True
+    if s[0].islower():
+        return True
+    return s.upper() == s and s.startswith(_TAIL_CAPS)
+
+
+def _label_start(full: str, tail: str) -> str:
+    """The printed label from the full wrapped label of a statement line: from the last word that starts a label
+    (capital letter, after a heading word in capitals, a note marker or the start) to the end, without the
+    accumulated-depreciation or allowance clause ('Aset tetap - setelah dikurangi akumulasi penyusutan sebesar
+    Rp… pada 31 Desember 2025 …' -> 'Aset tetap - setelah dikurangi akumulasi penyusutan')."""
+    import re
+    words = (full or "").split()
+    if not words or not " ".join(words).endswith(" ".join(tail.split())):
+        return ""
+    caps_tail = tail.upper() == tail
+    start = 0
+    for i, w in enumerate(words):
+        prev = words[i - 1] if i else ""
+        if caps_tail:
+            # a wrapped capital label: the run of capital words that ends with the tail
+            if not (w.isupper() or not re.search(r"[A-Za-z]", w)):
+                start = i + 1
+            continue
+        if w[:1].isupper() and not w.isupper() and (not prev or prev.isupper() or re.fullmatch(r"(?i)notes|catatan/?|\)|:", prev)
+                                                    or prev.endswith((")", ":"))):
+            start = i
+    out = " ".join(words[start:])
+    # headings and an English fragment of a bilingual line in front of the label ('Aset tidak lancar Aset tetap',
+    # 'Liabilitas Jangka Panjang Bagian utang ...', 'Property, plant and Aset tetap', '2022 PENJUALAN BERSIH')
+    lead = re.compile(r"^(?:(?:aset (?:tidak )?lancar|liabilitas (?:jangka (?:pendek|panjang)|(?:tidak )?lancar)|ekuitas|"
+                      r"\d{4}|[A-Z][a-z]+(?:,? [a-z]+)*)\s+)(?=(?:Aset|Piutang|Liabilitas|Bagian|Pinjaman|Utang|Kas|Arus|"
+                      r"Beban|Pendapatan|Penjualan|Laba|Rugi|Jumlah|Total|PENJUALAN|PENDAPATAN|BEBAN|LABA|RUGI|JUMLAH)\b)")
+    for _ in range(3):
+        new = re.sub(r"^(?i:aset (?:tidak )?lancar|liabilitas (?:jangka (?:pendek|panjang)|(?:tidak )?lancar)|ekuitas)\s+"
+                     r"(?=[A-Z])", "", out)
+        new = lead.sub("", new)
+        if new == out:
+            break
+        out = new
+    out = re.sub(r"\s+sebesar\b.*$", "", out)
+    out = re.sub(r"\s+(pada|per)\s+" + _DATE + r".*$", "", out, flags=re.I)
+    return out.strip(" ,-")
+
+
+def keep_printed_labels(r: Result):
+    """Store, for each value whose source line carries only the tail of a wrapped label, the full printed label of
+    that line from the statements. Run before the statement lines are dropped (app cache)."""
+    ex = r.extraction
+    sts = getattr(ex, "statements", None) or {}
+    if not sts:
+        return
+    lines = [ln for st in sts.values() for ln in st.lines if ln.amounts]
+    for v in ex.values:
+        if not v.quotes or not v.value or (v.field, v.column) in ex.printed_labels:
+            continue
+        lab = source_label(v.quotes[0], "id")
+        if not _fragment(lab):
+            continue
+        pg = set(v.pages or [])
+        hit = [ln for ln in lines if ln.page in pg and abs(ln.amounts.get(v.column, 0.5)) == abs(v.value)]
+        got = {_label_start(ln.full_label or "", ln.label or lab) for ln in hit}
+        if len(got) == 1:                   # one label for the amount on the page(s), never a choice between two
+            got = got.pop()
+            if got and not _fragment(got):
+                ex.printed_labels[(v.field, v.column)] = got
+
+
+def printed_label(r: Result, f: str, quote: str, lang="id"):
+    """The 'line item in the report' column: the printed label of the source line. A wrapped label is shown in
+    full when the statement line was found; a tail that cannot be completed is marked with '…'; a date or a line
+    of figures is never shown as a line item ('—')."""
+    lab = source_label(quote, lang)
+    if not _fragment(source_label(quote, "id")):
+        return lab
+    kept = getattr(r.extraction, "printed_labels", None) or {}
+    got = kept.get((f, "t")) or kept.get((f, "t1"))
+    if got:
+        return got
+    import re
+    s = re.sub(r"[\s().,/:;-]+", " ", source_label(quote, "id") or "").strip()
+    if not s or re.fullmatch(r"[\d ]+", s) or re.fullmatch(_DATE, s, re.I):
+        return "—"
+    return "…" + source_label(quote, "id")
+
+
+def user_check_text(r: Result, lang="id"):
+    """What the user did on the review screen, item by item kind: confirmed, amended, entered, declared nil
+    (RUNS FY2025 report review, 12 Nov 2026: a nil declaration is not 'confirmed as Agree')."""
+    uc = getattr(r, "user_checked", None) or []
+    by = {(v.field, v.column): v for v in r.extraction.values}
+    kind = {}
+    for f, c, s_, *_ in uc:
+        k = _shown_status(by[(f, c)]) if (f, c) in by else s_
+        k = {"USER NIL": "nil", "USER ENTERED": "entered", "USER AMENDED": "edit"}.get(k, "ok")
+        order = ("ok", "nil", "entered", "edit")
+        kind[f] = max(kind.get(f, "ok"), k, key=order.index)
+    n = {k: sum(1 for x in kind.values() if x == k) for k in ("ok", "edit", "entered", "nil")}
+    parts = [Msg("rep.box.p.ok", n=n["ok"])] if n["ok"] else []
+    parts += [Msg("rep.box.p.edit", n=n["edit"])] if n["edit"] else [Msg("rep.box.p.noedit")]
+    parts += [Msg(f"rep.box.p.{k}", n=n[k]) for k in ("entered", "nil") if n[k]]
+    return t("rep.box.user_done", lang, parts=join(parts, "; "))
+
+
 def user_check_state(r: Result):
     """('done', confirmed, amended) after the review screen; ('skipped', 0, 0); ('none', 0, 0) when no check ran."""
     uc = getattr(r, "user_checked", None) or []
@@ -639,6 +780,7 @@ def checklist_rows(r: Result, lang="id"):
     One row per review item with the value as read, its pages and its source line, so the user can
     open the page and tick Matches / Does not match."""
     by = {(v.field, v.column): v for v in r.extraction.values}
+    keep_printed_labels(r)
     fy = getattr(r.extraction, "fiscal_year", None)
     years = {"t": str(fy) if fy else "t", "t1": str(fy - 1) if fy else "t−1"}
     rows = []
@@ -652,7 +794,7 @@ def checklist_rows(r: Result, lang="id"):
         quote = next((v.quotes[0] for v in vals if v is not None and v.quotes), "")
         year = years.get(i["column"]) or t("col.both", lang, a=years["t"], b=years["t1"])
         rows.append({"no": n, "key": i["key"], "item": i["title"], "year": year, "value": value, "pages": pages,
-                     "why": i["why"], "source": source_label(quote, lang), "quote": quote,
+                     "why": i["why"], "source": printed_label(r, f, quote, lang) if quote else "", "quote": quote,
                      "assumed": any(v is not None and v.status == "ASSUMED" for v in vals)})
     return rows
 

@@ -329,7 +329,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
     used = [v for v in ex.values if v.field in report.FIELD_ORDER]
     n_found = sum(1 for v in used if v.status in ("FOUND", "USER SET"))
     ucs, n_ok, n_ed = report.user_check_state(r)
-    user_v = {"done": t("rep.box.user_done", lang, a=n_ok, b=n_ed), "skipped": t("rep.box.user_skipped", lang)}.get(
+    user_v = {"done": report.user_check_text(r, lang), "skipped": t("rep.box.user_skipped", lang)}.get(
         ucs, t("rep.box.user_v", lang))
     user_d = t("rep.box.user_done_d", lang) if ucs == "done" else t("rep.box.user_d", lang)
     boxes = [[[P(t("rep.box.figures", lang), "field"), P(t("rep.box.figures_v", lang, a=n_found, b=len(used)), "fieldv"),
@@ -467,7 +467,7 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         status = x["status_t"] if x["status_t"] == x["status_t1"] else f'{yt}: {x["status_t"]}; {yt1}: {x["status_t1"]}'
         rows.append([P(x["label"].strip(), "cell"), Paragraph(_x(x["value_t"]), S["cellm"]),
                      Paragraph(_x(x["value_t1"]), S["cellm"]), P(status, "cell"),
-                     P(x["pages"], "cell"), P(report.source_label(x["source"], lang), "cell")])
+                     P(x["pages"], "cell"), P(x.get("label_src") or "", "cell")])
         extra += [("BACKGROUND", (1, i), (1, i), CELL[x["colour_t"]]), ("BACKGROUND", (2, i), (2, i), CELL[x["colour_t1"]])]
     story.append(_table(rows, [40 * mm, 31 * mm, 31 * mm, 30 * mm, 11 * mm, W - 143 * mm], S, extra=extra))
 
