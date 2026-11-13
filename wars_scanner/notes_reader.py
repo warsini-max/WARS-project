@@ -497,6 +497,9 @@ ROU_DEP_TARGET = re.compile(r"^(beban|biaya|harga) (pokok|penjualan|pemasaran|um
                             r"produksi|operasi)")
 
 
+NOTE_REF_ONLY = re.compile(r"^\(?(catatan|note|notes|lihat catatan)\s*\d+[a-z]?\)?$")
+
+
 def rou_depreciation_lines(cache, first_note_page):
     """Returns (values {t, t1}, page, quote, reconciled) or None."""
     for p in cache.pages_matching(ROU_WORDS.pattern, start=first_note_page):
@@ -504,17 +507,28 @@ def rou_depreciation_lines(cache, first_note_page):
         for i, ln in enumerate(lines):
             if ln.amounts or not ROU_DEP_HEAD.match(_norm(ln.label)):
                 continue
-            parts = []
-            for nxt in lines[i + 1:i + 8]:
+            parts, quotes = [], []
+            k = i + 1
+            while k < min(len(lines), i + 10):
+                nxt = lines[k]
                 if {"t", "t1"} <= set(nxt.amounts) and ROU_DEP_TARGET.match(_norm(nxt.label)):
                     parts.append(nxt)
+                    quotes.append(nxt.text[:60])
+                    k += 1
+                elif (not nxt.amounts and ROU_DEP_TARGET.match(_norm(nxt.label)) and k + 1 < len(lines)
+                      and {"t", "t1"} <= set(lines[k + 1].amounts) and NOTE_REF_ONLY.match(_norm(lines[k + 1].label))):
+                    # an expense line wrapped onto its note reference: 'Beban umum dan administrasi' / '(Catatan 32)
+                    # 14.865 ...' (SPTO 2022: only the cost-of-revenue line was taken, 3.772 of 18.638 bn)
+                    parts.append(lines[k + 1])
+                    quotes.append((nxt.label.strip() + " " + lines[k + 1].text.strip())[:80])
+                    k += 2
                 else:
                     break
             if not parts:
                 continue
             got = {c: sum(abs(x.amounts[c]) for x in parts) for c in ("t", "t1")}
             rec = all(_movement_additions(cache, {"page": p}, got[c]) is not None for c in ("t", "t1") if got[c])
-            return got, p, " / ".join(x.text[:60] for x in parts), rec
+            return got, p, " / ".join(quotes), rec
     return None
 
 

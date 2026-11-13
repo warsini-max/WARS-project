@@ -321,3 +321,23 @@ def test_lease_liability_movement_is_not_rou_depreciation():
     page = [_ln("13. ASET HAK-GUNA DAN LIABILITAS SEWA (Lanjutan)"), _ln("Beban penyusutan aset hak-guna"),
             _ln("Saldo awal", 8935, 2694), _ln("Penambahan tahun berjalan", 10886, 0), _ln("Jumlah", 13945, 8935)]
     assert nr.rou_depreciation_lines(FakeCache({1: page}, text={1: "aset hak-guna"}), 1) is None
+
+
+def test_rou_depreciation_line_wrapped_onto_its_note_reference():
+    """SPTO 2022: 'Beban umum dan administrasi' / '(Catatan 32) 14.865.880.466 15.228.433.752'; only the cost-of-revenue
+    line (3.772) was taken before. The ROU total 18.638 / 19.434 bn is in the ROU movement table."""
+    page = [_ln("12. SEWA (lanjutan)"), _ln("Beban penyusutan aset hak guna"),
+            _ln("Beban pokok pendapatan (Catatan 30)", 3772464101, 4205146938), _ln("Beban umum dan administrasi"),
+            _ln("(Catatan 32)", 14865880466, 15228433752), _ln("Beban bunga liabilitas sewa", 8907123468, 9680967493)]
+    got = nr.rou_depreciation_lines(FakeCache({1: page}, text={1: "aset hak guna"}), 1)
+    assert got is not None and got[0] == {"t": 18638344567, "t1": 19433580690}
+    assert "Beban umum dan administrasi (Catatan 32)" in got[2]
+    # must NOT: a wrapped label whose next line is not a bare note reference (a total, another item)
+    for nxt in (_ln("Jumlah", 14865880466, 15228433752), _ln("Beban bunga liabilitas sewa", 8907123468, 9680967493)):
+        page2 = page[:4] + [nxt]
+        got = nr.rou_depreciation_lines(FakeCache({1: page2}, text={1: "aset hak guna"}), 1)
+        assert got[0] == {"t": 3772464101, "t1": 4205146938}
+    # must NOT: a label-only line that is not an expense line (short-term lease cost)
+    page3 = page[:3] + [_ln("Sewa jangka pendek"), _ln("(Catatan 33)", 5, 6)]
+    got = nr.rou_depreciation_lines(FakeCache({1: page3}, text={1: "aset hak guna"}), 1)
+    assert got[0] == {"t": 3772464101, "t1": 4205146938}
