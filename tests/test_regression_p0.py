@@ -68,3 +68,20 @@ def test_reg_ctth22_not_assessed_line_has_a_card():
     for f in na & set(gate.GATE_FIELDS):
         assert f in cards and cards[f].mode == "missing", f
     assert r.gate.ok
+
+
+def test_reg_ledger_in_the_app_is_shadow_only():
+    """P0-2 (K6): app.analyse attaches the evidence ledger; values, statuses, cards and the score equal the run
+    without the ledger."""
+    import warnings
+    warnings.filterwarnings("ignore")
+    r0, its0 = _pair("Tahap 9", "HOPE", 2025)
+    import app
+    d = os.path.join(DATA, "WARS_Trial_XBRL_Tahap 9")
+    r, its = app.analyse.__wrapped__(open(os.path.join(d, "HOPE_LK_2025.pdf"), "rb").read(),
+                                     open(os.path.join(d, "HOPE_instance_2025.zip"), "rb").read())
+    assert r.ledger and not getattr(r, "ledger_error", None)
+    assert {(x["field"], x["column"]) for x in r.ledger} >= {("revenue", "t"), ("long_term_debt", "t1")}
+    key = lambda res: [(v.field, v.column, v.value, v.status) for v in res.extraction.values]   # noqa: E731
+    assert key(r) == key(r0) and r.m_score == r0.m_score and r.gate_block == r0.gate_block
+    assert [(i.field, i.mode) for i in its] == [(i.field, i.mode) for i in its0]
