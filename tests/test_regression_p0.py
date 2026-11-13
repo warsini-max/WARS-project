@@ -85,3 +85,31 @@ def test_reg_ledger_in_the_app_is_shadow_only():
     key = lambda res: [(v.field, v.column, v.value, v.status) for v in res.extraction.values]   # noqa: E731
     assert key(r) == key(r0) and r.m_score == r0.m_score and r.gate_block == r0.gate_block
     assert [(i.field, i.mode) for i in its] == [(i.field, i.mode) for i in its0]
+
+
+def _ledger(stage, tk, year, path):
+    from wars_scanner import ledger
+    r, its = _pair(stage, tk, year)
+    d = os.path.join(DATA, f"WARS_Trial_XBRL_{stage}")
+    pages = xbrl_pipeline.pdf_pages(os.path.join(d, f"{tk}_LK_{year}.pdf"))
+    rr = r if path == "X" else xbrl_pipeline.run(open(os.path.join(d, f"{tk}_instance_{year}.zip"), "rb").read(),
+                                                 os.path.join(d, f"{tk}_LK_{year}.pdf")).pdf
+    return {(x["field"], x["column"]): x for x in ledger.build(rr, pages, path)}
+
+
+def test_reg_apex25_sga_from_the_tag_is_not_found_in_the_ledger():
+    # P0-3 (shadow): selling + G&A from the XBRL tags, printed on 'Beban langsung' / 'Beban usaha' (APEX 2025)
+    rows = _ledger("Tahap 9", "APEX", 2025, "X")
+    for c in ("t", "t1"):
+        x = rows[("selling_general_administrative_expenses", c)]
+        assert x["status_old"] == "FOUND" and x["status_proposed"] == "REVIEW", x
+
+
+def test_reg_mtla25_pdf_partial_sga_and_deferred_tax_rou():
+    # P0-4 (shadow): marketing alone, reprinted in its note, is not complete (MTLA 2025, PDF path)
+    rows = _ledger("Tahap 9", "MTLA", 2025, "P")
+    for c in ("t", "t1"):
+        x = rows[("selling_general_administrative_expenses", c)]
+        assert x["status_proposed"] == "REVIEW" and x["reason"].startswith("K5-A"), x
+    rou = rows.get(("rou_assets_net", "t"))
+    assert rou is None or rou["value"] != 598           # must NOT: 'Aset hak guna (598)' of the deferred tax table

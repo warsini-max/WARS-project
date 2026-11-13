@@ -1157,6 +1157,7 @@ def non_ppe_evidence(cache, first_note_page, invprop_table, statements=None):
 # ------------------------------------------------------------------------------ main entry
 
 ROU_WORDS = re.compile(r"(?i)hak[ -]guna|hak untuk menggunakan aset|hak pakai|right[ -]of[ -]use")
+DEFERRED_TAX = re.compile(r"(?i)pajak tangguhan|deferred tax")
 
 
 def _val(values, f, c):
@@ -1257,8 +1258,13 @@ def read_notes(cache, statements, face_values):
     elif not face_rou:
         found = None
         for p in cache.pages_matching(r"(?i)hak untuk menggunakan aset|aset hak guna|aset hak-guna|right-of-use", start=first_note):
-            for ln in cache.lines(p):
+            lns = cache.lines(p)
+            for i, ln in enumerate(lns):
                 if re.search(r"^(hak untuk menggunakan aset|aset hak guna|aset hak-guna)", _norm(ln.label)) and _complete(ln):
+                    # must NOT: a right-of-use line of the deferred tax table (temporary difference, not the asset;
+                    # MTLA 2025: 'Aset hak guna (598)' under 'Rincian aset (liabilitas) pajak tangguhan')
+                    if any(DEFERRED_TAX.search(x.label or "") for x in lns[max(0, i - 15):i]):
+                        continue
                     found = ln
                     break
             if found:
