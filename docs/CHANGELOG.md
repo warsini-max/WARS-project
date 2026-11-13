@@ -43,3 +43,27 @@ Each entry says what was **approved**, what is **implemented**, what is **tested
     proposed REVIEW. **Not independent:** the corroboration rules were tuned on Tahap 6-9.
 - **Open:** operational use of the proposed statuses (next P0 stages); K2-R1..R3 (`WARS_K2_Conflict_Map_r0.md`) need
   explicit authorisation.
+
+### Feedback and Suggestions (PDF report)
+
+- **Approved:** Gail 13 Nov 2026 17.23 (wording EN and ID, to be used exactly).
+- **Implemented (`1604f95`):** `rep.feedback.title` / `rep.feedback.body`; section after the disclaimer on the last page.
+  No new link: the footer envelope icon already links to `mailto:` + `CONTACT_EMAIL` (same value as `app.py`).
+- **Tested:** `tests/test_report_feedback.py` 8 passed; page counts unchanged for 5 reports x 2 languages.
+- **Open:** the ID footer label is "Hubungi kami" while the approved text says "Contact Us" (Gail to decide).
+
+### Right-of-use asset not from the deferred tax table (`e9dd578`)
+
+- **Problem:** MTLA 2025 (PDF path) PPE included 'Aset hak guna (598)' from the deferred tax breakdown.
+- **Implemented:** candidate lines under a deferred tax heading are skipped (`notes_reader`).
+- **Tested:** REG-MTLA25-PDF; regression: only MTLA 2025 changes (PPE 839,194 -> 838,596 in the PDF path;
+  M -0.22160 -> -0.22159).
+
+### P0-3 / P0-4 – shadow acceptance sets (`e51ec9d`)
+
+- **Approved:** K1 = B, K5 = A (Gail 13 Nov 2026 16.46).
+- **Implemented:** POS-X1..X3, NEG-X1..X7, POS-A1..A2, NEG-A1..A5 as ledger unit tests; C-LAB uses line amounts only;
+  labels wrapped below the amounts.
+- **Tested:** test_ledger 20 passed; full suite 605 passed, 1 skipped; ledger_compare 0 K6 violations.
+- **Open:** card-increase threshold (criterion of P0-3, not yet set); P0-5 (operational `decide`) needs Gail's review
+  of the differences; NEG-A6/A7 belong to the depreciation reader (P1).
