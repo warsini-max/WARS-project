@@ -437,7 +437,7 @@ def test_rou_depreciation_page_lrna_2025():
 
 
 def test_rou_untagged_note_kept_off_conflict_and_component_cards():
-    # SPTO 2021: depreciation already REVIEW (single source) must still name missing right-of-use depreciation;
+    # SPTO 2022: depreciation already REVIEW (single source) must still name missing right-of-use depreciation;
     # CMNP (ROU split known) and DIVA (conflict with the XBRL movement) keep their own cards
     import inspect
     from wars_scanner import xbrl_pipeline as XP

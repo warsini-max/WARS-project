@@ -418,7 +418,7 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
         if p not in pages["bs"] and p not in pages["pl"]:
             continue
         # the label of a wrapped line: 'Aset hak guna - setelah dikurangi' / 'akumulasi penyusutan 12 115.299 ...'
-        # (SPTO 2021: the amount line alone names no family; right-of-use assets tagged as other financial assets
+        # (SPTO 2022: the amount line alone names no family; right-of-use assets tagged as other financial assets
         # went into PPE as FOUND). Only for an amount line that starts in lower case (a continuation), from at most
         # two label-only lines directly above on the same page.
         if held_p != p:

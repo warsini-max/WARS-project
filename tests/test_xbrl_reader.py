@@ -485,7 +485,7 @@ def test_stage8_rounding_difference_uses_the_printed_figure():
 
 
 def test_rule2_rou_label_wrapped_onto_the_amount_line():
-    # SPTO 2021 lesson: 'Aset hak guna - setelah dikurangi' / 'akumulasi penyusutan 12 115.299 ...'; the amount line
+    # SPTO 2022 lesson: 'Aset hak guna - setelah dikurangi' / 'akumulasi penyusutan 12 115.299 ...'; the amount line
     # alone names no family and right-of-use assets tagged as other financial assets went into PPE as FOUND
     wrap = "Aset hak guna - setelah dikurangi Right of use assets - net of\nakumulasi penyusutan 12 290 865 accumulated depreciation"
     bs = BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + wrap)

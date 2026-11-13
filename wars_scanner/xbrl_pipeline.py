@@ -473,8 +473,8 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
         covered = c in parts or bool(alloc and x_dep is not None and with_rou)   # ROU depreciation already in view
         conflict = "xbrl movement" in note.lower()                              # the card names the conflict
         if rou_untagged and (st == "FOUND" or not (covered or conflict)):
-            # also when the figure is already REVIEW for another reason (SPTO 2021: single source; the card then said
-            # nothing about right-of-use depreciation, 39.995 / 40.534 bn, missing from the figure)
+            # also when the figure is already REVIEW for another reason (SPTO 2022: single source; the card then said
+            # nothing about consolidated right-of-use depreciation, 18.638 / 19.434 bn (note 12), missing from the figure)
             st = "REVIEW"
             note = "; ".join(x for x in (note, "right-of-use assets on the face are not tagged in XBRL; their "
                                                "depreciation may be missing") if x)

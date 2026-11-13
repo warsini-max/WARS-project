@@ -418,7 +418,7 @@ def _reason(f, note, findings, r):
     label = re.sub(r"[\d.,()\s-]+$", "", re.sub(r"\s\d[\d.,a-z]*\s.*$", "", line)).strip() if line else ""
     if hit.get("wrapped"):
         # a label wrapped over two lines of a two-language face: the raw lines mix both languages; the statement
-        # line read by the PDF reader (same page, same amounts) holds the Indonesian label alone (SPTO 2021)
+        # line read by the PDF reader (same page, same amounts) holds the Indonesian label alone (SPTO 2022)
         label = _statement_label(r, hit.get("page"), hit.get("amounts") or []) or label
     if f == "taxes_payable" and ("pendekatan" in note_l or "d-03g" in note_l):
         return Msg("chk.r.tax_proxy"), []
