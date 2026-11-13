@@ -507,3 +507,13 @@ def test_rule2_rou_label_wrapped_onto_the_amount_line():
     assert not [x for x in run(instance(base={"OtherNonCurrentFinancialAssets": (290, 865)}),
                                [BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + gap), PL, NOTE])["face_findings"]
                 if x["family"] == "rou"]
+    # must NOT: a label-only line above the label that the amount line continues (JAST 2025)
+    two = "Utang sewa guna Lease liabilities\nLiabilitas\nimbalan kerja 23 290 865"
+    assert not [x for x in run(instance(base={"OtherNonCurrentFinancialAssets": (290, 865)}),
+                               [BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + two), PL, NOTE])["face_findings"]
+                if x["family"] == "debt" and x.get("wrapped")]
+    # must NOT: a note sentence ending with a date (the year is not an amount; PURI 2022)
+    sent = "Utang pihak berelasi merupakan pinjaman modal kerja,\njangka waktu sampai dengan 31 Agustus 2025."
+    assert not [x for x in run(instance(), [BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + sent), PL, NOTE])
+                ["face_findings"] if x.get("wrapped")]
+

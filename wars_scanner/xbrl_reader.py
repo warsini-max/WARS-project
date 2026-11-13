@@ -428,7 +428,12 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
             held = (held + [ln.strip()])[-2:] if ln.strip() else []
             label = ln
         else:
-            label = (" ".join(held) + " " + ln) if held and ln.strip()[:1].islower() else ln
+            # from the last held line that starts a label (capital): 'Utang sewa guna' / 'Liabilitas' / 'imbalan kerja
+            # 23 7.324 ...' is 'Liabilitas imbalan kerja' (JAST 2025). A year alone is not an amount ('... sampai dengan
+            # 31 Agustus 2025.' in a note sentence, PURI 2022)
+            start = max((i for i, h in enumerate(held) if h[:1].isupper()), default=None)
+            real = [x for x in n if x >= 100 and not 1900 <= x <= 2100]
+            label = (" ".join(held[start:]) + " " + ln) if start is not None and real and ln.strip()[:1].islower() else ln
             held = []
         # a wrapped current-maturities heading ('Bagian liabilitas jangka panjang' / 'yang jatuh tempo dalam satu
         # tahun' on the next line) is not the non-current heading (XBRL stage 6, finding A: SOHO 2022)
