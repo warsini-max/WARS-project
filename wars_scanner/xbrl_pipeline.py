@@ -430,6 +430,10 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     xall = {c: _xbrl_dep(xr, c) for c in ("t", "t1")}
     alloc = allocation_total(lines, xr["face_pages"], own["t"], own["t1"], xall["t"], xall["t1"])
     parts = {}
+    # ROU depreciation the PDF reader proved (FOUND: printed lines under the ROU-depreciation heading, the sum found
+    # again in the ROU movement table), for an allocation table of owned PPE only (SPTO 2022)
+    rou_pdf = {v.column: abs(v.value) for v in pr.extraction.values
+               if v.field == "rou_depreciation" and v.status == "FOUND" and v.value}
     for c in ("t", "t1"):
         with_rou = False
         pdf_dep = pr.inputs.get(f"ppe_depreciation_disclosed_{c}")
@@ -446,6 +450,12 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
                 st, src, note = "FOUND", "PDF notes = allocation table", ""
             elif pdf_dep is not None and abs(pdf_dep - a_dep) <= 1:
                 st, src, note = "REVIEW", "PDF notes = allocation table", f"XBRL movement table gives {x_dep:,.0f}"
+            elif not with_rou and c not in parts and rou_pdf.get(c) and pdf_dep is not None \
+                    and abs(pdf_dep - (a_dep + rou_pdf[c])) <= 1:
+                # owned (allocation table) + ROU depreciation read and proved in the PDF notes; REVIEW: the review
+                # step shows both components (dep_parts)
+                parts[c] = (a_dep, rou_pdf[c])
+                st, src, note = "REVIEW", "PDF allocation table + ROU depreciation (PDF notes)", ""
             elif same and not fxv and (pdf_dep is None or abs(pdf_dep - x_dep) <= 1):
                 pdf_dep, st, src, note = x_dep, "FOUND", "XBRL movement = PDF allocation table", ""
             else:
