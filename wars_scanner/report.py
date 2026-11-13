@@ -538,6 +538,9 @@ def verdict(r: Result, confirm=None, lang="id", reviewer="", provisional_note=Tr
     m = r.m_score
     if getattr(r, "verification_skipped", False):        # Gail 4 Nov 2026: the review step was skipped
         return t("v.withheld", lang), t("chk.skipped", lang), "none"
+    if getattr(r, "gate_block", None):                    # P0-1 (INV-10): inputs that need the user have no card
+        names = sorted({title(f, lang) for f, _c, _s in r.gate_block if f"label.{f}" in _labels()})
+        return t("v.withheld", lang), t("v.held_gate", lang, items=Raw(", ".join(names))), "none"
     inv = (getattr(r.extraction, "non_ppe_evidence", None) or {}).get("invprop_face")
     if m is None and r.status == "AWAITING NON-PPE STATUS" and inv:
         return (t("v.withheld", lang), t("v.held_invprop", lang, p=inv["page"], years=_years(r.non_ppe_pending, lang)),

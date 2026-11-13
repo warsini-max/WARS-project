@@ -513,6 +513,9 @@ CATALOG: dict = {
 
     # ---------------------------------------------------------------- verdicts (B r1 §6, r1/C6 7.x)
     "v.withheld": _e("M-score ditahan", "M-score withheld", "r1 9.8"),
+    "v.held_gate": _e("Pos berikut memerlukan pemeriksaan pengguna, tetapi belum tersedia pada langkah pengecekan: {items}. M-score tidak ditampilkan sampai pos tersebut diperiksa.",
+        "The following items require the user's check but are not available in the review step: {items}. The M-score is not shown until they are checked.",
+        "P0-1 score gate (Gail 13 Nov 16.46); disusun Claude; menunggu Gail"),
     "v.held_nonppe": _e('Status penyusutan dan amortisasi selain aset tetap untuk {years} belum ditetapkan. Tetapkan status pada bagian “{section}”. Sistem tidak menetapkan status secara otomatis.',
         'The status of depreciation and amortisation other than PPE for {years} has not been set. Set the status in the “{section}” section. The system does not set the status automatically.',
         'Review r1 nada profesional (Gail 12 Nov 15.43); diterapkan Claude; menunggu Gail'),

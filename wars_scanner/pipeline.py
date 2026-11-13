@@ -11,7 +11,7 @@ import copy
 
 from dataclasses import dataclass, field, replace
 
-from . import company, engine, validation
+from . import company, engine, gate, validation
 from .parameters import NON_PPE_STATUSES
 from .pdf_reader import Extraction, read
 from .text import Amt, Msg, Pages, Raw, join
@@ -39,6 +39,7 @@ class Result:
     amort_decisions: dict = field(default_factory=dict)  # M-15: amortisation status set by the user, per year
     assumed: list = field(default_factory=list)       # (field, column, note): provisional assumptions (28 Oct 2026)
     issuer: object = None                             # company.Issuer when the header matches the master list
+    gate_block: list = field(default_factory=list)    # P0-1: inputs that need the user and have no card (gate.enforce)
 
     @property
     def m_score_raw(self):
@@ -51,8 +52,9 @@ class Result:
 
     @property
     def m_score(self):
-        """The score as shown to the user: none when a cross-check is ERROR (workbook m_score_usable = N)."""
-        return self.m_score_raw if not self.errors else None
+        """The score as shown to the user: none when a cross-check is ERROR (workbook m_score_usable = N), and none
+        when the score gate found an input that needs the user and has no card (P0-1, INV-10)."""
+        return self.m_score_raw if not self.errors and not self.gate_block else None
 
     @property
     def non_ppe_pending(self):
@@ -75,6 +77,8 @@ class Result:
             return "NOT CALCULATED"
         if self.errors:
             return "NOT USABLE (cross-check error)"
+        if self.gate_block:
+            return "WITHHELD (inputs not covered by the review step)"
         if self.review or any(f.severity == "REVIEW" for f in self.flags):
             return "PROVISIONAL (inputs to check)"
         return "CALCULATED"
@@ -139,7 +143,9 @@ def run(pdf_path, ticker: str = "UPLOAD") -> Result:
     flags = validation.check(p, ex) if not unreadable else []
     passed = validation.passed_checks(p, ex) if not unreadable else []
     issuer, _ = company.identify(company.header_text(ex.statements))
-    return Result(ex, p, calc, review, missing, assumptions, unreadable, flags, passed, issuer=issuer)
+    r = Result(ex, p, calc, review, missing, assumptions, unreadable, flags, passed, issuer=issuer)
+    gate.normalize(r)                                 # INV-3 (P0-1)
+    return r
 
 
 # ------------------------------------------------------------------------------ M-06 (approved 22 Oct 2026)
@@ -340,7 +346,9 @@ def apply_provisional(r: Result) -> Result:
     else:
         r = replace(r, calc=engine.calculate(p),
                     flags=validation.check(p, None) + [f for f in r.flags if f.code.startswith(validation.EXTRACTION_ONLY)])
-    return replace(r, assumed=assumed)
+    r = replace(r, assumed=assumed)
+    gate.normalize(r)                                 # INV-3 (P0-1)
+    return r
 
 
 def apply_user_decisions(r: Result, non_ppe: dict, amort: dict) -> Result:

@@ -17,7 +17,7 @@ import io
 import re
 from dataclasses import dataclass, field
 
-from . import company, engine, validation
+from . import company, engine, gate, validation
 from .pdf_reader import Value
 from .text import Amt, Msg, Psak, Raw, join
 
@@ -141,6 +141,7 @@ def merge_xbrl(pr, xres):
               "dep_parts": (xres.xbrl or {}).get("dep_parts") or {},
               "sga_final_tax": (xres.xbrl or {}).get("sga_final_tax"),
               "parts": _sum_parts(xres)}
+    gate.normalize(r)                    # INV-3 (P0-1): a value of None is never REVIEW (XBRL stage 9: HOPE 2025)
     return r
 
 
@@ -323,7 +324,12 @@ def items(r) -> list:
             continue
         vals = {c: r.inputs.get(f"{f}_{c}") for c in ("t", "t1")}
         if any(v is None for v in vals.values()):
-            continue                                   # handled below as a missing line
+            # a line to check without a value in one year is completed like a missing line, never dropped
+            # (INV-4, P0-1; XBRL stage 9: HOPE 2025 PPE depreciation 2025 had no card and the score could not be completed)
+            pages = sorted({pg for v in r.extraction.values if v.field == f for pg in (getattr(v, "pages", None) or [])})
+            out.append(CheckItem(f, vals, Msg("chk.r.missing" if f in NIL_FIELDS else "chk.r.missing_val"), pages, [], [],
+                                 mode="missing"))
+            continue
         if cols:
             note = " ".join(str(rev[(f, c)]) for c in cols)
             reason, labels = _reason(f, note, findings, r)
@@ -550,6 +556,8 @@ def apply(r, checks, answers):
     replaced = set((getattr(r2, "xbrl", None) or {}).get("found", set())) | done
     r2.flags = _drop_pdf_reading_checks(r2.flags, replaced) + [f for f in (r.flags or []) if f.code == LAYOUT_FLAG]
     r2.user_checked = checked
+    r2.gate_block = []
+    gate.enforce(r2, items(r2))          # INV-1/INV-2/INV-10 (P0-1): every input checked or the score is withheld
     return r2
 
 

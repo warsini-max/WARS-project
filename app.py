@@ -20,7 +20,7 @@ import tempfile
 
 import streamlit as st
 
-from wars_scanner import check, pipeline, report, report_pdf, report_xlsx, xbrl_pipeline
+from wars_scanner import check, gate, pipeline, report, report_pdf, report_xlsx, xbrl_pipeline
 from wars_scanner.report import NEUTRAL_M, THRESHOLD, dec
 from wars_scanner.text import CATALOG, Msg, Num, Raw, fmt_number, render, t, unit_msg
 
@@ -274,6 +274,7 @@ def analyse(data: bytes, xdata: bytes | None = None):
             r = pipeline.apply_provisional(pipeline.run(path, "UPLOAD"))
     checks = check.items(r)
     check.annotate(r, checks)
+    gate.enforce(r, checks)               # P0-1: an input that needs the user and has no card withholds the score
     report.keep_printed_labels(r)         # wrapped labels of the source lines, before the lines are dropped
     r.extraction.statements = {}          # not needed after reading; keeps the cache small
     return r, checks
