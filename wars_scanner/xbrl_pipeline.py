@@ -431,6 +431,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
     alloc = allocation_total(lines, xr["face_pages"], own["t"], own["t1"], xall["t"], xall["t1"])
     parts = {}
     for c in ("t", "t1"):
+        with_rou = False
         pdf_dep = pr.inputs.get(f"ppe_depreciation_disclosed_{c}")
         x_dep = _xbrl_dep(xr, c)
         if alloc and x_dep is not None:
@@ -469,8 +470,14 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
                 am = p.get(f"amortization_intangibles_{c}") or 0
                 npp = p.get(f"depreciation_amortization_non_ppe_{c}") or 0
                 p[f"depreciation_amortization_total_{c}"] = pdf_dep + am + npp
-        if st == "FOUND" and rou_untagged:
-            st, note = "REVIEW", "right-of-use assets on the face are not tagged in XBRL; their depreciation may be missing"
+        covered = c in parts or bool(alloc and x_dep is not None and with_rou)   # ROU depreciation already in view
+        conflict = "xbrl movement" in note.lower()                              # the card names the conflict
+        if rou_untagged and (st == "FOUND" or not (covered or conflict)):
+            # also when the figure is already REVIEW for another reason (SPTO 2021: single source; the card then said
+            # nothing about right-of-use depreciation, 39.995 / 40.534 bn, missing from the figure)
+            st = "REVIEW"
+            note = "; ".join(x for x in (note, "right-of-use assets on the face are not tagged in XBRL; their "
+                                               "depreciation may be missing") if x)
         items.append(Item("ppe_depreciation_disclosed", c, pdf_dep, st, src, note))
     # the two components and their pages, so that the review step shows both (LRNA 2025, Gail 11 Nov 13.11: the
     # extract showed only the allocation table, and the sum looked different from the PDF)

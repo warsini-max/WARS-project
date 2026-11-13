@@ -434,3 +434,13 @@ def test_rou_depreciation_page_lrna_2025():
     assert rou_dep_page(lines[:2], pages, 2562198610, 2038790000) is None
     face = [(14, "Aset hak guna 2.562.198.610 2.038.790.000", {2562198610, 2038790000})]
     assert rou_dep_page(face, pages, 2562198610, 2038790000) is None
+
+
+def test_rou_untagged_note_kept_off_conflict_and_component_cards():
+    # SPTO 2021: depreciation already REVIEW (single source) must still name missing right-of-use depreciation;
+    # CMNP (ROU split known) and DIVA (conflict with the XBRL movement) keep their own cards
+    import inspect
+    from wars_scanner import xbrl_pipeline as XP
+    src = inspect.getsource(XP.run)
+    assert "covered = c in parts" in src and 'conflict = "xbrl movement" in note.lower()' in src
+    assert 'if rou_untagged and (st == "FOUND" or not (covered or conflict)):' in src

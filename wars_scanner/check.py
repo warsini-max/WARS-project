@@ -394,12 +394,32 @@ def _face_pages(r, f):
     return list(loc.get("position" if f in BS_FIELDS else "profit_loss") or [])
 
 
+def _statement_label(r, page, amounts):
+    """The full printed label of the statement line on `page` carrying `amounts` (one label only, never a choice)."""
+    from . import report
+    sts = getattr(r.extraction, "statements", None) or {}
+    want = {round(abs(a)) for a in amounts}
+    got = set()
+    for st in sts.values():
+        for ln in st.lines:
+            vals = {round(abs(v)) for v in (ln.amounts or {}).values() if v is not None}
+            if ln.page == page and vals and vals <= want and len(vals) >= min(2, len(want)):
+                got.add(report._label_start(ln.full_label or "", ln.label or "") or "")
+    got.discard("")
+    return got.pop() if len(got) == 1 else ""
+
+
 def _reason(f, note, findings, r):
     note_l = note.lower()
     fam = {"long_term_debt": "debt", "current_maturities_long_term_debt": "debt",
            "property_plant_equipment_net": "rou", "ppe_depreciation_disclosed": "rou"}
-    line = next((x.get("line", "") for x in findings if x.get("family") == fam.get(f)), "")
+    hit = next((x for x in findings if x.get("family") == fam.get(f)), {})
+    line = hit.get("line", "")
     label = re.sub(r"[\d.,()\s-]+$", "", re.sub(r"\s\d[\d.,a-z]*\s.*$", "", line)).strip() if line else ""
+    if hit.get("wrapped"):
+        # a label wrapped over two lines of a two-language face: the raw lines mix both languages; the statement
+        # line read by the PDF reader (same page, same amounts) holds the Indonesian label alone (SPTO 2021)
+        label = _statement_label(r, hit.get("page"), hit.get("amounts") or []) or label
     if f == "taxes_payable" and ("pendekatan" in note_l or "d-03g" in note_l):
         return Msg("chk.r.tax_proxy"), []
     ft = (getattr(r, "xbrl", None) or {}).get("sga_final_tax") if f == "selling_general_administrative_expenses" else None
