@@ -413,9 +413,23 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
     cl = facts.get("CurrentLiabilities", {})
     cl_pair = (cl.get("t"), cl.get("t1")) if cl.get("t") and cl.get("t1") else None
     catch_all = {c for c in facts if CATCH_ALL.match(c)} - FAMILY_CONCEPTS["debt"]
+    held, held_p = [], None    # label-only lines just above: the start of a label wrapped onto the amount line
     for p, ln, n in lines:
         if p not in pages["bs"] and p not in pages["pl"]:
             continue
+        # the label of a wrapped line: 'Aset hak guna - setelah dikurangi' / 'akumulasi penyusutan 12 115.299 ...'
+        # (SPTO 2021: the amount line alone names no family; right-of-use assets tagged as other financial assets
+        # went into PPE as FOUND). Only for an amount line that starts in lower case (a continuation), from at most
+        # two label-only lines directly above on the same page.
+        if held_p != p:
+            held, held_p = [], p
+        has_amount = any(x >= 100 for x in n)
+        if not has_amount:
+            held = (held + [ln.strip()])[-2:] if ln.strip() else []
+            label = ln
+        else:
+            label = (" ".join(held) + " " + ln) if held and ln.strip()[:1].islower() else ln
+            held = []
         # a wrapped current-maturities heading ('Bagian liabilitas jangka panjang' / 'yang jatuh tempo dalam satu
         # tahun' on the next line) is not the non-current heading (XBRL stage 6, finding A: SOHO 2022)
         wrapped_cm = bool(CM_WRAP.match(ln))
@@ -453,7 +467,7 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
         for fam, rx in FAMILY_LABEL.items():
             if (fam == "sga") != (p in pages["pl"] and p not in pages["bs"]):
                 continue   # SGA lines on the P&L only; debt, ROU, receivables on the balance sheet only
-            if not rx.search(ln) or NOT_FAMILY[fam].search(ln):
+            if not rx.search(label) or NOT_FAMILY[fam].search(label):
                 continue
             def on_line(d):
                 a, b = d.get("t") or 0, d.get("t1") or 0
@@ -467,7 +481,8 @@ def face_check(inst: Instance, lines: list, pages: dict) -> list:
                 continue   # third column only (e.g. 1 January of the comparative year); t and t-1 are '-'
 
             if not any(c in FAMILY_CONCEPTS[fam] for c in hits):
-                findings.append({"page": p, "line": ln.strip()[:120], "family": fam, "tagged_as": hits[:3],
+                findings.append({"page": p, "line": label.strip()[:160], "family": fam, "tagged_as": hits[:3],
+                                 "wrapped": label is not ln, "amounts": sorted(x for x in nums if x >= 100)[:4],
                                  "section": section if fam == "debt" else None})
     return findings
 

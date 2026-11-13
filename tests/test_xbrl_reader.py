@@ -482,3 +482,28 @@ def test_stage8_rounding_difference_uses_the_printed_figure():
     two = ln + [(10, "JUMLAH 290.273.064.680 289.976.056.809", {290273064680, 289976056809})]
     assert X._pair_lines_rounded(two, 290273064683, 289976056809) == []
     assert X._pair_lines_rounded(ln, 290273064686, 289976056809) == []      # exact: the normal path handles it
+
+
+def test_rule2_rou_label_wrapped_onto_the_amount_line():
+    # SPTO 2021 lesson: 'Aset hak guna - setelah dikurangi' / 'akumulasi penyusutan 12 115.299 ...'; the amount line
+    # alone names no family and right-of-use assets tagged as other financial assets went into PPE as FOUND
+    wrap = "Aset hak guna - setelah dikurangi Right of use assets - net of\nakumulasi penyusutan 12 290 865 accumulated depreciation"
+    bs = BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + wrap)
+    r = run(instance(base={"OtherNonCurrentFinancialAssets": (290, 865)}), [bs, PL, NOTE])
+    f = [x for x in r["face_findings"] if x["family"] == "rou"]
+    assert f and f[0]["wrapped"] and f[0]["amounts"] == [290, 865]
+    # must NOT: an advance for right-of-use assets above a continuation line
+    adv = "Uang muka aset hak guna\nuntuk sewa kantor 12 290 865 advances"
+    assert not [x for x in run(instance(base={"OtherNonCurrentFinancialAssets": (290, 865)}),
+                               [BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + adv), PL, NOTE])["face_findings"]
+                if x["family"] == "rou"]
+    # must NOT: a line that starts its own label (capital) does not inherit the line above
+    own = "Aset hak guna - neto Right of use assets - net\nInvestasi jangka panjang 12 290 865 Long-term investments"
+    assert not [x for x in run(instance(base={"OtherNonCurrentFinancialAssets": (290, 865)}),
+                               [BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + own), PL, NOTE])["face_findings"]
+                if x["family"] == "rou"]
+    # must NOT: a label above a blank line
+    gap = "Aset hak guna - setelah dikurangi\n\nakumulasi penyusutan 12 290 865"
+    assert not [x for x in run(instance(base={"OtherNonCurrentFinancialAssets": (290, 865)}),
+                               [BS.replace("Aset tetap 500 480", "Aset tetap 500 480\n" + gap), PL, NOTE])["face_findings"]
+                if x["family"] == "rou"]

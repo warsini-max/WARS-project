@@ -115,3 +115,18 @@ def test_shown_status_separates_nil_entered_assumed():
     assert [report._shown_status(v) for v in (nil, ent, ok)] == ["USER NIL", "USER ENTERED", "USER CONFIRMED"]
     assert report._shown_status(Value("x", "t", 0, "ASSUMED")) == "ASSUMED ZERO"
     assert report._shown_status(Value("x", "t", 83, "ASSUMED")) == "ASSUMED"
+
+
+def test_rou_card_label_from_the_statement_line_one_label_only():
+    from wars_scanner import check
+    ln = NS(page=9, label="akumulasi penyusutan", full_label="Aset hak guna - setelah dikurangi akumulasi penyusutan",
+            amounts={"t": 115_299_853_434, "t1": 142_306_115_108})
+    r = NS(extraction=NS(statements={"position": NS(lines=[ln])}))
+    assert check._statement_label(r, 9, [115_299_853_434, 142_306_115_108]) == \
+        "Aset hak guna - setelah dikurangi akumulasi penyusutan"
+    # must NOT: another page, or two different labels with the same amounts
+    assert check._statement_label(r, 10, [115_299_853_434, 142_306_115_108]) == ""
+    ln2 = NS(page=9, label="akumulasi penyusutan", full_label="Aset tetap - setelah dikurangi akumulasi penyusutan",
+             amounts=dict(ln.amounts))
+    r.extraction.statements["position"].lines.append(ln2)
+    assert check._statement_label(r, 9, [115_299_853_434, 142_306_115_108]) == ""
