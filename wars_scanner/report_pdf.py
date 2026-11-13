@@ -516,6 +516,10 @@ def build(r, lang="id", file_name="", sha="", now=None) -> bytes:
         story += [Paragraph(_x(t(k, lang)), num, bulletText=f"{n_}."), Spacer(1, 3 * mm)]
     story += [P(t("rep.formula", lang, const=Num(report.M_CONSTANT, 2)), "small"), Spacer(1, 3 * mm),
               Paragraph(_x(t("app.disclaimer", lang)), ParagraphStyle("disc", parent=S["body"], fontName="Sans-It"))]
+    # Feedback and Suggestions (Gail, 13 Nov 2026 17.23): after the disclaimer, kept together on one page; the Contact
+    # us icons in the footer carry the mail link
+    story.append(KeepTogether([Spacer(1, 6 * mm), Paragraph(_x(t("rep.feedback.title", lang)), S["h2"]),
+                               Spacer(1, 1.5 * mm), P(t("rep.feedback.body", lang), "body")]))
 
     doc.build(story, canvasmaker=lambda *a, **kw: _Numbered(*a, info=info, **kw))
     return buf.getvalue()
