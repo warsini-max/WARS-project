@@ -122,7 +122,8 @@ def _real(ln):
         if re.search(r"(rp|us\$|usd)\.?\s*$", ln[:m.start()], re.I):
             continue
         x = int(re.sub(r"\D", "", m.group()) or 0)
-        if x >= 100 and not 1900 <= x <= 2100:
+        year = re.fullmatch(r"\(?-?\d{4}\)?", m.group()) and 1900 <= x <= 2100     # '2025', not '2.025'
+        if x >= 100 and not year:
             out.append((m.start(), x))
     return out
 
@@ -176,13 +177,18 @@ def c_lab(lines, pages, key, a, b):
     lines above it for wrapped / indented labels; the whole label for the tail of a wrapped label) names the item."""
     first = None
     for i, (p, ln, n) in enumerate(lines):
-        if p not in pages or not _has_pair(n, a, b):
+        if p not in pages or not _has_pair(_amt(n, ln), a, b):     # amounts quoted inside a label do not count
             continue
         own = _own(ln)
         first = first or own[:80]
         cont = ln.strip()[:1].islower()
         if (not cont and _match(key, own)) or _match(key, _ctx(lines, i)):
             return True, own[:80]
+        # a label wrapped below the amounts: 'Arus kas bersih yang diperoleh dari 37,342 38,252 ... / aktivitas operasi'
+        # (ASII 2022). Only a label-only continuation line on the same page counts.
+        if not cont and i + 1 < len(lines) and lines[i + 1][0] == p and not _amt(lines[i + 1][2], lines[i + 1][1]) \
+                and lines[i + 1][1].strip()[:1].islower() and _match(key, own + " " + _own(lines[i + 1][1])):
+            return True, (own + " " + _own(lines[i + 1][1]))[:80]
     return False, first or "pair not on the statement pages"
 
 

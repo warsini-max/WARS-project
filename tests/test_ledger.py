@@ -179,3 +179,68 @@ def test_absence_zero_kept_when_the_report_is_readable_and_silent():
     r = _result(vals, {"position": _st("position", [1])}, {"items": items})
     rows = ledger.build(r, ["NERACA\nJUMLAH LIABILITAS 100 90", "Catatan\nUtang usaha 50 40"], "X")
     assert all(x["status_proposed"] == "FOUND" for x in rows)
+
+
+# ------------------------------------------------------------------ P0-3 / P0-4 acceptance sets (Test Plan r0 §3)
+
+def test_pos_x2_sub_line_under_its_heading():
+    ar = "Piutang usaha 5 Trade receivables\nPihak ketiga 6.398.965.494 6.979.937.104 Third parties"
+    assert ledger.c_lab(L(_pages(ar)), {1}, "accounts_receivable", 6_398_965_494, 6_979_937_104)[0]
+
+
+def test_neg_x3_pair_on_another_statement():
+    # must NOT: a balance-sheet item corroborated by the same pair on the cash flow statement page
+    pages = _pages("LAPORAN POSISI KEUANGAN\nJumlah aset 9.000.000 8.000.000 Total assets",
+                   "LAPORAN ARUS KAS\nKas dan setara kas akhir tahun 120.000 110.000 Cash at end of year")
+    assert not ledger.c_lab(L(pages), {1}, "cash_and_cash_equivalents", 120_000, 110_000)[0]
+
+
+def test_neg_x4_one_year_component_on_another_label():
+    # must NOT: a one-year value whose amount is printed on a line with another label
+    lines = L(_pages("Beban lain-lain 1.780.476 - Other expenses\nPENDAPATAN 24 2.000.001 2.020.780 REVENUES"))
+    assert not ledger.c_lab(lines, {1}, "revenue", 1_780_476, None)[0]
+
+
+def test_neg_x7_quoted_amount_is_not_a_line_amount():
+    # must NOT: the amount quoted inside a label ('... sebesar Rp 2.429.785.811 ...') read as the line's figure
+    lines = L(_pages(AR))
+    assert not ledger.family_sum(lines, {1}, ["accounts_receivable"], {"t": 2_429_785_811, "t1": 2_429_785_811})[0]
+    q = "Jumlah aset termasuk penyisihan sebesar Rp 5.000.000 dan Rp 4.000.000 Total assets"
+    assert not ledger.c_lab(L(_pages(q)), {1}, "total_assets", 5_000_000, 4_000_000)[0]
+
+
+def test_pos_a1_recognised_other_lines_in_the_block():
+    pl = PL.replace("Beban pajak final 29 (72.137) (77.547) Final tax expense",
+                    "Penghasilan lain-lain 2.000 1.000 Other income\nBeban lain-lain (1.500) (900) Other expenses")
+    assert ledger.sga_complete(L(_pages(pl)), {1}, {"t": 389_417, "t1": 367_537})[0]
+
+
+def test_neg_a3_subtotal_of_another_block():
+    # must NOT: a subtotal equal to the value printed outside the gross profit -> operating profit block
+    pl = """LABA BRUTO 940.243 942.021 GROSS PROFIT
+Beban penjualan (100.000) (100.000) Selling expenses
+Beban umum dan administrasi (200.000) (200.000) General and administrative expenses
+LABA USAHA 640.243 642.021 OPERATING PROFIT
+Jumlah beban lain-lain (389.417) (367.537) Total other expenses"""
+    assert not ledger.sga_complete(L(_pages(pl)), {1}, {"t": 389_417, "t1": 367_537})[0]
+
+
+def test_neg_a5_ppe_without_the_separate_right_of_use_line():
+    # must NOT: owned PPE alone when right-of-use assets are presented on a line of their own
+    bs = """Aset tetap - neto 99.142.946 9 103.085.969 Fixed assets - net
+Aset hak-guna - neto 7.007.939 12 7.335.209 Right-of-use assets - net"""
+    assert not ledger.family_sum(L(_pages(bs)), {1}, ["ppe", "rou", "bearer"], {"t": 99_142_946, "t1": 103_085_969})[0]
+
+
+def test_c_lab_label_wrapped_below_the_amounts():
+    cf = """Arus kas bersih yang diperoleh dari 37,342 38,252 Net cash flows provided from
+aktivitas operasi operating activities
+Arus kas dari aktivitas investasi: Cash flows from investing activities:"""
+    assert ledger.c_lab(L(_pages(cf)), {1}, "cash_flow_from_operations", 37_342, 38_252)[0]
+    # must NOT: the next line carries amounts of its own (it is another line, not the rest of the label)
+    cf2 = """Arus kas bersih yang diperoleh dari 37,342 38,252 Net cash flows
+aktivitas operasi 1,000 2,000 operating activities"""
+    assert not ledger.c_lab(L(_pages(cf2)), {1}, "cash_flow_from_operations", 37_342, 38_252)[0]
+    # must NOT: the continuation is on the next page
+    assert not ledger.c_lab(L(_pages("Arus kas bersih yang diperoleh dari 37,342 38,252", "aktivitas operasi")),
+                            {1, 2}, "cash_flow_from_operations", 37_342, 38_252)[0]
