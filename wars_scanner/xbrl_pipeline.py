@@ -450,8 +450,7 @@ def run(instance_source, pdf_path, ticker: str | None = None) -> Result:
                 st, src, note = "FOUND", "PDF notes = allocation table", ""
             elif pdf_dep is not None and abs(pdf_dep - a_dep) <= 1:
                 st, src, note = "REVIEW", "PDF notes = allocation table", f"XBRL movement table gives {x_dep:,.0f}"
-            elif not with_rou and c not in parts and rou_pdf.get(c) and pdf_dep is not None \
-                    and abs(pdf_dep - (a_dep + rou_pdf[c])) <= 1:
+            elif rou_from_pdf(pdf_dep, a_dep, rou_pdf.get(c), with_rou, c in parts):
                 # owned (allocation table) + ROU depreciation read and proved in the PDF notes; REVIEW: the review
                 # step shows both components (dep_parts)
                 parts[c] = (a_dep, rou_pdf[c])
@@ -645,6 +644,15 @@ IP_COST = re.compile(r"(?i)properti investasi(?! dalam penyelesaian)[^.]{0,60}?(
 
 
 FINAL_TAX_LINE = re.compile(r"^\s*(beban\s+)?pajak\s+(penghasilan\s+)?final\b|^\s*final\s+(income\s+)?tax\b", re.I)
+
+
+def rou_from_pdf(pdf_dep, alloc_dep, rou_dep, alloc_covers_rou, split_known) -> bool:
+    """PPE depreciation = owned (allocation table) + ROU depreciation that the PDF reader proved (FOUND), only when
+    the PDF figure is exactly that sum. Not when the allocation table already covers ROU (counted twice), when the
+    ROU split is already known from XBRL, or when the ROU depreciation is not proved (`rou_dep` is then None)."""
+    if alloc_covers_rou or split_known or not rou_dep or pdf_dep is None or alloc_dep is None:
+        return False
+    return abs(pdf_dep - (alloc_dep + rou_dep)) <= 1
 
 
 def final_tax_on_face(lines, pl_pages, sga_t, sga_t1):

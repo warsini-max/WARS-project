@@ -444,3 +444,27 @@ def test_rou_untagged_note_kept_off_conflict_and_component_cards():
     src = inspect.getsource(XP.run)
     assert "covered = c in parts" in src and 'conflict = "xbrl movement" in note.lower()' in src
     assert 'if rou_untagged and (st == "FOUND" or not (covered or conflict)):' in src
+
+
+def test_rou_depreciation_from_the_pdf_only_when_proved_and_exact():
+    # SPTO 2022: owned 71,649,163,115 (allocation table) + ROU 18,638,344,567 (proved in the notes) = PDF 90,287,507,682
+    from wars_scanner import xbrl_pipeline as XP
+    own, rou, pdf = 71_649_163_115, 18_638_344_567, 90_287_507_682
+    assert XP.rou_from_pdf(pdf, own, rou, False, False)
+    # must NOT: ROU depreciation not proved in the PDF (REVIEW is not passed in: rou_pdf holds FOUND values only)
+    assert not XP.rou_from_pdf(pdf, own, None, False, False)
+    # must NOT: the PDF figure is not exactly owned + ROU (another component, a different line)
+    assert not XP.rou_from_pdf(pdf + 5_000, own, rou, False, False)
+    # must NOT: the allocation table already covers ROU (ASII, ARII): ROU would be counted twice
+    assert not XP.rou_from_pdf(pdf, own, rou, True, False)
+    # must NOT: the ROU split is already known from the XBRL movement (LRNA): that split stays
+    assert not XP.rou_from_pdf(pdf, own, rou, False, True)
+    # must NOT: no PDF figure or no allocation figure
+    assert not XP.rou_from_pdf(None, own, rou, False, False) and not XP.rou_from_pdf(pdf, None, rou, False, False)
+
+
+def test_rou_depreciation_from_the_pdf_takes_found_values_only():
+    import inspect
+    from wars_scanner import xbrl_pipeline as XP
+    src = inspect.getsource(XP.run)
+    assert 'v.field == "rou_depreciation" and v.status == "FOUND"' in src
