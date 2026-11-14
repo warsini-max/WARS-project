@@ -67,3 +67,21 @@ Each entry says what was **approved**, what is **implemented**, what is **tested
 - **Tested:** test_ledger 20 passed; full suite 605 passed, 1 skipped; ledger_compare 0 K6 violations.
 - **Open:** card-increase threshold (criterion of P0-3, not yet set); P0-5 (operational `decide`) needs Gail's review
   of the differences; NEG-A6/A7 belong to the depreciation reader (P1).
+
+## Release to the guest app – 14 Nov 2026 (`c2dd81b`, main = dev = v1/p0)
+
+Gail 14 Nov 2026 06.40 ("oke 1-4"), before pausing the project:
+1. **P0-5 first group:** SGA without proven completeness (K5-A) is REVIEW with card `chk.r.k5_sga`.
+2. P0-1 (score gate), P0-2 (ledger, shadow), MTLA right-of-use fix, D3/D4 tools.
+3. Methodology item 5 (`beta.limits`) rewritten after Tahap 9.
+4. Footer label 'Hubungi Kami' / 'Contact Us'; the ID feedback text refers to 'Hubungi Kami'.
+
+- **Tested:** full suite 613 passed, 1 skipped (pre-existing SIDO amortisation 0); test_engine_vs_workbook green.
+  Regression 96 non-case pairs x 2 paths against the previous guest (`7cc725e`): values unchanged except MTLA 2025
+  PDF path PPE (839,194 -> 838,596); M unchanged except MTLA PDF (-0.22160 -> -0.22159), no zone change;
+  SGA FOUND -> REVIEW in 8 pairs (XBRL path; +6 cards) and 12 pairs (PDF path; +12 cards); HOPE +1 card;
+  45 empty debt/depreciation lines REVIEW -> NOT FOUND.
+- **Checked by hand:** the SGA cards of APEX (X), MTLA (P), MERK (P): amount, components and page. The other 15 new
+  SGA cards: amount unchanged, components and page extract not checked one by one.
+- **Open:** EN translations of the two new texts (Gail's ID wording); K5-A receivables and PPE; K1-B; K2-R1..R3; K8;
+  D3/D4; P1.
