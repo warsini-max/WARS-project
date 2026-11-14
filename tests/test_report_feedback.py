@@ -17,7 +17,7 @@ from wars_scanner.text import t
 EN = ("WARS welcomes feedback, suggestions, and recommendations to support the further development and improvement of "
       "the system. Feedback may be submitted via email by selecting the email icon in the Contact Us section.")
 ID = ("WARS terbuka terhadap masukan, saran, dan rekomendasi untuk pengembangan dan penyempurnaan sistem. Masukan dapat "
-      "disampaikan melalui email dengan memilih ikon email pada bagian Contact Us.")
+      "disampaikan melalui email dengan memilih ikon email pada bagian Hubungi Kami.")
 HEAD = {"en": "Feedback and Suggestions", "id": "Masukan dan Saran"}
 BODY = {"en": EN, "id": ID}
 DOC = Path(__file__).resolve().parents[1].parent / "s3core" / "docs" / "LK_SIDO_2021.pdf"
@@ -78,3 +78,10 @@ def test_contact_email_link_on_every_page(pdfs, lang):
 def test_configured_address_is_the_one_the_app_uses():
     src = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
     assert f'CONTACT_EMAIL = "{report_pdf.CONTACT_EMAIL}"' in src
+
+
+@pytest.mark.parametrize("lang", ["en", "id"])
+def test_footer_label_is_the_section_the_text_refers_to(lang):
+    # Gail 14 Nov 06.40: 'Hubungi Kami' (ID) and 'Contact Us' (EN); the feedback text refers to that label
+    assert t("rep.contact", lang) == {"id": "Hubungi Kami", "en": "Contact Us"}[lang]
+    assert f"bagian {t('rep.contact', lang)}." in BODY[lang] if lang == "id" else f"the {t('rep.contact', lang)} section" in BODY[lang]
