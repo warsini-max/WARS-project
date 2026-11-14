@@ -426,6 +426,8 @@ def _reason(f, note, findings, r):
         # a label wrapped over two lines of a two-language face: the raw lines mix both languages; the statement
         # line read by the PDF reader (same page, same amounts) holds the Indonesian label alone (SPTO 2022)
         label = _statement_label(r, hit.get("page"), hit.get("amounts") or []) or label
+    if f == "selling_general_administrative_expenses" and "k5-a sga" in note_l:
+        return Msg("chk.r.k5_sga"), []          # P0-5 (Gail 14 Nov 06.40): completeness not shown (decide.py)
     if f == "taxes_payable" and ("pendekatan" in note_l or "d-03g" in note_l):
         return Msg("chk.r.tax_proxy"), []
     ft = (getattr(r, "xbrl", None) or {}).get("sga_final_tax") if f == "selling_general_administrative_expenses" else None

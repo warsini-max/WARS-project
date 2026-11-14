@@ -20,7 +20,7 @@ import tempfile
 
 import streamlit as st
 
-from wars_scanner import check, gate, ledger, pipeline, report, report_pdf, report_xlsx, xbrl_pipeline
+from wars_scanner import check, decide, gate, pipeline, report, report_pdf, report_xlsx, xbrl_pipeline
 from wars_scanner.report import NEUTRAL_M, THRESHOLD, dec
 from wars_scanner.text import CATALOG, Msg, Num, Raw, fmt_number, render, t, unit_msg
 
@@ -276,13 +276,13 @@ def analyse(data: bytes, xdata: bytes | None = None):
             pages = xbrl_pipeline.pdf_pages(path)
         except Exception:                 # noqa: BLE001  the ledger is shadow only; the analysis never depends on it
             pages = None
+    try:                                  # P0-2 ledger (shadow) + P0-5 first group: SGA completeness (K5-A) decides
+        decide.apply(r, pages, "X" if xdata else "P")
+    except Exception as e:                # noqa: BLE001  never stops the analysis; the SGA status then stays as read
+        r.ledger, r.ledger_error = [], str(e)[:200]
     checks = check.items(r)
     check.annotate(r, checks)
     gate.enforce(r, checks)               # P0-1: an input that needs the user and has no card withholds the score
-    try:                                  # P0-2: evidence ledger, shadow mode (K6): never changes the result
-        ledger.attach(r, pages, "X" if xdata else "P")
-    except Exception as e:                # noqa: BLE001
-        r.ledger, r.ledger_error = [], str(e)[:200]
     report.keep_printed_labels(r)         # wrapped labels of the source lines, before the lines are dropped
     r.extraction.statements = {}          # not needed after reading; keeps the cache small
     return r, checks
